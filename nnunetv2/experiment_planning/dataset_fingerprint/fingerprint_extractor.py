@@ -112,7 +112,7 @@ class DatasetFingerprintExtractor(object):
         properties_file = join(preprocessed_output_folder, 'dataset_fingerprint.json')
 
         if not isfile(properties_file) or overwrite_existing:
-            file_ending = self.dataset_json['file_ending']
+            file_ending = self.dataset_json['file_ending']  #".nii.gz"
             training_identifiers = get_identifiers_from_splitted_dataset_folder(join(self.input_folder, 'imagesTr'),
                                                                                 file_ending)
             reader_writer_class = determine_reader_writer_from_dataset_json(self.dataset_json,
@@ -162,7 +162,7 @@ class DatasetFingerprintExtractor(object):
             # we drop this so that the json file is somewhat human readable
             # foreground_intensity_stats_by_case_and_modality = [r[3] for r in results]
             median_relative_size_after_cropping = np.median([r[4] for r in results], 0)
-
+## FIXME: add channel dose
             num_channels = len(self.dataset_json['channel_names'].keys()
                                  if 'channel_names' in self.dataset_json.keys()
                                  else self.dataset_json['modality'].keys())

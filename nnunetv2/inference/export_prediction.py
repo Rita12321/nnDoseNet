@@ -137,6 +137,7 @@ def resample_and_save(predicted: Union[torch.Tensor, np.ndarray], target_shape: 
 
     # create segmentation (argmax, regions, etc)
     label_manager = plans_manager.get_label_manager(dataset_json_dict_or_file)
+##FIXME: predict probability to seg
     segmentation = label_manager.convert_logits_to_segmentation(predicted_array_or_file)
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):

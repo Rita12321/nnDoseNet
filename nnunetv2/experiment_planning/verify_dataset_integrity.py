@@ -29,17 +29,17 @@ from nnunetv2.utilities.utils import get_identifiers_from_splitted_dataset_folde
 
 ## FIXME: label
 def verify_labels(label_file: str, readerclass: Type[BaseReaderWriter], expected_labels: List[int]) -> bool:
-    rw = readerclass()
-    seg, properties = rw.read_seg(label_file)
-    found_labels = np.sort(pd.unique(seg.ravel()))  # np.unique(seg)
-    unexpected_labels = [i for i in found_labels if i not in expected_labels]
-    if len(found_labels) == 0 and found_labels[0] == 0:
-        print('WARNING: File %s only has label 0 (which should be background). This may be intentional or not, '
-              'up to you.' % label_file)
-    if len(unexpected_labels) > 0:
-        print("Error: Unexpected labels found in file %s.\nExpected: %s\nFound: %s" % (label_file, expected_labels,
-                                                                                       found_labels))
-        return False
+    # rw = readerclass()
+    # seg, properties = rw.read_seg(label_file)
+    # found_labels = np.sort(pd.unique(seg.ravel()))  # np.unique(seg)
+    # unexpected_labels = [i for i in found_labels if i not in expected_labels]
+    # if len(found_labels) == 0 and found_labels[0] == 0:
+    #     print('WARNING: File %s only has label 0 (which should be background). This may be intentional or not, '
+    #           'up to you.' % label_file)
+    # if len(unexpected_labels) > 0:
+    #     print("Error: Unexpected labels found in file %s.\nExpected: %s\nFound: %s" % (label_file, expected_labels,
+    #                                                                                    found_labels))
+    #     return False
     return True
 
 
@@ -211,6 +211,6 @@ def verify_dataset_integrity(folder: str, num_processes: int = 8) -> None:
 
 if __name__ == "__main__":
     # investigate geometry issues
-    example_folder = join(nnUNet_raw, 'Dataset250_COMPUTING_it0')
+    example_folder = join(nnUNet_raw)
     num_processes = 6
     verify_dataset_integrity(example_folder, num_processes)

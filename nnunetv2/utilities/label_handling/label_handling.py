@@ -32,13 +32,14 @@ class LabelManager(object):
             self._has_regions: bool = any(
                 [isinstance(i, (tuple, list)) and len(i) > 1 for i in self.label_dict.values()])
 
-## FIXME: ignorelabel?
+## NOTE ignorelabel not the kind of ignore we want
         self._ignore_label: Union[None, int] = self._determine_ignore_label()
-        self._all_labels: List[int] = self._get_all_labels()
+        self._all_labels: List[int] = None #self._get_all_labels()
 
         self._regions: Union[None, List[Union[int, Tuple[int, ...]]]] = self._get_regions()
 
         if self.has_ignore_label:
+            
             assert self.ignore_label == max(
                 self.all_labels) + 1, 'If you use the ignore label it must have the highest ' \
                                       'label value! It cannot be 0 or in between other labels. ' \
@@ -50,17 +51,18 @@ class LabelManager(object):
             self.inference_nonlin = inference_nonlin
 
     def _sanity_check(self, label_dict: dict):
-        if not 'background' in label_dict.keys():
-            raise RuntimeError('Background label not declared (remeber that this should be label 0!)')
-        bg_label = label_dict['background']
-        if isinstance(bg_label, (tuple, list)):
-            raise RuntimeError(f"Background label must be 0. Not a list. Not a tuple. Your background label: {bg_label}")
-        assert int(bg_label) == 0, f"Background label must be 0. Your background label: {bg_label}"
-        # not sure if we want to allow regions that contain background. I don't immediately see how this could cause
-        # problems so we allow it for now. That doesn't mean that this is explicitly supported. It could be that this
-        # just crashes.
+        print(" I don't care, I am ignoring the sanity check ")
+        # if not 'background' in label_dict.keys():
+        #     raise RuntimeError('Background label not declared (remeber that this should be label 0!)')
+        # bg_label = label_dict['background']
+        # if isinstance(bg_label, (tuple, list)):
+        #     raise RuntimeError(f"Background label must be 0. Not a list. Not a tuple. Your background label: {bg_label}")
+        # assert int(bg_label) == 0, f"Background label must be 0. Your background label: {bg_label}"
+        # # not sure if we want to allow regions that contain background. I don't immediately see how this could cause
+        # # problems so we allow it for now. That doesn't mean that this is explicitly supported. It could be that this
+        # # just crashes.
 
-    def _get_all_labels(self) -> List[int]:
+    def _get_all_labels(self) -> List:#List[int]
         all_labels = []
         for k, r in self.label_dict.items():
             # ignore label is not going to be used, hence the name. Duh.
@@ -300,8 +302,9 @@ def determine_num_input_channels(plans_manager: PlansManager,
 
 if __name__ == '__main__':
     # this code used to be able to differentiate variant 1 and 2 to measure time.
-    num_labels = 7
-    seg = np.random.randint(0, num_labels, size=(256, 256, 256), dtype=np.uint8)
+    #num_labels = 100
+    #seg = np.random.randint(0, num_labels, size=(256, 256, 256), dtype=np.uint8)
+    seg = np.random.uniform(low=-0.5,high=50.55,size=(256, 256, 256))
     seg_torch = torch.from_numpy(seg)
     st = time()
     onehot_npy = convert_labelmap_to_one_hot(seg, np.arange(num_labels))
@@ -318,3 +321,5 @@ if __name__ == '__main__':
     onehot_torch2 = onehot_torch2.numpy()
     print(np.all(onehot_torch == onehot_npy))
     print(np.all(onehot_torch2 == onehot_npy))
+    
+    

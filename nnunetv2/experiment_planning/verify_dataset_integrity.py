@@ -27,7 +27,7 @@ from nnunetv2.paths import nnUNet_raw
 from nnunetv2.utilities.label_handling.label_handling import LabelManager
 from nnunetv2.utilities.utils import get_identifiers_from_splitted_dataset_folder
 
-
+## FIXME: label
 def verify_labels(label_file: str, readerclass: Type[BaseReaderWriter], expected_labels: List[int]) -> bool:
     rw = readerclass()
     seg, properties = rw.read_seg(label_file)

@@ -354,9 +354,12 @@ class nnUNetTrainer(object):
         # this gives higher resolution outputs more weight in the loss
         weights = np.array([1 / (2 ** i) for i in range(len(deep_supervision_scales))])
         weights[-1] = 0
+  
 
         # we don't use the lowest 2 outputs. Normalize weights so that they sum to 1
         weights = weights / weights.sum()
+        
+        print("######### weights",weights,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         # now wrap the loss
         loss = DeepSupervisionWrapper(loss, weights)
         return loss
@@ -572,7 +575,7 @@ class nnUNetTrainer(object):
                                     folder_with_segs_from_previous_stage=self.folder_with_segs_from_previous_stage,
                                     num_images_properties_loading_threshold=0)
         return dataset_tr, dataset_val
-
+## FIXME: 
     def get_dataloaders(self):
         # we use the patch size to determine whether we need 2D or 3D dataloaders. We also use it to determine whether
         # we need to use dummy 2D augmentation (in case of 3D training) and what our initial patch size should be

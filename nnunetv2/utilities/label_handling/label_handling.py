@@ -23,6 +23,7 @@ class LabelManager(object):
                  inference_nonlin=None):
         self._sanity_check(label_dict)
         self.label_dict = label_dict
+        
         self.regions_class_order = regions_class_order
         self._force_use_labels = force_use_labels
 
@@ -34,7 +35,7 @@ class LabelManager(object):
 
 ## NOTE ignorelabel not the kind of ignore we want
         self._ignore_label: Union[None, int] = self._determine_ignore_label()
-        self._all_labels: List[int] = None #self._get_all_labels()
+        self._all_labels: List[int] = self._get_all_labels()
 
         self._regions: Union[None, List[Union[int, Tuple[int, ...]]]] = self._get_regions()
 
@@ -50,6 +51,8 @@ class LabelManager(object):
         else:
             self.inference_nonlin = inference_nonlin
 
+## HACK:
+
     def _sanity_check(self, label_dict: dict):
         print(" I don't care, I am ignoring the sanity check ")
         # if not 'background' in label_dict.keys():
@@ -63,19 +66,20 @@ class LabelManager(object):
         # # just crashes.
 
     def _get_all_labels(self) -> List:#List[int]
-        all_labels = []
-        for k, r in self.label_dict.items():
-            # ignore label is not going to be used, hence the name. Duh.
-            if k == 'ignore':
-                continue
-            if isinstance(r, (tuple, list)):
-                for ri in r:
-                    all_labels.append(int(ri))
-            else:
-                all_labels.append(int(r))
-        all_labels = list(np.unique(all_labels))
-        all_labels.sort()
-        return all_labels
+        # all_labels = []
+        # for k, r in self.label_dict.items():
+        #     # ignore label is not going to be used, hence the name. Duh.
+        #     if k == 'ignore':
+        #         continue
+        #     if isinstance(r, (tuple, list)):
+        #         for ri in r:
+        #             all_labels.append(int(ri))
+        #     else:
+        #         all_labels.append(int(r))
+        # all_labels = list(np.unique(all_labels))
+        # all_labels.sort()
+        
+        return []
 
     def _get_regions(self) -> Union[None, List[Union[int, Tuple[int, ...]]]]:
         if not self._has_regions or self._force_use_labels:
@@ -233,7 +237,7 @@ class LabelManager(object):
         else:
             return len(self.all_labels)
 
-
+#FIXME:
 def get_labelmanager_class_from_plans(plans: dict) -> Type[LabelManager]:
     if 'label_manager' not in plans.keys():
         print('No label manager specified in plans. Using default: LabelManager')

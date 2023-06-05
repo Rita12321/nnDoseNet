@@ -1,6 +1,5 @@
 import shutil
 from typing import List, Type, Optional, Tuple, Union
-#check
 import nnunetv2
 from batchgenerators.utilities.file_and_folder_operations import join, maybe_mkdir_p, subfiles
 
@@ -76,8 +75,7 @@ def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str 
     overwrite_target_spacing ONLY applies to 3d_fullres and 3d_cascade fullres!
     """
     
-    #### FIXME: print
-    print("plan experiment: plan_and_preprocess_api.py")
+ 
     experiment_planner = recursive_find_python_class(join(nnunetv2.__path__[0], "experiment_planning"),
                                                      experiment_planner_class_name,
                                                      current_module="nnunetv2.experiment_planning")

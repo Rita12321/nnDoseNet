@@ -184,7 +184,18 @@ def plan_and_preprocess_entry():
     extract_fingerprints(args.d, args.fpe, args.npfp, args.verify_dataset_integrity, args.clean, args.verbose)
 
     # experiment planning
-    print('Experiment planning...')
+    print('Experiment planning...')        # all_labels = []
+        # for k, r in self.label_dict.items():
+        #     # ignore label is not going to be used, hence the name. Duh.
+        #     if k == 'ignore':
+        #         continue
+        #     if isinstance(r, (tuple, list)):
+        #         for ri in r:
+        #             all_labels.append(int(ri))
+        #     else:
+        #         all_labels.append(int(r))
+        # all_labels = list(np.unique(all_labels))
+        # all_labels.sort()
     plan_experiments(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing, args.overwrite_plans_name)
 
     # manage default np

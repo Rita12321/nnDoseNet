@@ -22,7 +22,7 @@ def extract_fingerprint_dataset(dataset_id: int,
     """
     Returns the fingerprint as a dictionary (additionally to saving it)
     """
-    dataset_name = convert_id_to_dataset_name(dataset_id)
+    dataset_name = convert_id_to_dataset_name(dataset_id) #find wich dataset got the input id num 
     print(dataset_name)
 
     if check_dataset_integrity:
@@ -75,6 +75,9 @@ def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str 
     """
     overwrite_target_spacing ONLY applies to 3d_fullres and 3d_cascade fullres!
     """
+    
+    #### FIXME: print
+    print("plan experiment: plan_and_preprocess_api.py")
     experiment_planner = recursive_find_python_class(join(nnunetv2.__path__[0], "experiment_planning"),
                                                      experiment_planner_class_name,
                                                      current_module="nnunetv2.experiment_planning")
@@ -82,7 +85,7 @@ def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str 
         plan_experiment_dataset(d, experiment_planner, gpu_memory_target_in_gb, preprocess_class_name,
                                 overwrite_target_spacing, overwrite_plans_name)
 
-
+ # FIXME: add 3d low-res back?
 def preprocess_dataset(dataset_id: int,
                        plans_identifier: str = 'nnUNetPlans',
                        configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres', '3d_lowres'),
@@ -117,11 +120,14 @@ def preprocess_dataset(dataset_id: int,
     [shutil.copy(i, join(join(nnUNet_preprocessed, dataset_name, 'gt_segmentations'))) for i in
      subfiles(join(nnUNet_raw, dataset_name, 'labelsTr'))]
 
-
+# FIXME: add 3d low-res back?
 def preprocess(dataset_ids: List[int],
                plans_identifier: str = 'nnUNetPlans',
-               configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres', '3d_lowres'),
+               configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres'),#, '3d_lowres'
                num_processes: Union[int, Tuple[int, ...], List[int]] = (8, 4, 8),
                verbose: bool = False):
+    # not using default
+    
     for d in dataset_ids:
+        
         preprocess_dataset(d, plans_identifier, configurations, num_processes, verbose)

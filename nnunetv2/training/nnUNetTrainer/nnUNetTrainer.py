@@ -272,7 +272,7 @@ class nnUNetTrainer(object):
         variants can be loaded at inference time (inference will use the same nnUNetTrainer that was used for
         training, so if you change the network architecture during training by deriving a new trainer class then
         inference will know about it).
-
+## FIXME: 
         If you need to know how many segmentation outputs your custom architecture needs to have, use the following snippet:
         > label_manager = plans_manager.get_label_manager(dataset_json)
         > label_manager.num_segmentation_heads

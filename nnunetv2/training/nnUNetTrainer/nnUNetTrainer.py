@@ -281,6 +281,7 @@ class nnUNetTrainer(object):
         should be generated. label_manager takes care of all that for you.)
 
         """
+
         return get_network_from_plans(plans_manager, dataset_json, configuration_manager,
                                       num_input_channels, deep_supervision=enable_deep_supervision)
 
@@ -358,8 +359,7 @@ class nnUNetTrainer(object):
 
         # we don't use the lowest 2 outputs. Normalize weights so that they sum to 1
         weights = weights / weights.sum()
-        
-        print("######### weights",weights,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
         # now wrap the loss
         loss = DeepSupervisionWrapper(loss, weights)
         return loss
@@ -479,6 +479,9 @@ class nnUNetTrainer(object):
                 # self.optimizer.zero_grad()
 
                 # broken.
+                print("plot_network_architecture")
+
+                #print(self.network)
 
                 import hiddenlayer as hl
                 g = hl.build_graph(self.network,

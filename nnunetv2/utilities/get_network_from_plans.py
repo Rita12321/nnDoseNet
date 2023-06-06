@@ -58,7 +58,7 @@ def get_network_from_plans(plans_manager: PlansManager,
         'n_conv_per_stage_decoder': configuration_manager.n_conv_per_stage_decoder
     }
     # network class name!!
-#FIXME: changed num_class
+#FIXME: changed num_class?
     model = network_class(
         input_channels=num_input_channels,
         n_stages=num_stages,
@@ -67,7 +67,7 @@ def get_network_from_plans(plans_manager: PlansManager,
         conv_op=conv_op,
         kernel_sizes=configuration_manager.conv_kernel_sizes,
         strides=configuration_manager.pool_op_kernel_sizes,
-        num_classes=1,#label_manager.num_segmentation_heads,
+        num_classes=label_manager.num_segmentation_heads,
         deep_supervision=deep_supervision,
         **conv_or_blocks_per_stage,
         **kwargs[segmentation_network_class_name]

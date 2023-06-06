@@ -281,6 +281,9 @@ class nnUNetTrainer(object):
         should be generated. label_manager takes care of all that for you.)
 
         """
+        label_managerr = plans_manager.get_label_manager(dataset_json)
+        
+        print("numof head",label_managerr.num_segmentation_heads,"~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         return get_network_from_plans(plans_manager, dataset_json, configuration_manager,
                                       num_input_channels, deep_supervision=enable_deep_supervision)

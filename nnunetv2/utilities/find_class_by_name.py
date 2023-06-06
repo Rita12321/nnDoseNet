@@ -21,5 +21,5 @@ def recursive_find_python_class(folder: str, class_name: str, current_module: st
                 tr = recursive_find_python_class(join(folder, modname), class_name, current_module=next_current_module)
             if tr is not None:
                 break
-    print(tr,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~```")
+
     return tr

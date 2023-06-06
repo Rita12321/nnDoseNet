@@ -1,5 +1,6 @@
 import shutil
 from typing import List, Type, Optional, Tuple, Union
+
 import nnunetv2
 from batchgenerators.utilities.file_and_folder_operations import join, maybe_mkdir_p, subfiles
 
@@ -86,7 +87,7 @@ def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str 
  # FIXME: add 3d low-res back?
 def preprocess_dataset(dataset_id: int,
                        plans_identifier: str = 'nnUNetPlans',
-                       configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres', '3d_lowres'),
+                       configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres'),#, '3d_lowres'
                        num_processes: Union[int, Tuple[int, ...], List[int]] = (8, 4, 8),
                        verbose: bool = False) -> None:
     if not isinstance(num_processes, list):

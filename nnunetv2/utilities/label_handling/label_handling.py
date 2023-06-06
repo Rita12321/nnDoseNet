@@ -71,13 +71,14 @@ class LabelManager(object):
             # ignore label is not going to be used, hence the name. Duh.
             if k == 'ignore':
                 continue
+
             if isinstance(r, (tuple, list)):
                 for ri in r:
                     all_labels.append(int(ri))
             else:
                 all_labels.append(int(r))
-        all_labels = list(np.unique(all_labels))
-        all_labels.sort()
+        #all_labels = list(np.unique(all_labels))
+        #all_labels.sort()
         
         return all_labels
 

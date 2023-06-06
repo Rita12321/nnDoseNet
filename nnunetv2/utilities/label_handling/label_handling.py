@@ -51,35 +51,35 @@ class LabelManager(object):
         else:
             self.inference_nonlin = inference_nonlin
 
-## HACK:
+## FIXME: changed
 
     def _sanity_check(self, label_dict: dict):
         print(" I don't care, I am ignoring the sanity check ")
-        # if not 'background' in label_dict.keys():
-        #     raise RuntimeError('Background label not declared (remeber that this should be label 0!)')
-        # bg_label = label_dict['background']
-        # if isinstance(bg_label, (tuple, list)):
-        #     raise RuntimeError(f"Background label must be 0. Not a list. Not a tuple. Your background label: {bg_label}")
-        # assert int(bg_label) == 0, f"Background label must be 0. Your background label: {bg_label}"
-        # # not sure if we want to allow regions that contain background. I don't immediately see how this could cause
-        # # problems so we allow it for now. That doesn't mean that this is explicitly supported. It could be that this
-        # # just crashes.
-
+        if not 'background' in label_dict.keys():
+            raise RuntimeError('Background label not declared (remeber that this should be label 0!)')
+        bg_label = label_dict['background']
+        if isinstance(bg_label, (tuple, list)):
+            raise RuntimeError(f"Background label must be 0. Not a list. Not a tuple. Your background label: {bg_label}")
+        assert int(bg_label) == 0, f"Background label must be 0. Your background label: {bg_label}"
+        # not sure if we want to allow regions that contain background. I don't immediately see how this could cause
+        # problems so we allow it for now. That doesn't mean that this is explicitly supported. It could be that this
+        # just crashes.
+## FIXME: changed
     def _get_all_labels(self) -> List:#List[int]
-        # all_labels = []
-        # for k, r in self.label_dict.items():
-        #     # ignore label is not going to be used, hence the name. Duh.
-        #     if k == 'ignore':
-        #         continue
-        #     if isinstance(r, (tuple, list)):
-        #         for ri in r:
-        #             all_labels.append(int(ri))
-        #     else:
-        #         all_labels.append(int(r))
-        # all_labels = list(np.unique(all_labels))
-        # all_labels.sort()
+        all_labels = []
+        for k, r in self.label_dict.items():
+            # ignore label is not going to be used, hence the name. Duh.
+            if k == 'ignore':
+                continue
+            if isinstance(r, (tuple, list)):
+                for ri in r:
+                    all_labels.append(int(ri))
+            else:
+                all_labels.append(int(r))
+        all_labels = list(np.unique(all_labels))
+        all_labels.sort()
         
-        return []
+        return all_labels
 
     def _get_regions(self) -> Union[None, List[Union[int, Tuple[int, ...]]]]:
         if not self._has_regions or self._force_use_labels:

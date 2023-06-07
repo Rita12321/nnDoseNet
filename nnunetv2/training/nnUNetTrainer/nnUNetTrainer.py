@@ -11,6 +11,7 @@ from typing import Union, Tuple, List
 
 import numpy as np
 import torch
+from torch.nn import MSELoss
 from batchgenerators.dataloading.single_threaded_augmenter import SingleThreadedAugmenter
 from batchgenerators.transforms.abstract_transforms import AbstractTransform, Compose
 from batchgenerators.transforms.color_transforms import BrightnessMultiplicativeTransform, \
@@ -340,7 +341,11 @@ class nnUNetTrainer(object):
             self.oversample_foreground_percent = oversample_percents[my_rank]
 
     def _build_loss(self):
-        if self.label_manager.has_regions:
+        print("self.label_manager.num_segmentation_heads",self.label_manager.num_segmentation_heads)
+        if self.label_manager.num_segmentation_heads<=1:
+            print("self.label_manager.num_segmentation_heads=",self.label_manager.num_segmentation_heads,"----->loss=torch.nn.MSELoss()")
+            loss= MSELoss()
+        elif self.label_manager.has_regions:
             loss = DC_and_BCE_loss({},
                                    {'batch_dice': self.configuration_manager.batch_dice,
                                     'do_bg': True, 'smooth': 1e-5, 'ddp': self.is_ddp},
@@ -357,13 +362,18 @@ class nnUNetTrainer(object):
         # this gives higher resolution outputs more weight in the loss
         weights = np.array([1 / (2 ** i) for i in range(len(deep_supervision_scales))])
         weights[-1] = 0
+        
   
 
         # we don't use the lowest 2 outputs. Normalize weights so that they sum to 1
         weights = weights / weights.sum()
+        print("weights",weights)
+        print(loss)
 
         # now wrap the loss
+## FIXME: 
         loss = DeepSupervisionWrapper(loss, weights)
+        print(loss)
         return loss
 
     def configure_rotation_dummyDA_mirroring_and_inital_patch_size(self):
@@ -877,6 +887,7 @@ class nnUNetTrainer(object):
         with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
             output = self.network(data)
             # del data
+
             l = self.loss(output, target)
 
         if self.grad_scaler is not None:

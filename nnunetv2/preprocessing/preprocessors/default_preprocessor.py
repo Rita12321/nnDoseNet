@@ -105,7 +105,12 @@ class DefaultPreprocessor(object):
             properties['class_locations'] = self._sample_foreground_locations(seg, collect_for_this,
                                                                                    verbose=self.verbose)
             seg = self.modify_seg_fn(seg, plans_manager, dataset_json, configuration_manager)
-        if np.max(seg) > 127:
+## FIXME:   having a label call dose?     
+        #if --> np. float16
+        if label_manager.dose_label:
+            print("label_manager.dose_label=",label_manager.dose_label,"~~~~~~~~~~~~~~~~~~~~~~~~~")
+            seg = seg.astype(np.float16)
+        elif np.max(seg) > 127:
             seg = seg.astype(np.int16)
         else:
             seg = seg.astype(np.int8)

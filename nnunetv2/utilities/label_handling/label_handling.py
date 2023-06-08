@@ -23,6 +23,7 @@ class LabelManager(object):
                  inference_nonlin=None):
         self._sanity_check(label_dict)
         self.label_dict = label_dict
+        self.dose_label = False
         
         self.regions_class_order = regions_class_order
         self._force_use_labels = force_use_labels
@@ -51,10 +52,10 @@ class LabelManager(object):
         else:
             self.inference_nonlin = inference_nonlin
 
-## FIXME: changed
+## NOTE np need to change, it only check if there is label back ground.
 
     def _sanity_check(self, label_dict: dict):
-        print(" I don't care, I am ignoring the sanity check ")
+        #print(" I don't care, I am ignoring the sanity check ")
         if not 'background' in label_dict.keys():
             raise RuntimeError('Background label not declared (remeber that this should be label 0!)')
         bg_label = label_dict['background']
@@ -71,14 +72,16 @@ class LabelManager(object):
             # ignore label is not going to be used, hence the name. Duh.
             if k == 'ignore':
                 continue
-
+            if k == 'dose':
+                self.dose_label=True
+                continue
             if isinstance(r, (tuple, list)):
                 for ri in r:
                     all_labels.append(int(ri))
             else:
                 all_labels.append(int(r))
-        #all_labels = list(np.unique(all_labels))
-        #all_labels.sort()
+        all_labels = list(np.unique(all_labels))
+        all_labels.sort()
         
         return all_labels
 

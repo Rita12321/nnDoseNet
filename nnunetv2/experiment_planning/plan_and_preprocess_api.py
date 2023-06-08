@@ -84,7 +84,7 @@ def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str 
         plan_experiment_dataset(d, experiment_planner, gpu_memory_target_in_gb, preprocess_class_name,
                                 overwrite_target_spacing, overwrite_plans_name)
 
- # FIXME: add 3d low-res back?
+
 def preprocess_dataset(dataset_id: int,
                        plans_identifier: str = 'nnUNetPlans',
                        configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres', '3d_lowres'),#, '3d_lowres'

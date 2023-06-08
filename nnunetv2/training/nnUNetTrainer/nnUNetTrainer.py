@@ -273,7 +273,7 @@ class nnUNetTrainer(object):
         variants can be loaded at inference time (inference will use the same nnUNetTrainer that was used for
         training, so if you change the network architecture during training by deriving a new trainer class then
         inference will know about it).
-## FIXME: 
+
         If you need to know how many segmentation outputs your custom architecture needs to have, use the following snippet:
         > label_manager = plans_manager.get_label_manager(dataset_json)
         > label_manager.num_segmentation_heads
@@ -339,7 +339,7 @@ class nnUNetTrainer(object):
 
             self.batch_size = batch_sizes[my_rank]
             self.oversample_foreground_percent = oversample_percents[my_rank]
-
+#FIXME:
     def _build_loss(self):
         print("self.label_manager.num_segmentation_heads",self.label_manager.num_segmentation_heads)
         if self.label_manager.num_segmentation_heads<=1:
@@ -371,7 +371,7 @@ class nnUNetTrainer(object):
         print(loss)
 
         # now wrap the loss
-## FIXME: 
+
         loss = DeepSupervisionWrapper(loss, weights)
         print(loss)
         return loss
@@ -590,7 +590,7 @@ class nnUNetTrainer(object):
                                     folder_with_segs_from_previous_stage=self.folder_with_segs_from_previous_stage,
                                     num_images_properties_loading_threshold=0)
         return dataset_tr, dataset_val
-## FIXME: 
+
     def get_dataloaders(self):
         # we use the patch size to determine whether we need 2D or 3D dataloaders. We also use it to determine whether
         # we need to use dummy 2D augmentation (in case of 3D training) and what our initial patch size should be

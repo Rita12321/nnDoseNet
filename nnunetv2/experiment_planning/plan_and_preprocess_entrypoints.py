@@ -200,9 +200,9 @@ def plan_and_preprocess_entry():
 
     # manage default np
     
-# FIXME: add 3d low-res back?
+
     if args.np is None:
-        default_np = {"2d": 8, "3d_fullres": 8}#, "3d_lowres": 8
+        default_np = {"2d": 8, "3d_fullres": 8, "3d_lowres": 8}
         np = [default_np[c] if c in default_np.keys() else 4 for c in args.c]
     else:
         np = args.np

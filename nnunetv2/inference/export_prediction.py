@@ -27,23 +27,39 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
         len(configuration_manager.spacing) == \
         len(properties_dict['shape_after_cropping_and_before_resampling']) else \
         [properties_dict['spacing'][0], *configuration_manager.spacing]
+        
+        
+    np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_logits_beforeresample"+ '.npz', probabilities=predicted_logits.cpu().numpy())
+    #FIXME:
+    
     predicted_logits = configuration_manager.resampling_fn_probabilities(predicted_logits,
                                             properties_dict['shape_after_cropping_and_before_resampling'],
                                             current_spacing,
                                             properties_dict['spacing'])
     # return value of resampling_fn_probabilities can be ndarray or Tensor but that doesnt matter because
     # apply_inference_nonlin will covnert to torch
-    predicted_probabilities = label_manager.apply_inference_nonlin(predicted_logits)
-    del predicted_logits
-    segmentation = label_manager.convert_probabilities_to_segmentation(predicted_probabilities)
 
+    np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_logits_afterresample"+ '.npz', probabilities=predicted_logits)
+    #FIXME: nonlin would conduct soft max
+    predicted_probabilities = label_manager.apply_inference_nonlin(predicted_logits)# it would done soft max on dim0
+    predicted_probabilities=torch.from_numpy(predicted_logits).cuda()
+    #np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_logits_afternonlin"+ '.npz', probabilities=predicted_probabilities.cpu().numpy())
+    del predicted_logits
+    #FIXME: it would done argmax on probability
+    #segmentation = label_manager.convert_probabilities_to_segmentation(predicted_probabilities)
+    segmentation=predicted_probabilities
+    #np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_logits_after2seg"+ '.npz', probabilities=segmentation.cpu().numpy())
+    
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):
         segmentation = segmentation.cpu().numpy()
 
     # put segmentation in bbox (revert cropping)
+    #FIXME:
+    # segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
+    #                                           dtype=np.uint8 if len(label_manager.foreground_labels) < 255 else np.uint16)
     segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
-                                              dtype=np.uint8 if len(label_manager.foreground_labels) < 255 else np.uint16)
+                                              dtype=np.float16 if len(label_manager.foreground_labels) < 255 else np.float32)
     slicer = bounding_box_to_slice(properties_dict['bbox_used_for_cropping'])
     segmentation_reverted_cropping[slicer] = segmentation
     del segmentation
@@ -62,12 +78,15 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
         predicted_probabilities = predicted_probabilities.transpose([0] + [i + 1 for i in
                                                                            plans_manager.transpose_backward])
         torch.set_num_threads(old_threads)
+        np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_probabilitiesBeforeReturn"+ '.npz', probabilities=predicted_probabilities)
+        #FIXME:
         return segmentation_reverted_cropping, predicted_probabilities
+        #return predicted_probabilities, predicted_probabilities
     else:
         torch.set_num_threads(old_threads)
         return segmentation_reverted_cropping
 
-
+#FIXME:
 def export_prediction_from_logits(predicted_array_or_file: Union[np.ndarray, torch.Tensor], properties_dict: dict,
                                   configuration_manager: ConfigurationManager,
                                   plans_manager: PlansManager,
@@ -102,6 +121,7 @@ def export_prediction_from_logits(predicted_array_or_file: Union[np.ndarray, tor
         del ret
 
     rw = plans_manager.image_reader_writer_class()
+
     rw.write_seg(segmentation_final, output_file_truncated + dataset_json_dict_or_file['file_ending'],
                  properties_dict)
 

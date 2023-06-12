@@ -100,6 +100,7 @@ def compute_metrics(reference_file: str, prediction_file: str, image_reader_writ
     results['reference_file'] = reference_file
     results['prediction_file'] = prediction_file
     results['metrics'] = {}
+    
     for r in labels_or_regions:
         results['metrics'][r] = {}
         mask_ref = region_or_label_to_mask(seg_ref, r)
@@ -149,30 +150,31 @@ def compute_metrics_on_folder(folder_ref: str, folder_pred: str, output_file: st
         )
 
     # mean metric per class
-    metric_list = list(results[0]['metrics'][regions_or_labels[0]].keys())
-    means = {}
-    for r in regions_or_labels:
-        means[r] = {}
-        for m in metric_list:
-            means[r][m] = np.nanmean([i['metrics'][r][m] for i in results])
+    
+    # metric_list = list(results[0]['metrics'][regions_or_labels[0]].keys())
+    # means = {}
+    # for r in regions_or_labels:
+    #     means[r] = {}
+    #     for m in metric_list:
+    #         means[r][m] = np.nanmean([i['metrics'][r][m] for i in results])
 
-    # foreground mean
-    foreground_mean = {}
-    for m in metric_list:
-        values = []
-        for k in means.keys():
-            if k == 0 or k == '0':
-                continue
-            values.append(means[k][m])
-        foreground_mean[m] = np.mean(values)
+    # # foreground mean
+    # foreground_mean = {}
+    # for m in metric_list:
+    #     values = []
+    #     for k in means.keys():
+    #         if k == 0 or k == '0':
+    #             continue
+    #         values.append(means[k][m])
+    #     foreground_mean[m] = np.mean(values)
 
-    [recursive_fix_for_json_export(i) for i in results]
-    recursive_fix_for_json_export(means)
-    recursive_fix_for_json_export(foreground_mean)
-    result = {'metric_per_case': results, 'mean': means, 'foreground_mean': foreground_mean}
-    if output_file is not None:
-        save_summary_json(result, output_file)
-    return result
+    # [recursive_fix_for_json_export(i) for i in results]
+    # recursive_fix_for_json_export(means)
+    # recursive_fix_for_json_export(foreground_mean)
+    # result = {'metric_per_case': results, 'mean': means, 'foreground_mean': foreground_mean}
+    # if output_file is not None:
+    #     save_summary_json(result, output_file)
+    return {}#result
     # print('DONE')
 
 

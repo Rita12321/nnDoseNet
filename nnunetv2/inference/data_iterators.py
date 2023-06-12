@@ -26,6 +26,7 @@ def preprocess_fromfiles_save_to_queue(list_of_lists: List[List[str]],
                                        verbose: bool = False):
     try:
         label_manager = plans_manager.get_label_manager(dataset_json)
+
         preprocessor = configuration_manager.preprocessor_class(verbose=verbose)
         for idx in range(len(list_of_lists)):
             data, seg, data_properites = preprocessor.run_case(list_of_lists[idx],
@@ -37,6 +38,9 @@ def preprocess_fromfiles_save_to_queue(list_of_lists: List[List[str]],
             if list_of_segs_from_prev_stage_files is not None and list_of_segs_from_prev_stage_files[idx] is not None:
                 seg_onehot = convert_labelmap_to_one_hot(seg[0], label_manager.foreground_labels, data.dtype)
                 data = np.vstack((data, seg_onehot))
+            #     print("Trueeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+            # else:
+            #     print("Falseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 
             data = torch.from_numpy(data).contiguous().float()
 
@@ -68,8 +72,12 @@ def preprocessing_iterator_fromfiles(list_of_lists: List[List[str]],
                                      verbose: bool = False):
     context = multiprocessing.get_context('spawn')
     manager = Manager()
+    
     num_processes = min(len(list_of_lists), num_processes)
+    preprocess_fromfiles_save_to_queue
+
     assert num_processes >= 1
+
     processes = []
     done_events = []
     target_queues = []
@@ -208,7 +216,7 @@ class PreprocessAdapterFromNpy(DataLoader):
         data = torch.from_numpy(data)
 
         return {'data': data, 'data_properites': props, 'ofile': ofname}
-
+#FIXME:
 
 def preprocess_fromnpy_save_to_queue(list_of_images: List[np.ndarray],
                                      list_of_segs_from_prev_stage: Union[List[np.ndarray], None],
@@ -254,7 +262,7 @@ def preprocess_fromnpy_save_to_queue(list_of_images: List[np.ndarray],
         abort_event.set()
         raise e
 
-
+#FIXME:
 def preprocessing_iterator_fromnpy(list_of_images: List[np.ndarray],
                                    list_of_segs_from_prev_stage: Union[List[np.ndarray], None],
                                    list_of_image_properties: List[dict],

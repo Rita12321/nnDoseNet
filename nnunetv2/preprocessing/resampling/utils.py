@@ -12,4 +12,5 @@ def recursive_find_resampling_fn_by_name(resampling_fn: str) -> Callable:
         raise RuntimeError("Unable to find resampling function named '%s'. Please make sure this fn is located in the "
                            "nnunetv2.preprocessing.resampling module." % resampling_fn)
     else:
+
         return ret

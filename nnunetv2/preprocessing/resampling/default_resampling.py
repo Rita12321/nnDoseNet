@@ -74,6 +74,7 @@ def resample_data_or_seg_to_spacing(data: np.ndarray,
     return data_reshaped
 
 
+#FIXME:
 def resample_data_or_seg_to_shape(data: Union[torch.Tensor, np.ndarray],
                                   new_shape: Union[Tuple[int, ...], List[int], np.ndarray],
                                   current_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
@@ -87,6 +88,10 @@ def resample_data_or_seg_to_shape(data: Union[torch.Tensor, np.ndarray],
     """
     if isinstance(data, torch.Tensor):
         data = data.cpu().numpy()
+    #FIXME:
+    print("data eneter",data.shape,np.max(data),np.min(data))
+    
+    
     if force_separate_z is not None:
         do_separate_z = force_separate_z
         if force_separate_z:
@@ -103,6 +108,7 @@ def resample_data_or_seg_to_shape(data: Union[torch.Tensor, np.ndarray],
         else:
             do_separate_z = False
             axis = None
+    print("data_after force seperatez",data.shape,np.max(data),np.min(data))
 
     if axis is not None:
         if len(axis) == 3:
@@ -114,11 +120,16 @@ def resample_data_or_seg_to_shape(data: Union[torch.Tensor, np.ndarray],
             do_separate_z = False
         else:
             pass
+    print("data_after_axis",data.shape,np.max(data),np.min(data))
 
     if data is not None:
         assert len(data.shape) == 4, "data must be c x y z"
+    
+
 
     data_reshaped = resample_data_or_seg(data, new_shape, is_seg, axis, order, do_separate_z, order_z=order_z)
+    print("data_after_resample",data.shape,np.max(data),np.min(data))
+    
     return data_reshaped
 
 
@@ -138,6 +149,8 @@ def resample_data_or_seg(data: np.ndarray, new_shape: Union[Tuple[float, ...], L
     """
     assert len(data.shape) == 4, "data must be (c, x, y, z)"
     assert len(new_shape) == len(data.shape) - 1
+    
+    print("data_before_resample",data.shape,np.max(data),np.min(data))
 
     if is_seg:
         resize_fn = resize_segmentation

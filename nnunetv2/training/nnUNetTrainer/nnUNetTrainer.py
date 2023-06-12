@@ -143,7 +143,8 @@ class nnUNetTrainer(object):
         self.oversample_foreground_percent = 0.33
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
-        self.num_epochs = 1000
+        #FIXME:
+        self.num_epochs = 100
         self.current_epoch = 0
 
         ### Dealing with labels/regions
@@ -635,6 +636,7 @@ class nnUNetTrainer(object):
                                            transform=val_transforms, num_processes=max(1, allowed_num_processes // 2),
                                            num_cached=3, seeds=None, pin_memory=self.device.type == 'cuda',
                                            wait_time=0.02)
+     
         return mt_gen_train, mt_gen_val
 
     def get_plain_dataloaders(self, initial_patch_size: Tuple[int, ...], dim: int):
@@ -752,7 +754,7 @@ class nnUNetTrainer(object):
             tr_transforms.append(ConvertSegmentationToRegionsTransform(list(regions) + [ignore_label]
                                                                        if ignore_label is not None else regions,
                                                                        'target', 'target'))
-
+#FIXME:
         if deep_supervision_scales is not None:
             tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
                                                               output_key='target'))
@@ -942,7 +944,7 @@ class nnUNetTrainer(object):
 
         # the following is needed for online evaluation. Fake dice (green line)
         axes = [0] + list(range(2, len(output.shape)))
-
+## FIXME: arg max disable? 
         if self.label_manager.has_regions:
             predicted_segmentation_onehot = (torch.sigmoid(output) > 0.5).long()
         else:

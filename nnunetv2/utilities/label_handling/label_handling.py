@@ -23,7 +23,9 @@ class LabelManager(object):
                  inference_nonlin=None):
         self._sanity_check(label_dict)
         self.label_dict = label_dict
-        self.dose_label = False
+        
+        #FIXME:
+        self.dose_label = None
         
         self.regions_class_order = regions_class_order
         self._force_use_labels = force_use_labels
@@ -46,7 +48,7 @@ class LabelManager(object):
                 self.all_labels) + 1, 'If you use the ignore label it must have the highest ' \
                                       'label value! It cannot be 0 or in between other labels. ' \
                                       'Sorry bro.'
-
+    #FIXME:    
         if inference_nonlin is None:
             self.inference_nonlin = torch.sigmoid if self.has_regions else softmax_helper_dim0
         else:
@@ -75,11 +77,16 @@ class LabelManager(object):
             if k == 'dose':
                 self.dose_label=True
                 continue
+            
             if isinstance(r, (tuple, list)):
                 for ri in r:
                     all_labels.append(int(ri))
             else:
                 all_labels.append(int(r))
+                
+        if not self.dose_label:
+            self.dose_label=False
+            
         all_labels = list(np.unique(all_labels))
         all_labels.sort()
         

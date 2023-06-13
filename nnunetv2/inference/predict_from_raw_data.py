@@ -358,9 +358,7 @@ class nnUNetPredictor(object):
                     proceed = not check_workers_alive_and_busy(export_pool, worker_list, r, allowed_num_queued=2)
 
                 prediction = self.predict_logits_from_preprocessed_data(data).cpu()
-#FIXME: 
-                np.savez_compressed("/home/changh/Documents/2023_DosePredcition/temp000"+ '.npz', probabilities=prediction)
-
+#
                 if ofile is not None:
                     # this needs to go into background processes
                     # export_prediction_from_logits(prediction, properties, configuration_manager, plans_manager,

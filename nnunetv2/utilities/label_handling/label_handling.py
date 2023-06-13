@@ -24,7 +24,7 @@ class LabelManager(object):
         self._sanity_check(label_dict)
         self.label_dict = label_dict
         
-        #FIXME:
+#NOTE: add dose_label
         self.dose_label = None
         
         self.regions_class_order = regions_class_order
@@ -48,7 +48,7 @@ class LabelManager(object):
                 self.all_labels) + 1, 'If you use the ignore label it must have the highest ' \
                                       'label value! It cannot be 0 or in between other labels. ' \
                                       'Sorry bro.'
-    #FIXME:    
+
         if inference_nonlin is None:
             self.inference_nonlin = torch.sigmoid if self.has_regions else softmax_helper_dim0
         else:
@@ -67,7 +67,7 @@ class LabelManager(object):
         # not sure if we want to allow regions that contain background. I don't immediately see how this could cause
         # problems so we allow it for now. That doesn't mean that this is explicitly supported. It could be that this
         # just crashes.
-## FIXME: changed
+## NOTE: changed: add 'dose' condition
     def _get_all_labels(self) -> List:#List[int]
         all_labels = []
         for k, r in self.label_dict.items():
@@ -248,7 +248,7 @@ class LabelManager(object):
         else:
             return len(self.all_labels)
 
-#FIXME:
+
 def get_labelmanager_class_from_plans(plans: dict) -> Type[LabelManager]:
     if 'label_manager' not in plans.keys():
         print('No label manager specified in plans. Using default: LabelManager')

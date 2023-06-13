@@ -27,19 +27,19 @@ from nnunetv2.paths import nnUNet_raw
 from nnunetv2.utilities.label_handling.label_handling import LabelManager
 from nnunetv2.utilities.utils import get_identifiers_from_splitted_dataset_folder
 
-## FIXME: label
+
 def verify_labels(label_file: str, readerclass: Type[BaseReaderWriter], expected_labels: List[int]) -> bool:
-    # rw = readerclass()
-    # seg, properties = rw.read_seg(label_file)
-    # found_labels = np.sort(pd.unique(seg.ravel()))  # np.unique(seg)
-    # unexpected_labels = [i for i in found_labels if i not in expected_labels]
-    # if len(found_labels) == 0 and found_labels[0] == 0:
-    #     print('WARNING: File %s only has label 0 (which should be background). This may be intentional or not, '
-    #           'up to you.' % label_file)
-    # if len(unexpected_labels) > 0:
-    #     print("Error: Unexpected labels found in file %s.\nExpected: %s\nFound: %s" % (label_file, expected_labels,
-    #                                                                                    found_labels))
-    #     return False
+    rw = readerclass()
+    seg, properties = rw.read_seg(label_file)
+    found_labels = np.sort(pd.unique(seg.ravel()))  # np.unique(seg)
+    unexpected_labels = [i for i in found_labels if i not in expected_labels]
+    if len(found_labels) == 0 and found_labels[0] == 0:
+        print('WARNING: File %s only has label 0 (which should be background). This may be intentional or not, '
+              'up to you.' % label_file)
+    if len(unexpected_labels) > 0:
+        print("Error: Unexpected labels found in file %s.\nExpected: %s\nFound: %s" % (label_file, expected_labels,
+                                                                                       found_labels))
+        return False
     return True
 
 
@@ -183,14 +183,17 @@ def verify_dataset_integrity(folder: str, num_processes: int = 8) -> None:
 
     # check whether only the desired labels are present
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
-        result = p.starmap(
-            verify_labels,
-            zip([join(folder, 'labelsTr', i) for i in labelfiles], [reader_writer_class] * len(labelfiles),
-                [expected_labels] * len(labelfiles))
-        )
-        if not all(result):
-            raise RuntimeError(
-                'Some segmentation images contained unexpected labels. Please check text output above to see which one(s).')
+        
+        if label_manager.dose_label!=True:
+            
+            result = p.starmap(
+                verify_labels,
+                zip([join(folder, 'labelsTr', i) for i in labelfiles], [reader_writer_class] * len(labelfiles),
+                    [expected_labels] * len(labelfiles))
+            )
+            if not all(result):
+                raise RuntimeError(
+                    'Some segmentation images contained unexpected labels. Please check text output above to see which one(s).')
 
         # check whether shapes and spacings match between images and labels
         result = p.starmap(

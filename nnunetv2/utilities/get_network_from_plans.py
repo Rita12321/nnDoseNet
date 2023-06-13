@@ -58,7 +58,7 @@ def get_network_from_plans(plans_manager: PlansManager,
         'n_conv_per_stage_decoder': configuration_manager.n_conv_per_stage_decoder
     }
     # network class name!!
-#FIXME: changed num_class?
+
     model = network_class(
         input_channels=num_input_channels,
         n_stages=num_stages,

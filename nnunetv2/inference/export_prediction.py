@@ -29,8 +29,7 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
         [properties_dict['spacing'][0], *configuration_manager.spacing]
         
         
-    np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_logits_beforeresample"+ '.npz', probabilities=predicted_logits.cpu().numpy())
-    #FIXME:
+   
     
     predicted_logits = configuration_manager.resampling_fn_probabilities(predicted_logits,
                                             properties_dict['shape_after_cropping_and_before_resampling'],
@@ -39,27 +38,32 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
     # return value of resampling_fn_probabilities can be ndarray or Tensor but that doesnt matter because
     # apply_inference_nonlin will covnert to torch
 
-    np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_logits_afterresample"+ '.npz', probabilities=predicted_logits)
-    #FIXME: nonlin would conduct soft max
+    
+    #NOTE: nonlin would conduct soft max
     predicted_probabilities = label_manager.apply_inference_nonlin(predicted_logits)# it would done soft max on dim0
     predicted_probabilities=torch.from_numpy(predicted_logits).cuda()
     #np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_logits_afternonlin"+ '.npz', probabilities=predicted_probabilities.cpu().numpy())
     del predicted_logits
-    #FIXME: it would done argmax on probability
-    #segmentation = label_manager.convert_probabilities_to_segmentation(predicted_probabilities)
-    segmentation=predicted_probabilities
-    #np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_logits_after2seg"+ '.npz', probabilities=segmentation.cpu().numpy())
+    
+    #NOTE: changed : 
+    if label_manager.dose_label==None: 
+        label_manager._get_all_labels
+        
+    if label_manager.dose_label==True:
+        segmentation=predicted_probabilities
+        segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
+                                              dtype=np.float16 if len(label_manager.foreground_labels) < 255 else np.float32)
+    else:
+        segmentation = label_manager.convert_probabilities_to_segmentation(predicted_probabilities)#it would done argmax on probability
+        segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
+                                                dtype=np.uint8 if len(label_manager.foreground_labels) < 255 else np.uint16)
+    
     
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):
         segmentation = segmentation.cpu().numpy()
-
+    
     # put segmentation in bbox (revert cropping)
-    #FIXME:
-    # segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
-    #                                           dtype=np.uint8 if len(label_manager.foreground_labels) < 255 else np.uint16)
-    segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
-                                              dtype=np.float16 if len(label_manager.foreground_labels) < 255 else np.float32)
     slicer = bounding_box_to_slice(properties_dict['bbox_used_for_cropping'])
     segmentation_reverted_cropping[slicer] = segmentation
     del segmentation
@@ -77,16 +81,14 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
         # revert transpose
         predicted_probabilities = predicted_probabilities.transpose([0] + [i + 1 for i in
                                                                            plans_manager.transpose_backward])
-        torch.set_num_threads(old_threads)
-        np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_probabilitiesBeforeReturn"+ '.npz', probabilities=predicted_probabilities)
-        #FIXME:
+        torch.set_num_threads(old_threads)   
         return segmentation_reverted_cropping, predicted_probabilities
-        #return predicted_probabilities, predicted_probabilities
+
     else:
         torch.set_num_threads(old_threads)
         return segmentation_reverted_cropping
 
-#FIXME:
+
 def export_prediction_from_logits(predicted_array_or_file: Union[np.ndarray, torch.Tensor], properties_dict: dict,
                                   configuration_manager: ConfigurationManager,
                                   plans_manager: PlansManager,
@@ -157,7 +159,7 @@ def resample_and_save(predicted: Union[torch.Tensor, np.ndarray], target_shape: 
 
     # create segmentation (argmax, regions, etc)
     label_manager = plans_manager.get_label_manager(dataset_json_dict_or_file)
-##FIXME: predict probability to seg
+    #FIXME:  validation might go wrong!
     segmentation = label_manager.convert_logits_to_segmentation(predicted_array_or_file)
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):

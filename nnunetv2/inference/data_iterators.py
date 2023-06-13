@@ -216,7 +216,7 @@ class PreprocessAdapterFromNpy(DataLoader):
         data = torch.from_numpy(data)
 
         return {'data': data, 'data_properites': props, 'ofile': ofname}
-#FIXME:
+
 
 def preprocess_fromnpy_save_to_queue(list_of_images: List[np.ndarray],
                                      list_of_segs_from_prev_stage: Union[List[np.ndarray], None],
@@ -262,7 +262,7 @@ def preprocess_fromnpy_save_to_queue(list_of_images: List[np.ndarray],
         abort_event.set()
         raise e
 
-#FIXME:
+
 def preprocessing_iterator_fromnpy(list_of_images: List[np.ndarray],
                                    list_of_segs_from_prev_stage: Union[List[np.ndarray], None],
                                    list_of_image_properties: List[dict],

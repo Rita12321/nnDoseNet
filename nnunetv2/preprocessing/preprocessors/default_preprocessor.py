@@ -42,7 +42,6 @@ class DefaultPreprocessor(object):
                      dataset_json: Union[dict, str]):
         # let's not mess up the inputs!
         data = np.copy(data)
-        #FIXME:
         if seg is not None:
             seg = np.copy(seg)
 
@@ -81,21 +80,24 @@ class DefaultPreprocessor(object):
         # print('current shape', data.shape[1:], 'current_spacing', original_spacing,
         #       '\ntarget shape', new_shape, 'target_spacing', target_spacing)
         old_shape = data.shape[1:]
-        #FIXME:
+     
         data = configuration_manager.resampling_fn_data(data, new_shape, original_spacing, target_spacing)
         seg = configuration_manager.resampling_fn_seg(seg, new_shape, original_spacing, target_spacing)
         if self.verbose:
             print(f'old shape: {old_shape}, new_shape: {new_shape}, old_spacing: {original_spacing}, '
                   f'new_spacing: {target_spacing}, fn_data: {configuration_manager.resampling_fn_data}')
             
-        #label_manager = plans_manager.get_label_manager(dataset_json)
+
         # if we have a segmentation, sample foreground locations for oversampling and add those to properties
+        
+## NOTE: changed: call label_manager first
         label_manager = plans_manager.get_label_manager(dataset_json)
         if has_seg:
             # reinstantiating LabelManager for each case is not ideal. We could replace the dataset_json argument
             # with a LabelManager Instance in this function because that's all its used for. Dunno what's better.
             # LabelManager is pretty light computation-wise.
-            label_manager = plans_manager.get_label_manager(dataset_json)
+            
+            #label_manager = plans_manager.get_label_manager(dataset_json)#call before if has_seg
             collect_for_this = label_manager.foreground_regions if label_manager.has_regions \
                 else label_manager.foreground_labels
 
@@ -109,9 +111,9 @@ class DefaultPreprocessor(object):
             properties['class_locations'] = self._sample_foreground_locations(seg, collect_for_this,
                                                                                    verbose=self.verbose)
             seg = self.modify_seg_fn(seg, plans_manager, dataset_json, configuration_manager)
-## FIXME:   having a label call dose  --> np. float16
+            
+## NOTE: changed: having a label call dose  --> np. float16
         if label_manager.dose_label:
-            #print("label_manager.dose_label=",label_manager.dose_label,"~~~~~~~~~~~~~~~~~~~~~~~~~")
             seg = seg.astype(np.float16)
         elif np.max(seg) > 127:
             seg = seg.astype(np.int16)

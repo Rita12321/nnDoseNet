@@ -98,10 +98,29 @@ def find_best_configuration(dataset_name_or_id,
         identifier = os.path.basename(output_folder)
         merged_output_folder = join(output_folder, f'crossval_results_folds_{folds_tuple_to_string(folds)}')
         accumulate_cv_results(output_folder, merged_output_folder, folds, num_processes, overwrite)
+        
+#FIXME: 
+        
         all_results[identifier] = {
             'source': merged_output_folder,
-            'result': load_summary_json(join(merged_output_folder, 'summary.json'))['foreground_mean']['Dice']
+            'result': load_summary_json(join(merged_output_folder, 'summary.json'))['mean']        
         }
+        # except:
+            
+        #     count=0
+        #     sum=0
+        #     for i in load_summary_json(join(merged_output_folder, 'summary.json')):
+        #         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        #         print(i)
+        #         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        #         print("mse",i['MSE'])
+        #         sum=sum+int(i['MSE'])
+        #         count=count+1
+        #     mse=sum/count
+        #     all_results[identifier] = {
+        #         'source': merged_output_folder,
+        #         'result': mse     
+        #     }
 
     if allow_ensembling:
         for i in range(len(allowed_trained_models)):
@@ -168,7 +187,8 @@ def find_best_configuration(dataset_name_or_id,
         'all_results': {i: j['result'] for i, j in all_results.items()},
         'best_model_or_ensemble': {
             'result_on_crossval_pre_pp': all_results[best_key]["result"],
-            'result_on_crossval_post_pp': load_json(join(all_results[best_key]['source'], 'postprocessed', 'summary.json'))['foreground_mean']['Dice'],
+            #FIXME:
+            #'result_on_crossval_post_pp': load_json(join(all_results[best_key]['source'], 'postprocessed', 'summary.json'))['foreground_mean']['Dice'],
             'postprocessing_file': join(all_results[best_key]['source'], 'postprocessing.pkl'),
             'some_plans_file': join(all_results[best_key]['source'], 'plans.json'),
             # just needed for label handling, can

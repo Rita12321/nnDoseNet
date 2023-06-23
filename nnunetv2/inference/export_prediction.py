@@ -19,9 +19,10 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
                                                                 properties_dict: dict,
                                                                 return_probabilities: bool = False,
                                                                 num_threads_torch: int = default_num_processes):
+    
     old_threads = torch.get_num_threads()
     torch.set_num_threads(num_threads_torch)
-
+    
     # resample to original shape
     current_spacing = configuration_manager.spacing if \
         len(configuration_manager.spacing) == \

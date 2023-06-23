@@ -143,6 +143,7 @@ class nnUNetTrainer(object):
         self.oversample_foreground_percent = 0.33
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
+        #NOTE: changed
         self.num_epochs = 1000
         self.current_epoch = 0
 
@@ -164,7 +165,7 @@ class nnUNetTrainer(object):
         maybe_mkdir_p(self.output_folder)
         self.log_file = join(self.output_folder, "training_log_%d_%d_%d_%02.0d_%02.0d_%02.0d.txt" %
                              (timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute,
-                              timestamp.second))
+                              timestamp.second) )
         self.logger = nnUNetLogger()
 
         ### placeholders
@@ -213,6 +214,7 @@ class nnUNetTrainer(object):
             self.optimizer, self.lr_scheduler = self.configure_optimizers()
             # if ddp, wrap in DDP wrapper
             if self.is_ddp:
+            
                 self.network = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.network)
                 self.network = DDP(self.network, device_ids=[self.local_rank])
 
@@ -367,8 +369,7 @@ class nnUNetTrainer(object):
 
         # we don't use the lowest 2 outputs. Normalize weights so that they sum to 1
         weights = weights / weights.sum()
-        print("weights",weights)
-        print(loss)
+      
 
         # now wrap the loss
 
@@ -1220,7 +1221,7 @@ class nnUNetTrainer(object):
 
         if self.is_ddp:
             dist.barrier()
-
+##NOTE: changed pass dose label
         if self.local_rank == 0:
             metrics = compute_metrics_on_folder(join(self.preprocessed_dataset_folder_base, 'gt_segmentations'),
                                                 validation_output_folder,
@@ -1229,9 +1230,11 @@ class nnUNetTrainer(object):
                                                 self.dataset_json["file_ending"],
                                                 self.label_manager.foreground_regions if self.label_manager.has_regions else
                                                 self.label_manager.foreground_labels,
-                                                self.label_manager.ignore_label, chill=True)
+                                                self.label_manager.ignore_label,
+                                                self.label_manager.dose_label,
+                                                chill=True)
             self.print_to_log_file("Validation complete", also_print_to_console=True)
-            self.print_to_log_file("Mean Validation Dice: ", (metrics['foreground_mean']["Dice"]), also_print_to_console=True)
+            #self.print_to_log_file("Mean Validation Dice: ", (metrics['foreground_mean']["Dice"]), also_print_to_console=True)
 
         self.set_deep_supervision_enabled(True)
         compute_gaussian.cache_clear()

@@ -22,11 +22,10 @@ class LabelManager(object):
     def __init__(self, label_dict: dict, regions_class_order: Union[List[int], None], force_use_labels: bool = False,
                  inference_nonlin=None):
         self._sanity_check(label_dict)
-        self.label_dict = label_dict
-        
+        self.label_dict = label_dict      
 #NOTE: add dose_label
         self.dose_label = None
-        
+             
         self.regions_class_order = regions_class_order
         self._force_use_labels = force_use_labels
 
@@ -54,8 +53,7 @@ class LabelManager(object):
         else:
             self.inference_nonlin = inference_nonlin
 
-## NOTE np need to change, it only check if there is label back ground.
-
+## NOTE no need to change, it only check if there is label back ground.
     def _sanity_check(self, label_dict: dict):
         #print(" I don't care, I am ignoring the sanity check ")
         if not 'background' in label_dict.keys():
@@ -67,6 +65,7 @@ class LabelManager(object):
         # not sure if we want to allow regions that contain background. I don't immediately see how this could cause
         # problems so we allow it for now. That doesn't mean that this is explicitly supported. It could be that this
         # just crashes.
+        
 ## NOTE: changed: add 'dose' condition
     def _get_all_labels(self) -> List:#List[int]
         all_labels = []
@@ -84,7 +83,7 @@ class LabelManager(object):
             else:
                 all_labels.append(int(r))
                 
-        if not self.dose_label:
+        if self.dose_label!=True:
             self.dose_label=False
             
         all_labels = list(np.unique(all_labels))

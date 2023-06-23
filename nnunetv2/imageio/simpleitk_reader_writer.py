@@ -121,7 +121,7 @@ class SimpleITKIO(BaseReaderWriter):
         if output_dimension == 2:
             seg = seg[0]
 
-# NOTE: np.uint8-->float.
+# NOTE:changed np.uint8-->float.
         itk_image = sitk.GetImageFromArray(seg.astype(np.float32))
         itk_image.SetSpacing(properties['sitk_stuff']['spacing'])
         itk_image.SetOrigin(properties['sitk_stuff']['origin'])

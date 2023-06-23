@@ -3,7 +3,7 @@ import os
 from copy import deepcopy
 from multiprocessing import Pool
 from typing import Tuple, List, Union, Optional
-
+from sklearn.metrics import mean_squared_error as MSE
 import numpy as np
 from batchgenerators.utilities.file_and_folder_operations import subfiles, join, save_json, load_json, \
     isfile
@@ -38,12 +38,20 @@ def save_summary_json(results: dict, output_file: str):
     """
     results_converted = deepcopy(results)
     # convert keys in mean metrics
-    results_converted['mean'] = {label_or_region_to_key(k): results['mean'][k] for k in results['mean'].keys()}
-    # convert metric_per_case
-    for i in range(len(results_converted["metric_per_case"])):
-        results_converted["metric_per_case"][i]['metrics'] = \
-            {label_or_region_to_key(k): results["metric_per_case"][i]['metrics'][k]
-             for k in results["metric_per_case"][i]['metrics'].keys()}
+    ##FIXME:
+    try:
+        results_converted['mean'] = {label_or_region_to_key(k): results['mean'][k] for k in results['mean'].keys()}
+    except:
+        print("no means")
+    # convert metric_per_case 
+    try:
+        for i in range(len(results_converted["metric_per_case"])):
+        
+            results_converted["metric_per_case"][i]['metrics'] = \
+                {label_or_region_to_key(k): results["metric_per_case"][i]['metrics'][k]
+                for k in results["metric_per_case"][i]['metrics'].keys()}
+    except:
+        print("no metric_per_case")
     # sort_keys=True will make foreground_mean the first entry and thus easy to spot
     save_json(results_converted, output_file, sort_keys=True)
 
@@ -51,12 +59,19 @@ def save_summary_json(results: dict, output_file: str):
 def load_summary_json(filename: str):
     results = load_json(filename)
     # convert keys in mean metrics
-    results['mean'] = {key_to_label_or_region(k): results['mean'][k] for k in results['mean'].keys()}
+##FIXME:
+    try:
+        results['mean'] = {key_to_label_or_region(k): results['mean'][k] for k in results['mean'].keys()}
+    except:
+        print("no mean")
     # convert metric_per_case
-    for i in range(len(results["metric_per_case"])):
-        results["metric_per_case"][i]['metrics'] = \
-            {key_to_label_or_region(k): results["metric_per_case"][i]['metrics'][k]
-             for k in results["metric_per_case"][i]['metrics'].keys()}
+    try:
+        for i in range(len(results["metric_per_case"])):
+            results["metric_per_case"][i]['metrics'] = \
+                {key_to_label_or_region(k): results["metric_per_case"][i]['metrics'][k]
+                for k in results["metric_per_case"][i]['metrics'].keys()}
+    except:
+        print("no metric_per_case")
     return results
 
 
@@ -95,14 +110,19 @@ def compute_metrics(reference_file: str, prediction_file: str, image_reader_writ
     # spacing = seg_ref_dict['spacing']
 
     ignore_mask = seg_ref == ignore_label if ignore_label is not None else None
+    print("computing seg metrics")
 
     results = {}
     results['reference_file'] = reference_file
     results['prediction_file'] = prediction_file
+    results['dose']='False'
     results['metrics'] = {}
     
     for r in labels_or_regions:
         results['metrics'][r] = {}
+        mask_ref = region_or_label_to_mask(seg_ref, r)
+        mask_pred = region_or_label_to_mask(seg_pred, r)
+
         mask_ref = region_or_label_to_mask(seg_ref, r)
         mask_pred = region_or_label_to_mask(seg_pred, r)
         tp, fp, fn, tn = compute_tp_fp_fn_tn(mask_ref, mask_pred, ignore_mask)
@@ -120,12 +140,63 @@ def compute_metrics(reference_file: str, prediction_file: str, image_reader_writ
         results['metrics'][r]['n_ref'] = fn + tp
     return results
 
+def compute_dose_metrics(reference_file: str, prediction_file: str, image_reader_writer: BaseReaderWriter,
+                    labels_or_regions: Union[List[int], List[Union[int, Tuple[int, ...]]]],
+                    ignore_label: int = None) -> dict:
+    # load images
+    seg_ref, seg_ref_dict = image_reader_writer.read_seg(reference_file)
+    seg_pred, seg_pred_dict = image_reader_writer.read_seg(prediction_file)
+    # spacing = seg_ref_dict['spacing']
+
+    #FIXME: Do we need to keep ignore label
+    #ignore_mask = seg_ref == ignore_label if ignore_label is not None else None
+    print("computing dose metrics")
+
+
+    results = {}
+    results['reference_file'] = reference_file
+    results['prediction_file'] = prediction_file
+    results['dose']='True'
+    results['metrics'] = {}
+    print(seg_ref.squeeze().shape,seg_pred.squeeze().shape)
+    results['metrics']['MSE']=MSE(seg_ref.squeeze().flatten(),seg_pred.squeeze().flatten())
+    
+
+        
+## FIXME: validation metrics for dose
+
+
+
+    # for r in labels_or_regions:
+        # results['metrics'][r] = {}
+        # mask_ref = region_or_label_to_mask(seg_ref, r)
+        # mask_pred = region_or_label_to_mask(seg_pred, r)
+        # tp, fp, fn, tn = compute_tp_fp_fn_tn(mask_ref, mask_pred, ignore_mask)
+        # if tp + fp + fn == 0:
+        #     results['metrics'][r]['Dice'] = np.nan
+        #     results['metrics'][r]['IoU'] = np.nan
+        # else:
+        #     results['metrics'][r]['Dice'] = 2 * tp / (2 * tp + fp + fn)
+        #     results['metrics'][r]['IoU'] = tp / (tp + fp + fn)
+        # results['metrics'][r]['FP'] = fp
+        # results['metrics'][r]['TP'] = tp
+        # results['metrics'][r]['FN'] = fn
+        # results['metrics'][r]['TN'] = tn
+        # results['metrics'][r]['n_pred'] = fp + tp
+        # results['metrics'][r]['n_ref'] = fn + tp
+    # print("############################################################")
+    # print(results)
+    # print("############################################################")
+    # print(results.keys())
+    # print("############################################################")
+    return results
 
 def compute_metrics_on_folder(folder_ref: str, folder_pred: str, output_file: str,
                               image_reader_writer: BaseReaderWriter,
                               file_ending: str,
                               regions_or_labels: Union[List[int], List[Union[int, Tuple[int, ...]]]],
                               ignore_label: int = None,
+                              dose_label:bool=False,
                               num_processes: int = default_num_processes,
                               chill: bool = True) -> dict:
     """
@@ -143,38 +214,73 @@ def compute_metrics_on_folder(folder_ref: str, folder_pred: str, output_file: st
     with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
         # for i in list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred), [ignore_label] * len(files_pred))):
         #     compute_metrics(*i)
-        results = pool.starmap(
-            compute_metrics,
-            list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
-                     [ignore_label] * len(files_pred)))
-        )
-
-    # mean metric per class
+        
+        #FIXME: use compute_dose_metrics
+        if dose_label:
+            results = pool.starmap(
+                compute_dose_metrics,
+                list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
+                        [ignore_label] * len(files_pred)))
+            )
+        else:
+            results = pool.starmap(
+                compute_metrics,
+                list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
+                        [ignore_label] * len(files_pred)))
+            )
+    if dose_label:
+        #mean metric per class
+        print("mertics list",results[0]['metrics'].keys())
     
-    # metric_list = list(results[0]['metrics'][regions_or_labels[0]].keys())
-    # means = {}
-    # for r in regions_or_labels:
-    #     means[r] = {}
-    #     for m in metric_list:
-    #         means[r][m] = np.nanmean([i['metrics'][r][m] for i in results])
+        metric_list = results[0]['metrics'].keys()
+        print(metric_list)
+        means = {}
+        
+        for m in metric_list:
+            means[m] = np.nanmean([i['metrics'][m] for i in results])
 
-    # # foreground mean
-    # foreground_mean = {}
-    # for m in metric_list:
-    #     values = []
-    #     for k in means.keys():
-    #         if k == 0 or k == '0':
-    #             continue
-    #         values.append(means[k][m])
-    #     foreground_mean[m] = np.mean(values)
 
-    # [recursive_fix_for_json_export(i) for i in results]
-    # recursive_fix_for_json_export(means)
-    # recursive_fix_for_json_export(foreground_mean)
-    # result = {'metric_per_case': results, 'mean': means, 'foreground_mean': foreground_mean}
-    # if output_file is not None:
-    #     save_summary_json(result, output_file)
-    return {}#result
+
+        [recursive_fix_for_json_export(i) for i in results]
+        recursive_fix_for_json_export(means)
+        result = {'metric_per_case': results, 'mean': means}
+
+
+        if output_file is not None:
+            save_summary_json(result, output_file)
+        return result
+        # print('DONE')
+
+    else:
+        print("nondose?????????????????????????????")
+        results = {}
+
+        #mean metric per class
+    
+        metric_list = list(results[0]['metrics'][regions_or_labels[0]].keys())
+        means = {}
+        for r in regions_or_labels:
+            means[r] = {}
+            for m in metric_list:
+                means[r][m] = np.nanmean([i['metrics'][r][m] for i in results])
+
+        # foreground mean
+        foreground_mean = {}
+        for m in metric_list:
+            values = []
+            for k in means.keys():
+                if k == 0 or k == '0':
+                    continue
+                values.append(means[k][m])
+            foreground_mean[m] = np.mean(values)
+
+        [recursive_fix_for_json_export(i) for i in results]
+        recursive_fix_for_json_export(means)
+        recursive_fix_for_json_export(foreground_mean)
+        result = {'metric_per_case': results, 'mean': means, 'foreground_mean': foreground_mean}
+        if output_file is not None:
+            save_summary_json(result, output_file)
+    return result
     # print('DONE')
 
 

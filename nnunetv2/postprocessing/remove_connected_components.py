@@ -148,16 +148,31 @@ def determine_postprocessing(folder_predictions: str,
         # prefer to do it this way
         baseline_results = load_summary_json(join(folder_predictions, 'summary.json'))
         pp_results = load_summary_json(join(output_here, 'summary.json'))
-        do_this = pp_results['foreground_mean']['Dice'] > baseline_results['foreground_mean']['Dice']
+        
+        ##FIXME:
+        try:
+            do_this = pp_results['foreground_mean']['Dice'] > baseline_results['foreground_mean']['Dice']
+        except:
+            do_this=True
+            print("no foreground_mean")
         if do_this:
+            
             for class_id in pp_results['mean'].keys():
-                if pp_results['mean'][class_id]['Dice'] < baseline_results['mean'][class_id]['Dice']:
-                    do_this = False
-                    break
+                try:
+                    if pp_results['mean'][class_id]['Dice'] < baseline_results['mean'][class_id]['Dice']:
+                        do_this = False
+                        break
+                except:
+                    if pp_results['mean'][class_id] < baseline_results['mean'][class_id]:
+                        do_this = False
+                        break
         if do_this:
-            print(f'Results were improved by removing all but the largest foreground region. '
-                  f'Mean dice before: {round(baseline_results["foreground_mean"]["Dice"], 5)} '
-                  f'after: {round(pp_results["foreground_mean"]["Dice"], 5)}')
+            try:
+                print(f'Results were improved by removing all but the largest foreground region. '
+                    f'Mean dice before: {round(baseline_results["foreground_mean"]["Dice"], 5)} '
+                    f'after: {round(pp_results["foreground_mean"]["Dice"], 5)}')
+            except:
+                print(f'Results were improved by removing all but the largest foreground region. ')
             source = output_here
             pp_fns.append(pp_fn)
             pp_fn_kwargs.append(kwargs)
@@ -203,6 +218,7 @@ def determine_postprocessing(folder_predictions: str,
                                           num_processes)
                 baseline_results = load_summary_json(join(source, 'summary.json'))
                 pp_results = load_summary_json(join(output_here, 'summary.json'))
+                
                 do_this = pp_results['mean'][label_or_region]['Dice'] > baseline_results['mean'][label_or_region]['Dice']
                 if do_this:
                     print(f'Results were improved by removing all but the largest component for {label_or_region}. '
@@ -223,12 +239,20 @@ def determine_postprocessing(folder_predictions: str,
 
     baseline_results = load_summary_json(join(folder_predictions, 'summary.json'))
     final_results = load_summary_json(join(output_folder, 'summary.json'))
-    tmp = {
-        'input_folder': {i: baseline_results[i] for i in ['foreground_mean', 'mean']},
-        'postprocessed': {i: final_results[i] for i in ['foreground_mean', 'mean']},
-        'postprocessing_fns': [i.__name__ for i in pp_fns],
-        'postprocessing_kwargs': pp_fn_kwargs,
-    }
+    try:
+        tmp = {
+            'input_folder': {i: baseline_results[i] for i in ['foreground_mean', 'mean']},
+            'postprocessed': {i: final_results[i] for i in ['foreground_mean', 'mean']},
+            'postprocessing_fns': [i.__name__ for i in pp_fns],
+            'postprocessing_kwargs': pp_fn_kwargs,
+        }
+    except:
+        tmp = {
+            'input_folder': {i: baseline_results[i] for i in ['mean']},
+            'postprocessed': {i: final_results[i] for i in ['mean']},
+            'postprocessing_fns': [i.__name__ for i in pp_fns],
+            'postprocessing_kwargs': pp_fn_kwargs,
+        }
     # json is a very annoying little bi###. Can't handle tuples as dict keys.
     tmp['input_folder']['mean'] = {label_or_region_to_key(k): tmp['input_folder']['mean'][k] for k in
                                    tmp['input_folder']['mean'].keys()}

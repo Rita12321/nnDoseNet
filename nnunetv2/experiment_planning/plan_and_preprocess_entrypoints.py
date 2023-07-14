@@ -78,7 +78,7 @@ def preprocess_entry():
                         help='[OPTIONAL] Configurations for which the preprocessing should be run. Default: 2d 3f_fullres '
                              '3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data '
                              'from 3f_fullres. Configurations that do not exist for some dataset will be skipped.')
-    parser.add_argument('-np', type=int, nargs='+', default=[8, 4, 8], required=False,
+    parser.add_argument('-np', type=int, nargs='+', default=[14, 14, 14], required=False,
                         help="[OPTIONAL] Use this to define how many processes are to be used. If this is just one number then "
                              "this number of processes is used for all configurations specified with -c. If it's a "
                              "list of numbers this list must have as many elements as there are configurations. We "
@@ -96,9 +96,9 @@ def preprocess_entry():
     args, unrecognized_args = parser.parse_known_args()
     if args.np is None:
         default_np = {
-            '2d': 4,
-            '3d_lowres': 8,
-            '3d_fullres': 4
+            '2d': 28,
+            '3d_lowres': 28,
+            '3d_fullres': 28
         }
         np = {default_np[c] if c in default_np.keys() else 4 for c in args.c}
     else:
@@ -115,7 +115,7 @@ def plan_and_preprocess_entry():
     parser.add_argument('-fpe', type=str, required=False, default='DatasetFingerprintExtractor',
                         help='[OPTIONAL] Name of the Dataset Fingerprint Extractor class that should be used. Default is '
                              '\'DatasetFingerprintExtractor\'.')
-    parser.add_argument('-npfp', type=int, default=8, required=False,
+    parser.add_argument('-npfp', type=int, default=14, required=False,
                         help='[OPTIONAL] Number of processes used for fingerprint extraction. Default: 8')
     parser.add_argument("--verify_dataset_integrity", required=False, default=False, action="store_true",
                         help="[RECOMMENDED] set this flag to check the dataset integrity. This is useful and should be done once for "
@@ -158,7 +158,7 @@ def plan_and_preprocess_entry():
                              'running other nnunet commands (training, inference etc)')
     
     # FIXME: add 3d low-res back?
-    parser.add_argument('-c', required=False, default=['2d', '3d_fullres'], nargs='+',#, '3d_lowres'
+    parser.add_argument('-c', required=False, default=['3d_fullres'], nargs='+',#,'2d',  '3d_lowres'
                         help='[OPTIONAL] Configurations for which the preprocessing should be run. Default: 2d 3f_fullres '
                              '3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data '
                              'from 3f_fullres. Configurations that do not exist for some dataset will be skipped.')
@@ -202,7 +202,7 @@ def plan_and_preprocess_entry():
     
 
     if args.np is None:
-        default_np = {"2d": 8, "3d_fullres": 8, "3d_lowres": 8}
+        default_np = {"2d": 8, "3d_fullres": 10, "3d_lowres": 8}
         np = [default_np[c] if c in default_np.keys() else 4 for c in args.c]
     else:
         np = args.np

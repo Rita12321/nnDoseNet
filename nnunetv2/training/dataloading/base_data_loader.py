@@ -21,7 +21,7 @@ class nnUNetDataLoaderBase(DataLoader):
         super().__init__(data, batch_size, 1, None, True, False, True, sampling_probabilities)
         assert isinstance(data, nnUNetDataset), 'nnUNetDataLoaderBase only supports dictionaries as data'
         self.indices = list(data.keys())
-
+#FIXME:
         self.oversample_foreground_percent = oversample_foreground_percent
         self.final_patch_size = final_patch_size
         self.patch_size = patch_size

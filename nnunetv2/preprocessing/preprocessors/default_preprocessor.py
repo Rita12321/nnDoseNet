@@ -112,15 +112,15 @@ class DefaultPreprocessor(object):
                                                                                    verbose=self.verbose)
             seg = self.modify_seg_fn(seg, plans_manager, dataset_json, configuration_manager)
             
-## NOTE: changed: having a label call dose  --> np. float16
+## NOTE: changed: having a label call dose  --> np. float32
         if label_manager.dose_label:
-            seg = seg.astype(np.float16)
+            seg = seg.astype(np.float32)
         elif np.max(seg) > 127:
             seg = seg.astype(np.int16)
         else:
             seg = seg.astype(np.int8)
         return data, seg
-
+#FIXME:
     def run_case(self, image_files: List[str], seg_file: Union[str, None], plans_manager: PlansManager,
                  configuration_manager: ConfigurationManager,
                  dataset_json: Union[dict, str]):

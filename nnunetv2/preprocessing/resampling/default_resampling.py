@@ -28,7 +28,7 @@ def compute_new_shape(old_shape: Union[Tuple[int, ...], List[int], np.ndarray],
     new_shape = np.array([int(round(i / j * k)) for i, j, k in zip(old_spacing, new_spacing, old_shape)])
     return new_shape
 
-
+#FIXME:
 def resample_data_or_seg_to_spacing(data: np.ndarray,
                                     current_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
                                     new_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
@@ -149,10 +149,12 @@ def resample_data_or_seg(data: np.ndarray, new_shape: Union[Tuple[float, ...], L
     assert len(data.shape) == 4, "data must be (c, x, y, z)"
     assert len(new_shape) == len(data.shape) - 1
     
-
+#FIXME: 
     if is_seg:
-        resize_fn = resize_segmentation
-        kwargs = OrderedDict()
+        #resize_fn = resize_segmentation
+        #kwargs = OrderedDict()
+        resize_fn = resize
+        kwargs = {'mode': 'edge', 'anti_aliasing': False}
     else:
         resize_fn = resize
         kwargs = {'mode': 'edge', 'anti_aliasing': False}

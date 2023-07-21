@@ -118,7 +118,7 @@ def preprocess_dataset(dataset_id: int,
     maybe_mkdir_p(join(nnUNet_preprocessed, dataset_name, 'gt_segmentations'))
     [shutil.copy(i, join(join(nnUNet_preprocessed, dataset_name, 'gt_segmentations'))) for i in
      subfiles(join(nnUNet_raw, dataset_name, 'labelsTr'))]
-
+#FIXME: num_process
 
 def preprocess(dataset_ids: List[int],
                plans_identifier: str = 'nnUNetPlans',

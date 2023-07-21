@@ -152,7 +152,7 @@ class ExperimentPlanner(object):
             "force_separate_z": None,
         }
         return resampling_fn, resampling_fn_kwargs
-
+#FIXME:
     def determine_fullres_target_spacing(self) -> np.ndarray:
         """
         per default we use the 50th percentile=median for the target spacing. Higher spacing results in smaller data
@@ -170,10 +170,12 @@ class ExperimentPlanner(object):
         sizes = self.dataset_fingerprint['shapes_after_crop']
 
         target = np.percentile(np.vstack(spacings), 50, 0)
+        #target = np.min(np.vstack(spacings), 0)
 
         # todo sizes_after_resampling = [compute_new_shape(j, i, target) for i, j in zip(spacings, sizes)]
-
+        
         target_size = np.percentile(np.vstack(sizes), 50, 0)
+        
         # we need to identify datasets for which a different target spacing could be beneficial. These datasets have
         # the following properties:
         # - one axis which much lower resolution than the others

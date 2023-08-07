@@ -144,7 +144,7 @@ class nnUNetTrainer(object):
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
         #NOTE: epoch
-        self.num_epochs = 1000
+        self.num_epochs =5
         self.current_epoch = 0
 
         ### Dealing with labels/regions
@@ -179,7 +179,9 @@ class nnUNetTrainer(object):
         # self.configure_rotation_dummyDA_mirroring_and_inital_patch_size and will be saved in checkpoints
 
         ### checkpoint saving stuff
-        self.save_every = 50
+        
+        #FIXME: change check point save
+        self.save_every = 1
         self.disable_checkpointing = False
 
         ## DDP batch size and oversampling can differ between workers and needs adaptation
@@ -305,6 +307,7 @@ class nnUNetTrainer(object):
             oversample_percents = []
 
             world_size = dist.get_world_size()
+            #print("world size",world_size,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             my_rank = dist.get_rank()
 
             global_batch_size = self.configuration_manager.batch_size
@@ -472,9 +475,16 @@ class nnUNetTrainer(object):
             self.print_to_log_file('These are the global plan.json settings:\n', dct, '\n', add_timestamp=False)
 
     def configure_optimizers(self):
+        
+        #FIXME: change optimizer
         optimizer = torch.optim.SGD(self.network.parameters(), self.initial_lr, weight_decay=self.weight_decay,
                                     momentum=0.99, nesterov=True)
         lr_scheduler = PolyLRScheduler(optimizer, self.initial_lr, self.num_epochs)
+        # optimizer = torch.optim.AdamW(self.network.parameters(),
+        #                   lr=self.initial_lr,
+        #                   weight_decay=self.weight_decay,
+        #                   amsgrad=True)
+        # lr_scheduler = PolyLRScheduler(optimizer, self.initial_lr, self.num_epochs)
         return optimizer, lr_scheduler
 
     def plot_network_architecture(self):
@@ -483,27 +493,27 @@ class nnUNetTrainer(object):
                 # raise NotImplementedError('hiddenlayer no longer works and we do not have a viable alternative :-(')
                 # pip install git+https://github.com/saugatkandel/hiddenlayer.git
 
-                # from torchviz import make_dot
-                # # not viable.
-                # make_dot(tuple(self.network(torch.rand((1, self.num_input_channels,
-                #                                         *self.configuration_manager.patch_size),
-                #                                        device=self.device)))).render(
-                #     join(self.output_folder, "network_architecture.pdf"), format='pdf')
-                # self.optimizer.zero_grad()
+                from torchviz import make_dot
+                # not viable.
+                make_dot(tuple(self.network(torch.rand((1, self.num_input_channels,
+                                                        *self.configuration_manager.patch_size),
+                                                       device=self.device)))).render(
+                    join(self.output_folder, "network_architecture.pdf"), format='pdf')
+                self.optimizer.zero_grad()
 
                 # broken.
                 print("plot_network_architecture")
 
                 #print(self.network)
 
-                import hiddenlayer as hl
-                g = hl.build_graph(self.network,
-                                   torch.rand((1, self.num_input_channels,
-                                               *self.configuration_manager.patch_size),
-                                              device=self.device),
-                                   transforms=None)
-                g.save(join(self.output_folder, "network_architecture.pdf"))
-                del g
+                # import hiddenlayer as hl
+                # g = hl.build_graph(self.network,
+                #                    torch.rand((1, self.num_input_channels,
+                #                                *self.configuration_manager.patch_size),
+                #                               device=self.device),
+                #                    transforms=None)
+                # g.save(join(self.output_folder, "network_architecture.pdf"))
+                # del g
             except Exception as e:
                 self.print_to_log_file("Unable to plot network architecture:")
                 self.print_to_log_file(e)
@@ -606,9 +616,10 @@ class nnUNetTrainer(object):
             self.configure_rotation_dummyDA_mirroring_and_inital_patch_size()
 
         # training pipeline
+        #FIXME:
         tr_transforms = self.get_training_transforms(
             patch_size, rotation_for_DA, deep_supervision_scales, mirror_axes, do_dummy_2d_data_aug,
-            order_resampling_data=3, order_resampling_seg=1,
+            order_resampling_data=0, order_resampling_seg=3,#3,0
             use_mask_for_norm=self.configuration_manager.use_mask_for_norm,
             is_cascaded=self.is_cascaded, foreground_labels=self.label_manager.foreground_labels,
             regions=self.label_manager.foreground_regions if self.label_manager.has_regions else None,
@@ -621,14 +632,23 @@ class nnUNetTrainer(object):
                                                         regions=self.label_manager.foreground_regions if
                                                         self.label_manager.has_regions else None,
                                                         ignore_label=self.label_manager.ignore_label)
+        
+        #FIXME: disable transform
+        # tr_transforms=None
+        # val_transforms=None
 
         dl_tr, dl_val = self.get_plain_dataloaders(initial_patch_size, dim)
 
-        allowed_num_processes = get_allowed_n_proc_DA()
+        
+        #FIXME: 24 cpu
+        allowed_num_processes = 24#get_allowed_n_proc_DA()
+        print(allowed_num_processes)
         if allowed_num_processes == 0:
+            #print("single tread[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")
             mt_gen_train = SingleThreadedAugmenter(dl_tr, tr_transforms)
             mt_gen_val = SingleThreadedAugmenter(dl_val, val_transforms)
         else:
+            #print("LimitedLenWrapper[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")
             mt_gen_train = LimitedLenWrapper(self.num_iterations_per_epoch, data_loader=dl_tr, transform=tr_transforms,
                                              num_processes=allowed_num_processes, num_cached=6, seeds=None,
                                              pin_memory=self.device.type == 'cuda', wait_time=0.02)
@@ -676,14 +696,16 @@ class nnUNetTrainer(object):
                                 deep_supervision_scales: Union[List, Tuple],
                                 mirror_axes: Tuple[int, ...],
                                 do_dummy_2d_data_aug: bool,
-                                order_resampling_data: int = 3,
-                                order_resampling_seg: int = 1,
-                                border_val_seg: int = -1,
+                                order_resampling_data: int = 1,#3
+                                order_resampling_seg: int = 1,#
+                                border_val_seg: int = -100,#FIXME:
                                 use_mask_for_norm: List[bool] = None,
                                 is_cascaded: bool = False,
                                 foreground_labels: Union[Tuple[int, ...], List[int]] = None,
                                 regions: List[Union[List[int], Tuple[int, ...], int]] = None,
                                 ignore_label: int = None) -> AbstractTransform:
+        
+        
         tr_transforms = []
         if do_dummy_2d_data_aug:
             ignore_axes = (0,)
@@ -692,6 +714,19 @@ class nnUNetTrainer(object):
         else:
             patch_size_spatial = patch_size
             ignore_axes = None
+
+                # tr_transforms.append(SpatialTransform(
+                #     patch_size_spatial, patch_center_dist_from_border=None,
+                #     do_elastic_deform=False, alpha=(0, 0), sigma=(0, 0),
+                #     do_rotation=True, angle_x=rotation_for_DA['x'], angle_y=rotation_for_DA['y'], angle_z=rotation_for_DA['z'],
+                #     p_rot_per_axis=1,  # todo experiment with this
+                #     do_scale=False, scale=(0.7, 1.4),#do scale false
+                #     border_mode_data="constant", border_cval_data=0, order_data=3,# order-->3
+                #     border_mode_seg="constant", border_cval_seg=0, order_seg=3,#boarder seg0 oreder 0--?3
+                #     random_crop=False,  # random cropping is part of our dataloaders
+                #     p_el_per_sample=0, p_scale_per_sample=0.2, p_rot_per_sample=0.2,
+                #     independent_scale_for_each_axis=False  # todo experiment with this
+                # ))
 
         tr_transforms.append(SpatialTransform(
             patch_size_spatial, patch_center_dist_from_border=None,
@@ -705,11 +740,10 @@ class nnUNetTrainer(object):
             p_el_per_sample=0, p_scale_per_sample=0.2, p_rot_per_sample=0.2,
             independent_scale_for_each_axis=False  # todo experiment with this
         ))
-
         if do_dummy_2d_data_aug:
             tr_transforms.append(Convert2DTo3DTransform())
 
-        tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))
+        tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))#
         tr_transforms.append(GaussianBlurTransform((0.5, 1.), different_sigma_per_channel=True, p_per_sample=0.2,
                                                    p_per_channel=0.5))
         tr_transforms.append(BrightnessMultiplicativeTransform(multiplier_range=(0.75, 1.25), p_per_sample=0.15))
@@ -728,7 +762,7 @@ class nnUNetTrainer(object):
             tr_transforms.append(MaskTransform([i for i in range(len(use_mask_for_norm)) if use_mask_for_norm[i]],
                                                mask_idx_in_seg=0, set_outside_to=0))
 
-        tr_transforms.append(RemoveLabelTransform(-1, 0))
+        tr_transforms.append(RemoveLabelTransform(-100, 0))#FIXME: rmovelabel-1--.-100
 
         if is_cascaded:
             assert foreground_labels is not None, 'We need foreground_labels for cascade augmentations'
@@ -777,12 +811,14 @@ class nnUNetTrainer(object):
         val_transforms.append(RenameTransform('seg', 'target', True))
 
         if regions is not None:
+            print("i goyt region?????? what?????????????????????????????")
             # the ignore label must also be converted
             val_transforms.append(ConvertSegmentationToRegionsTransform(list(regions) + [ignore_label]
                                                                         if ignore_label is not None else regions,
                                                                         'target', 'target'))
 
         if deep_supervision_scales is not None:
+            print("i goyt deep_supervision scale !!!!!!!!! ok make sense")
             val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
                                                                output_key='target'))
 
@@ -843,8 +879,6 @@ class nnUNetTrainer(object):
         # print(f"oversample: {self.oversample_foreground_percent}")
 
     def on_train_end(self):
-        self.save_checkpoint(join(self.output_folder, "checkpoint_final.pth"))
-        # now we can delete latest
         if self.local_rank == 0 and isfile(join(self.output_folder, "checkpoint_latest.pth")):
             os.remove(join(self.output_folder, "checkpoint_latest.pth"))
 
@@ -877,34 +911,62 @@ class nnUNetTrainer(object):
 
         data = data.to(self.device, non_blocking=True)
         if isinstance(target, list):
+
             target = [i.to(self.device, non_blocking=True) for i in target]
         else:
-            target = target.to(self.device, non_blocking=True)
 
+            target = target.to(self.device, non_blocking=True)
+        #print("b_optimizer")
         self.optimizer.zero_grad()
+        #print("a_optimizer")
         # Autocast is a little bitch.
         # If the device_type is 'cpu' then it's slow as heck and needs to be disabled.
         # If the device_type is 'mps' then it will complain that mps is not implemented, even if enabled=False is set. Whyyyyyyy. (this is why we don't make use of enabled=False)
         # So autocast will only be active if we have a cuda device.
-        with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
+        #print("b_autocast")
+        #FIXME: disable autocast
+        #with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
+            #print("b_outpiut")
+        output = self.network(data)
+        # del data
+        #print("b_loss")
+
+        l = self.loss(output, target)
+            #print("a_loss")
+        """
+                with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
+            #print("b_outpiut")
             output = self.network(data)
             # del data
+            #print("b_loss")
 
             l = self.loss(output, target)
+            #print("a_loss")
+        """
 
         if self.grad_scaler is not None:
+            #print("grad_scaler=none////////////////////////////////////////////////////////////////////")
             self.grad_scaler.scale(l).backward()
+            #print("backward")
             self.grad_scaler.unscale_(self.optimizer)
+           # print("unscale")
             torch.nn.utils.clip_grad_norm_(self.network.parameters(), 12)
+            #print("clip_grAD_NORM")
             self.grad_scaler.step(self.optimizer)
+            #print("STEP")
             self.grad_scaler.update()
+            #print("update")
         else:
+            #print("grad_scaler!=none\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\")
             l.backward()
             torch.nn.utils.clip_grad_norm_(self.network.parameters(), 12)
             self.optimizer.step()
+            
+        #print("b_return_loss")
         return {'loss': l.detach().cpu().numpy()}
 
     def on_train_epoch_end(self, train_outputs: List[dict]):
+        #print("print(epoch_end+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++)")
         outputs = collate_outputs(train_outputs)
 
         if self.is_ddp:
@@ -933,10 +995,18 @@ class nnUNetTrainer(object):
         # If the device_type is 'cpu' then it's slow as heck and needs to be disabled.
         # If the device_type is 'mps' then it will complain that mps is not implemented, even if enabled=False is set. Whyyyyyyy. (this is why we don't make use of enabled=False)
         # So autocast will only be active if we have a cuda device.
-        with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
-            output = self.network(data)
-            del data
-            l = self.loss(output, target)
+        #with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
+        output = self.network(data)
+        del data
+        l = self.loss(output, target)
+            
+            
+        """
+            with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
+                output = self.network(data)
+                del data
+                l = self.loss(output, target)
+        """
 
         # we only need the output with the highest output resolution
         output = output[0]
@@ -1025,6 +1095,8 @@ class nnUNetTrainer(object):
         # todo find a solution for this stupid shit
         self.print_to_log_file('train_loss', np.round(self.logger.my_fantastic_logging['train_losses'][-1], decimals=4))
         self.print_to_log_file('val_loss', np.round(self.logger.my_fantastic_logging['val_losses'][-1], decimals=4))
+        
+        #FIXME: pseudo dice disable
         self.print_to_log_file('Pseudo dice', [np.round(i, decimals=4) for i in
                                                self.logger.my_fantastic_logging['dice_per_class_or_region'][-1]])
         self.print_to_log_file(
@@ -1036,9 +1108,14 @@ class nnUNetTrainer(object):
             self.save_checkpoint(join(self.output_folder, 'checkpoint_latest.pth'))
 
         # handle 'best' checkpointing. ema_fg_dice is computed by the logger and can be accessed like this
-        if self._best_ema is None or self.logger.my_fantastic_logging['ema_fg_dice'][-1] > self._best_ema:
-            self._best_ema = self.logger.my_fantastic_logging['ema_fg_dice'][-1]
-            self.print_to_log_file(f"Yayy! New best EMA pseudo Dice: {np.round(self._best_ema, decimals=4)}")
+        # if self._best_ema is None or self.logger.my_fantastic_logging['ema_fg_dice'][-1] > self._best_ema:
+        #     self._best_ema = self.logger.my_fantastic_logging['ema_fg_dice'][-1]
+        #     self.print_to_log_file(f"Yayy! New best EMA pseudo Dice: {np.round(self._best_ema, decimals=4)}")
+        #     self.save_checkpoint(join(self.output_folder, 'checkpoint_best.pth'))
+        # FIXME: I am an idiot ....
+        if self._best_ema is None or self.logger.my_fantastic_logging['val_losses'][-1] < self._best_ema:
+            self._best_ema = self.logger.my_fantastic_logging['val_losses'][-1]
+            self.print_to_log_file(f"Yayy! New best train_loss: {np.round(self._best_ema, decimals=4)}")
             self.save_checkpoint(join(self.output_folder, 'checkpoint_best.pth'))
 
         if self.local_rank == 0:
@@ -1151,10 +1228,11 @@ class nnUNetTrainer(object):
 
                 self.print_to_log_file(f"predicting {k}")
                 data, seg, properties = dataset_val.load_case(k)
-
+                #FIXME:
                 if self.is_cascaded:
                     data = np.vstack((data, convert_labelmap_to_one_hot(seg[-1], self.label_manager.foreground_labels,
-                                                                        output_dtype=data.dtype)))
+                                                                   output_dtype=data.dtype)))
+                # data = np.vstack((data, seg))    
                 with warnings.catch_warnings():
                     # ignore 'The given NumPy array is not writable' warning
                     warnings.simplefilter("ignore")
@@ -1248,13 +1326,19 @@ class nnUNetTrainer(object):
             self.on_train_epoch_start()
             train_outputs = []
             for batch_id in range(self.num_iterations_per_epoch):
+                #self.print_to_log_file("batch id ", batch_id)
+                ##print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
                 train_outputs.append(self.train_step(next(self.dataloader_train)))
+                #self.print_to_log_file("batch id ", batch_id," finish")
+                #print("batch",batch_id,"    finish")
+            #print("end!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             self.on_train_epoch_end(train_outputs)
 
             with torch.no_grad():
                 self.on_validation_epoch_start()
                 val_outputs = []
                 for batch_id in range(self.num_val_iterations_per_epoch):
+                    #print("batch idddddddddd    ",batch_id)
                     val_outputs.append(self.validation_step(next(self.dataloader_val)))
                 self.on_validation_epoch_end(val_outputs)
 

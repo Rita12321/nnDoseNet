@@ -151,20 +151,23 @@ def resample_data_or_seg(data: np.ndarray, new_shape: Union[Tuple[float, ...], L
     
 #FIXME: 
     if is_seg:
-        #resize_fn = resize_segmentation
-        #kwargs = OrderedDict()
-        resize_fn = resize
-        kwargs = {'mode': 'edge', 'anti_aliasing': False}
+        resize_fn = resize #it would change to onehot encoded
+        kwargs = OrderedDict()
+        # resize_fn = resize
+        #kwargs = {'mode': 'edge', 'anti_aliasing': False,'clip':False}
     else:
         resize_fn = resize
-        kwargs = {'mode': 'edge', 'anti_aliasing': False}
+        #Kwargs = {'mode': 'edge','anti_aliasing': False}
+        kwargs = {'mode': 'edge','anti_aliasing': False}
     dtype_data = data.dtype
+    if data.dtype!=np.float32:
+        print("i am not float 32~~~I'm",data.dtype)
     shape = np.array(data[0].shape)
     new_shape = np.array(new_shape)
     if np.any(shape != new_shape):
         data = data.astype(float)
         if do_separate_z:
-            # print("separate z, order in z is", order_z, "order inplane is", order)
+            #print("separate z, order in z is", order_z, "order inplane is", order)
             assert len(axis) == 1, "only one anisotropic axis supported"
             axis = axis[0]
             if axis == 0:
@@ -201,7 +204,9 @@ def resample_data_or_seg(data: np.ndarray, new_shape: Union[Tuple[float, ...], L
                     map_dims = dim_scale * (map_dims + 0.5) - 0.5
 
                     coord_map = np.array([map_rows, map_cols, map_dims])
-                    if not is_seg or order_z == 0:
+                    #if not is_seg or order_z == 0:
+                    if  order_z == 0:
+                    #if True:
                         reshaped_final_data.append(map_coordinates(reshaped_data, coord_map, order=order_z,
                                                                    mode='nearest')[None])
                     else:

@@ -69,7 +69,12 @@ class NoNormalization(ImageNormalization):
 
     def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
         return image.astype(self.target_dtype)
+    
+class NoNormalization_mask(ImageNormalization):
+    leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
 
+    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
+        return image.astype(np.uint8)
 
 class RescaleTo01Normalization(ImageNormalization):
     leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False

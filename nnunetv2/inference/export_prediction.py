@@ -41,8 +41,10 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
 
     
     #NOTE: nonlin would conduct soft max
-    predicted_probabilities = label_manager.apply_inference_nonlin(predicted_logits)# it would done soft max on dim0
-    predicted_probabilities=torch.from_numpy(predicted_logits).cuda()
+    #predicted_probabilities = label_manager.apply_inference_nonlin(predicted_logits)# it would done soft max on dim0
+    predicted_probabilities=predicted_logits
+
+    predicted_probabilities=torch.from_numpy(predicted_probabilities).cuda()
     #np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_logits_afternonlin"+ '.npz', probabilities=predicted_probabilities.cpu().numpy())
     del predicted_logits
     
@@ -53,7 +55,8 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
     if label_manager.dose_label==True:
         segmentation=predicted_probabilities
         segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
-                                              dtype=np.float16 if len(label_manager.foreground_labels) < 255 else np.float32)
+                                              dtype=np.float32)
+        #print("foreground labels",label_manager.foreground_labels)
     else:
         segmentation = label_manager.convert_probabilities_to_segmentation(predicted_probabilities)#it would done argmax on probability
         segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
@@ -118,6 +121,8 @@ def export_prediction_from_logits(predicted_array_or_file: Union[np.ndarray, tor
         segmentation_final, probabilities_final = ret
         np.savez_compressed(output_file_truncated + '.npz', probabilities=probabilities_final)
         save_pickle(properties_dict, output_file_truncated + '.pkl')
+        #FIXME: 
+        segmentation_final=probabilities_final.squeeze()
         del probabilities_final, ret
     else:
         segmentation_final = ret
@@ -160,10 +165,11 @@ def resample_and_save(predicted: Union[torch.Tensor, np.ndarray], target_shape: 
 
     # create segmentation (argmax, regions, etc)
     label_manager = plans_manager.get_label_manager(dataset_json_dict_or_file)
-    #FIXME:  validation might go wrong!
+    
     segmentation = label_manager.convert_logits_to_segmentation(predicted_array_or_file)
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):
         segmentation = segmentation.cpu().numpy()
-    np.savez_compressed(output_file, seg=segmentation.astype(np.uint8))
+    #FIXME:  changed np.uint8-->float32
+    np.savez_compressed(output_file, seg=segmentation.astype(np.float32))
     torch.set_num_threads(old_threads)

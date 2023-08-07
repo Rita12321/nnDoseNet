@@ -114,13 +114,16 @@ class DefaultPreprocessor(object):
             
 ## NOTE: changed: having a label call dose  --> np. float32
         if label_manager.dose_label:
+            #print("doselabel")
             seg = seg.astype(np.float32)
         elif np.max(seg) > 127:
+            #print("seg????>127")
             seg = seg.astype(np.int16)
         else:
+            #print("are you kidding? ")
             seg = seg.astype(np.int8)
         return data, seg
-#FIXME:
+
     def run_case(self, image_files: List[str], seg_file: Union[str, None], plans_manager: PlansManager,
                  configuration_manager: ConfigurationManager,
                  dataset_json: Union[dict, str]):
@@ -197,7 +200,7 @@ class DefaultPreprocessor(object):
                 raise RuntimeError('Unable to locate class \'%s\' for normalization' % scheme)
             normalizer = normalizer_class(use_mask_for_norm=configuration_manager.use_mask_for_norm[c],
                                           intensityproperties=foreground_intensity_properties_per_channel[str(c)])
-            data[c] = normalizer.run(data[c], seg[0])
+            data[c] = normalizer.run(data[c], seg[0])# just passs the seg didn't doing anything
         return data
 
     def run(self, dataset_name_or_id: Union[int, str], configuration_name: str, plans_identifier: str,

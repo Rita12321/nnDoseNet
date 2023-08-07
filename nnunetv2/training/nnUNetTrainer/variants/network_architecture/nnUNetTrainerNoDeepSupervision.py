@@ -68,10 +68,18 @@ class nnUNetTrainerNoDeepSupervision(nnUNetTrainer):
         # If the device_type is 'cpu' then it's slow as heck and needs to be disabled.
         # If the device_type is 'mps' then it will complain that mps is not implemented, even if enabled=False is set. Whyyyyyyy. (this is why we don't make use of enabled=False)
         # So autocast will only be active if we have a cuda device.
-        with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
-            output = self.network(data)
-            del data
-            l = self.loss(output, target)
+        #with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
+        
+        output = self.network(data)
+        del data
+        l = self.loss(output, target)
+            
+        """
+                with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
+        output = self.network(data)
+        del data
+        l = self.loss(output, target)
+            """
 
         # the following is needed for online evaluation. Fake dice (green line)
         axes = [0] + list(range(2, len(output.shape)))

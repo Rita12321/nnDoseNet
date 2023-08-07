@@ -164,7 +164,9 @@ class PreprocessAdapter(DataLoader):
         if seg_prev_stage is not None:
             seg_onehot = convert_labelmap_to_one_hot(seg[0], self.label_manager.foreground_labels, data.dtype)
             data = np.vstack((data, seg_onehot))
-
+        #FIXME: vstack seg
+        print("seg2-------------------------------------------------------------")
+        #data = np.vstack((data, seg[0]))
         data = torch.from_numpy(data)
 
         return {'data': data, 'data_properites': data_properites, 'ofile': ofile}
@@ -209,9 +211,13 @@ class PreprocessAdapterFromNpy(DataLoader):
                                                    self.plans_manager,
                                                    self.configuration_manager,
                                                    self.dataset_json)
+        
         if seg_prev_stage is not None:
             seg_onehot = convert_labelmap_to_one_hot(seg[0], self.label_manager.foreground_labels, data.dtype)
             data = np.vstack((data, seg_onehot))
+        #FIXME: vstack seg
+        print("seg3-------------------------------------------------------------")
+        #data = np.vstack((data, seg[0]))
 
         data = torch.from_numpy(data)
 
@@ -243,7 +249,9 @@ def preprocess_fromnpy_save_to_queue(list_of_images: List[np.ndarray],
             if list_of_segs_from_prev_stage is not None and list_of_segs_from_prev_stage[idx] is not None:
                 seg_onehot = convert_labelmap_to_one_hot(seg[0], label_manager.foreground_labels, data.dtype)
                 data = np.vstack((data, seg_onehot))
-
+            #FIXME: vstack seg
+            print("seg4-------------------------------------------------------------")
+            #data = np.vstack((data, seg[0]))
             data = torch.from_numpy(data).contiguous().float()
 
             item = {'data': data, 'data_properites': list_of_image_properties[idx],

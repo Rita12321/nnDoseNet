@@ -21,7 +21,7 @@ from nnunetv2.utilities.utils import get_identifiers_from_splitted_dataset_folde
 
 class ExperimentPlanner(object):
     def __init__(self, dataset_name_or_id: Union[str, int],
-                 gpu_memory_target_in_gb: float = 8,
+                 gpu_memory_target_in_gb: float = 24,
                  preprocessor_name: str = 'DefaultPreprocessor', plans_name: str = 'nnUNetPlans',
                  overwrite_target_spacing: Union[List[float], Tuple[float, ...]] = None,
                  suppress_transpose: bool = False):
@@ -51,7 +51,7 @@ class ExperimentPlanner(object):
         self.UNet_reference_val_3d = 560000000  # 455600128  550000000
         self.UNet_reference_val_2d = 85000000  # 83252480
         self.UNet_reference_com_nfeatures = 32
-        self.UNet_reference_val_corresp_GB = 8
+        self.UNet_reference_val_corresp_GB = 20#FIXME: changed 8-->20
         self.UNet_reference_val_corresp_bs_2d = 12
         self.UNet_reference_val_corresp_bs_3d = 2
         self.UNet_vram_target_GB = gpu_memory_target_in_gb
@@ -121,18 +121,26 @@ class ExperimentPlanner(object):
         """
         resampling_data = resample_data_or_seg_to_shape
         resampling_data_kwargs = {
-            "is_seg": False,
-            "order": 3,
-            "order_z": 0,
-            "force_separate_z": None,
-        }
-        resampling_seg = resample_data_or_seg_to_shape
-        resampling_seg_kwargs = {
             "is_seg": True,
             "order": 1,
             "order_z": 0,
             "force_separate_z": None,
         }
+        resampling_seg = resample_data_or_seg_to_shape
+        resampling_seg_kwargs = {
+            "is_seg": False,
+            "order": 3,
+            "order_z": 0,
+            "force_separate_z": None,
+        }
+        #FIXME: changed
+        # resampling_seg = resample_data_or_seg_to_shape
+        # resampling_seg_kwargs = {
+        #     "is_seg": True,
+        #     "order": 1,
+        #     "order_z": 0,
+        #     "force_separate_z": None,
+        # }
         return resampling_data, resampling_data_kwargs, resampling_seg, resampling_seg_kwargs
 
     def determine_segmentation_softmax_export_fn(self, *args, **kwargs):
@@ -144,13 +152,21 @@ class ExperimentPlanner(object):
         functions for each configuration
 
         """
+        #FIXME:
         resampling_fn = resample_data_or_seg_to_shape
+        
         resampling_fn_kwargs = {
             "is_seg": False,
             "order": 1,
             "order_z": 0,
             "force_separate_z": None,
         }
+        # resampling_fn_kwargs = {
+        #     "is_seg": False,
+        #     "order": 1,
+        #     "order_z": 0,
+        #     "force_separate_z": None,
+        # }
         return resampling_fn, resampling_fn_kwargs
 #FIXME:
     def determine_fullres_target_spacing(self) -> np.ndarray:

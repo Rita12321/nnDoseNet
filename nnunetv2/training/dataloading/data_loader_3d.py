@@ -1,9 +1,10 @@
 import numpy as np
 from nnunetv2.training.dataloading.base_data_loader import nnUNetDataLoaderBase
 from nnunetv2.training.dataloading.nnunet_dataset import nnUNetDataset
-
-
+from datetime import datetime
+import SimpleITK as sitk
 class nnUNetDataLoader3D(nnUNetDataLoaderBase):
+   
     def generate_train_batch(self):
         selected_keys = self.get_indices()
         # preallocate memory for data and seg
@@ -40,11 +41,45 @@ class nnUNetDataLoader3D(nnUNetDataLoaderBase):
 
             this_slice = tuple([slice(0, seg.shape[0])] + [slice(i, j) for i, j in zip(valid_bbox_lbs, valid_bbox_ubs)])
             seg = seg[this_slice]
+            # print("data_shape",data.shape,"data_min",np.min(data),"data_max",np.max(data),"###############################")
 
+            # now=datetime.now()
+     
+            # img=sitk.GetImageFromArray(data[0])
+            # sitk.WriteImage(img,"/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_1"+".nii.gz")
+            # print("/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_1"+".nii.gz")
+            # img=sitk.GetImageFromArray(data[1])
+            # sitk.WriteImage(img,"/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_2"+".nii.gz")
+            # print("/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_2"+".nii.gz")         
+            # img=sitk.GetImageFromArray(data[2])
+            # sitk.WriteImage(img,"/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_3"+".nii.gz")
+            # print("/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_3"+".nii.gz")     
+            # img=sitk.GetImageFromArray(seg[0])
+            # sitk.WriteImage(img,"/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"seg"+".nii.gz")
+            # print("/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"seg"+".nii.gz")       
+            
+            
+            
             padding = [(-min(0, bbox_lbs[i]), max(bbox_ubs[i] - shape[i], 0)) for i in range(dim)]
-            data_all[j] = np.pad(data, ((0, 0), *padding), 'constant', constant_values=0)
-            seg_all[j] = np.pad(seg, ((0, 0), *padding), 'constant', constant_values=-1)
-
+            data_all[j] = np.pad(data, ((0, 0), *padding), 'constant', constant_values=0)#0 
+            seg_all[j] = np.pad(seg, ((0, 0), *padding), 'constant', constant_values=-1)#-1
+            
+            #print("segall_shape",seg_all.shape,"segall_min",np.min(seg_all),"segall_max",np.max(seg_all),"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        
+     
+            # img=sitk.GetImageFromArray(data_all[0])
+            # sitk.WriteImage(img,"/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_all_1"+".nii.gz")
+            # print("/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_all_1"+".nii.gz")
+            # img=sitk.GetImageFromArray(data_all[1])
+            # sitk.WriteImage(img,"/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_all_2"+".nii.gz")
+            # print("/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_all_2"+".nii.gz")         
+            # img=sitk.GetImageFromArray(data_all[2])
+            # sitk.WriteImage(img,"/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_all_3"+".nii.gz")
+            # print("/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"data_all_3"+".nii.gz")     
+            # img=sitk.GetImageFromArray(seg_all[0])
+            # sitk.WriteImage(img,"/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"seg_all"+".nii.gz")
+            # print("/home/changh/Documents/2023_DosePredcition/idk/"+str(now)+"seg_all"+".nii.gz")
+              
         return {'data': data_all, 'seg': seg_all, 'properties': case_properties, 'keys': selected_keys}
 
 

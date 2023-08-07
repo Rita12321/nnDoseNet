@@ -8,8 +8,9 @@ from scipy.ndimage import gaussian_filter
 
 #FIXME:
 @lru_cache(maxsize=2)
+#FIXME:float 16-->float 32
 def compute_gaussian(tile_size: Union[Tuple[int, ...], List[int]], sigma_scale: float = 1. / 8,
-                     value_scaling_factor: float = 1, dtype=torch.float16, device=torch.device('cuda', 0)) \
+                     value_scaling_factor: float = 1, dtype=torch.float32, device=torch.device('cuda', 0)) \
         -> torch.Tensor:
     tmp = np.zeros(tile_size)
     center_coords = [i // 2 for i in tile_size]

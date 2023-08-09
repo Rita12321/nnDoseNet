@@ -21,7 +21,7 @@ from nnunetv2.utilities.utils import get_identifiers_from_splitted_dataset_folde
 
 class ExperimentPlanner(object):
     def __init__(self, dataset_name_or_id: Union[str, int],
-                 gpu_memory_target_in_gb: float = 24,
+                 gpu_memory_target_in_gb: float = 8,
                  preprocessor_name: str = 'DefaultPreprocessor', plans_name: str = 'nnUNetPlans',
                  overwrite_target_spacing: Union[List[float], Tuple[float, ...]] = None,
                  suppress_transpose: bool = False):
@@ -48,7 +48,7 @@ class ExperimentPlanner(object):
         self.UNet_class = PlainConvUNet
         # the following two numbers are really arbitrary and were set to reproduce nnU-Net v1's configurations as
         # much as possible
-        self.UNet_reference_val_3d = 560000000  # 455600128  550000000
+        self.UNet_reference_val_3d = 455600128 #their default value560000000  # 455600128  550000000
         self.UNet_reference_val_2d = 85000000  # 83252480
         self.UNet_reference_com_nfeatures = 32
         self.UNet_reference_val_corresp_GB = 20#FIXME: changed 8-->20

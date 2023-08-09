@@ -144,7 +144,7 @@ class nnUNetTrainer(object):
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
         #NOTE: epoch
-        self.num_epochs =5
+        self.num_epochs =1000
         self.current_epoch = 0
 
         ### Dealing with labels/regions
@@ -181,7 +181,7 @@ class nnUNetTrainer(object):
         ### checkpoint saving stuff
         
         #FIXME: change check point save
-        self.save_every = 1
+        self.save_every = 10
         self.disable_checkpointing = False
 
         ## DDP batch size and oversampling can differ between workers and needs adaptation
@@ -641,7 +641,7 @@ class nnUNetTrainer(object):
 
         
         #FIXME: 24 cpu
-        allowed_num_processes = 24#get_allowed_n_proc_DA()
+        allowed_num_processes = 26#get_allowed_n_proc_DA()
         print(allowed_num_processes)
         if allowed_num_processes == 0:
             #print("single tread[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")

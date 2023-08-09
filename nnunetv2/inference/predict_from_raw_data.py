@@ -622,7 +622,9 @@ class nnUNetPredictor(object):
                                                     device=results_device)
                 finally:
                     empty_cache(self.device)
-
+                
+                
+                #FIXME: changed workon-->float, it was double and raise a bug
                 if self.verbose: print('running prediction')
                 for sl in tqdm(slicers, disable=not self.allow_tqdm):
                     workon = data[sl][None]

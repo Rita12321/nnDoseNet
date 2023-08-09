@@ -160,8 +160,8 @@ def resample_data_or_seg(data: np.ndarray, new_shape: Union[Tuple[float, ...], L
         #Kwargs = {'mode': 'edge','anti_aliasing': False}
         kwargs = {'mode': 'edge','anti_aliasing': False}
     dtype_data = data.dtype
-    if data.dtype!=np.float32:
-        print("i am not float 32~~~I'm",data.dtype)
+    # if data.dtype!=np.float32:
+    #     print("i am not float 32~~~I'm",data.dtype)
     shape = np.array(data[0].shape)
     new_shape = np.array(new_shape)
     if np.any(shape != new_shape):

@@ -116,7 +116,7 @@ def plan_and_preprocess_entry():
                         help='[OPTIONAL] Name of the Dataset Fingerprint Extractor class that should be used. Default is '
                              '\'DatasetFingerprintExtractor\'.')
     parser.add_argument('-npfp', type=int, default=14, required=False,
-                        help='[OPTIONAL] Number of processes used for fingerprint extraction. Default: 8')
+                        help='[OPTIONAL] Number of processes used for fingerprint extraction. Default: 14')
     parser.add_argument("--verify_dataset_integrity", required=False, default=False, action="store_true",
                         help="[RECOMMENDED] set this flag to check the dataset integrity. This is useful and should be done once for "
                              "each dataset!")
@@ -172,7 +172,7 @@ def plan_and_preprocess_entry():
                              "know what that is then dont touch it, or at least don't increase it!). DANGER: More "
                              "often than not the number of processes that can be used is limited by the amount of "
                              "RAM available. Image resampling takes up a lot of RAM. MONITOR RAM USAGE AND "
-                             "DECREASE -np IF YOUR RAM FILLS UP TOO MUCH!. Default: 8 processes for 2d, 4 "
+                             "DECREASE -np IF YOUR RAM FILLS UP TOO MUCH!. Default: 8 processes for 2d, 8 "
                              "for 3d_fullres, 8 for 3d_lowres and 4 for everything else")
     parser.add_argument('--verbose', required=False, action='store_true',
                         help='Set this to print a lot of stuff. Useful for debugging. Will disable progrewss bar! '
@@ -202,7 +202,7 @@ def plan_and_preprocess_entry():
     
 
     if args.np is None:
-        default_np = {"2d": 8, "3d_fullres": 10, "3d_lowres": 8}
+        default_np = {"2d": 8, "3d_fullres": 8, "3d_lowres": 8}
         np = [default_np[c] if c in default_np.keys() else 4 for c in args.c]
     else:
         np = args.np

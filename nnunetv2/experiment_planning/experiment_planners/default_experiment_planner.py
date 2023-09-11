@@ -51,7 +51,7 @@ class ExperimentPlanner(object):
         self.UNet_reference_val_3d = 455600128 #their default value560000000  # 455600128  550000000
         self.UNet_reference_val_2d = 85000000  # 83252480
         self.UNet_reference_com_nfeatures = 32
-        self.UNet_reference_val_corresp_GB = 20#FIXME: changed 8-->20
+        self.UNet_reference_val_corresp_GB = 8
         self.UNet_reference_val_corresp_bs_2d = 12
         self.UNet_reference_val_corresp_bs_3d = 2
         self.UNet_vram_target_GB = gpu_memory_target_in_gb
@@ -119,28 +119,26 @@ class ExperimentPlanner(object):
         determine_resampling is called within get_plans_for_configuration to allow for different functions for each
         configuration
         """
+        # NOTE: switch setting for seg and data
+        # order1-->3 in seg , if use 1 dose would be grid like,
+        # order3-->1 in data, if use 3 the edge of oar or ptv won't be sharp. The value in amsk won't be binary 
+        
         resampling_data = resample_data_or_seg_to_shape
         resampling_data_kwargs = {
-            "is_seg": True,
-            "order": 1,
+            "is_seg": True,         
+            "order": 0,
             "order_z": 0,
             "force_separate_z": None,
         }
         resampling_seg = resample_data_or_seg_to_shape
         resampling_seg_kwargs = {
             "is_seg": False,
-            "order": 3,
+            "order": 0,     
             "order_z": 0,
             "force_separate_z": None,
         }
-        #FIXME: changed
-        # resampling_seg = resample_data_or_seg_to_shape
-        # resampling_seg_kwargs = {
-        #     "is_seg": True,
-        #     "order": 1,
-        #     "order_z": 0,
-        #     "force_separate_z": None,
-        # }
+        
+  
         return resampling_data, resampling_data_kwargs, resampling_seg, resampling_seg_kwargs
 
     def determine_segmentation_softmax_export_fn(self, *args, **kwargs):
@@ -152,7 +150,7 @@ class ExperimentPlanner(object):
         functions for each configuration
 
         """
-        #FIXME:
+  
         resampling_fn = resample_data_or_seg_to_shape
         
         resampling_fn_kwargs = {
@@ -161,14 +159,9 @@ class ExperimentPlanner(object):
             "order_z": 0,
             "force_separate_z": None,
         }
-        # resampling_fn_kwargs = {
-        #     "is_seg": False,
-        #     "order": 1,
-        #     "order_z": 0,
-        #     "force_separate_z": None,
-        # }
+
         return resampling_fn, resampling_fn_kwargs
-#FIXME:
+
     def determine_fullres_target_spacing(self) -> np.ndarray:
         """
         per default we use the 50th percentile=median for the target spacing. Higher spacing results in smaller data

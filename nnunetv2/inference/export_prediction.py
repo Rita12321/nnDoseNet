@@ -66,6 +66,8 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):
         segmentation = segmentation.cpu().numpy()
+    if label_manager.dose_label==True:
+        segmentation=np.clip(segmentation,0.0,np.max(segmentation.flatten()))
     
     # put segmentation in bbox (revert cropping)
     slicer = bounding_box_to_slice(properties_dict['bbox_used_for_cropping'])
@@ -121,7 +123,6 @@ def export_prediction_from_logits(predicted_array_or_file: Union[np.ndarray, tor
         segmentation_final, probabilities_final = ret
         np.savez_compressed(output_file_truncated + '.npz', probabilities=probabilities_final)
         save_pickle(properties_dict, output_file_truncated + '.pkl')
-        #FIXME: 
         segmentation_final=probabilities_final.squeeze()
         del probabilities_final, ret
     else:
@@ -170,6 +171,6 @@ def resample_and_save(predicted: Union[torch.Tensor, np.ndarray], target_shape: 
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):
         segmentation = segmentation.cpu().numpy()
-    #FIXME:  changed np.uint8-->float32
+    #Note: changed prediction ave prediction np.uint8-->float32
     np.savez_compressed(output_file, seg=segmentation.astype(np.float32))
     torch.set_num_threads(old_threads)

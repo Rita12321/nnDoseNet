@@ -38,7 +38,6 @@ def save_summary_json(results: dict, output_file: str):
     """
     results_converted = deepcopy(results)
     # convert keys in mean metrics
-    ##FIXME:
     try:
         results_converted['mean'] = {label_or_region_to_key(k): results['mean'][k] for k in results['mean'].keys()}
     except:
@@ -59,7 +58,6 @@ def save_summary_json(results: dict, output_file: str):
 def load_summary_json(filename: str):
     results = load_json(filename)
     # convert keys in mean metrics
-##FIXME:
     try:
         results['mean'] = {key_to_label_or_region(k): results['mean'][k] for k in results['mean'].keys()}
     except:

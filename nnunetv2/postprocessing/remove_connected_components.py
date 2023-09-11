@@ -149,7 +149,6 @@ def determine_postprocessing(folder_predictions: str,
         baseline_results = load_summary_json(join(folder_predictions, 'summary.json'))
         pp_results = load_summary_json(join(output_here, 'summary.json'))
         
-        ##FIXME:
         try:
             do_this = pp_results['foreground_mean']['Dice'] > baseline_results['foreground_mean']['Dice']
         except:

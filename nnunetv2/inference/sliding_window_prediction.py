@@ -6,9 +6,8 @@ from typing import Union, Tuple, List
 from acvl_utils.cropping_and_padding.padding import pad_nd_image
 from scipy.ndimage import gaussian_filter
 
-#FIXME:
+
 @lru_cache(maxsize=2)
-#FIXME:float 16-->float 32
 def compute_gaussian(tile_size: Union[Tuple[int, ...], List[int]], sigma_scale: float = 1. / 8,
                      value_scaling_factor: float = 1, dtype=torch.float32, device=torch.device('cuda', 0)) \
         -> torch.Tensor:
@@ -29,7 +28,6 @@ def compute_gaussian(tile_size: Union[Tuple[int, ...], List[int]], sigma_scale: 
 
     return gaussian_importance_map
 
-#FIXME:
 def compute_steps_for_sliding_window(image_size: Tuple[int, ...], tile_size: Tuple[int, ...], tile_step_size: float) -> \
         List[List[int]]:
     assert [i >= j for i, j in zip(image_size, tile_size)], "image size must be as large or larger than patch_size"

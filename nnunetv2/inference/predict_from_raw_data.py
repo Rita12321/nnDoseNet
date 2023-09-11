@@ -624,13 +624,15 @@ class nnUNetPredictor(object):
                     empty_cache(self.device)
                 
                 
-                #FIXME: changed workon-->float, it was double and raise a bug
+                
                 if self.verbose: print('running prediction')
                 for sl in tqdm(slicers, disable=not self.allow_tqdm):
                     workon = data[sl][None]
                     workon = workon.to(self.device, non_blocking=False)
+                    
+                    #NOTE: changed workon-->float, it was double and raise a bug
                     workon=workon.float()
-
+                    
                     prediction = self._internal_maybe_mirror_and_predict(workon)[0].to(results_device)
 
                     predicted_logits[sl] += (prediction * gaussian if self.use_gaussian else prediction)

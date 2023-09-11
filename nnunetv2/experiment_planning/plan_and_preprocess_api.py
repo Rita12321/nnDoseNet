@@ -118,12 +118,12 @@ def preprocess_dataset(dataset_id: int,
     maybe_mkdir_p(join(nnUNet_preprocessed, dataset_name, 'gt_segmentations'))
     [shutil.copy(i, join(join(nnUNet_preprocessed, dataset_name, 'gt_segmentations'))) for i in
      subfiles(join(nnUNet_raw, dataset_name, 'labelsTr'))]
-#FIXME: num_process
+#NOTE: changed num_process default
 
 def preprocess(dataset_ids: List[int],
                plans_identifier: str = 'nnUNetPlans',
                configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres', '3d_lowres'),#
-               num_processes: Union[int, Tuple[int, ...], List[int]] = (8, 4, 8),
+               num_processes: Union[int, Tuple[int, ...], List[int]] = (8, 8, 8),
                verbose: bool = False):
     # not using default
     

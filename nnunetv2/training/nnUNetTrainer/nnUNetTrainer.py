@@ -144,7 +144,7 @@ class nnUNetTrainer(object):
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
         #NOTE: epoch
-        self.num_epochs =1000
+        self.num_epochs =250
         self.current_epoch = 0
 
         ### Dealing with labels/regions
@@ -182,6 +182,7 @@ class nnUNetTrainer(object):
         
         #FIXME: change check point save
         self.save_every = 10
+        
         self.disable_checkpointing = False
 
         ## DDP batch size and oversampling can differ between workers and needs adaptation
@@ -307,7 +308,6 @@ class nnUNetTrainer(object):
             oversample_percents = []
 
             world_size = dist.get_world_size()
-            #print("world size",world_size,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             my_rank = dist.get_rank()
 
             global_batch_size = self.configuration_manager.batch_size
@@ -476,7 +476,7 @@ class nnUNetTrainer(object):
 
     def configure_optimizers(self):
         
-        #FIXME: change optimizer
+      
         optimizer = torch.optim.SGD(self.network.parameters(), self.initial_lr, weight_decay=self.weight_decay,
                                     momentum=0.99, nesterov=True)
         lr_scheduler = PolyLRScheduler(optimizer, self.initial_lr, self.num_epochs)
@@ -504,16 +504,7 @@ class nnUNetTrainer(object):
                 # broken.
                 print("plot_network_architecture")
 
-                #print(self.network)
 
-                # import hiddenlayer as hl
-                # g = hl.build_graph(self.network,
-                #                    torch.rand((1, self.num_input_channels,
-                #                                *self.configuration_manager.patch_size),
-                #                               device=self.device),
-                #                    transforms=None)
-                # g.save(join(self.output_folder, "network_architecture.pdf"))
-                # del g
             except Exception as e:
                 self.print_to_log_file("Unable to plot network architecture:")
                 self.print_to_log_file(e)
@@ -616,10 +607,10 @@ class nnUNetTrainer(object):
             self.configure_rotation_dummyDA_mirroring_and_inital_patch_size()
 
         # training pipeline
-        #FIXME:
+        #NOTE: changed resample order for transform 
         tr_transforms = self.get_training_transforms(
             patch_size, rotation_for_DA, deep_supervision_scales, mirror_axes, do_dummy_2d_data_aug,
-            order_resampling_data=0, order_resampling_seg=3,#3,0
+            order_resampling_data=0, order_resampling_seg=0,#3,0
             use_mask_for_norm=self.configuration_manager.use_mask_for_norm,
             is_cascaded=self.is_cascaded, foreground_labels=self.label_manager.foreground_labels,
             regions=self.label_manager.foreground_regions if self.label_manager.has_regions else None,
@@ -633,22 +624,20 @@ class nnUNetTrainer(object):
                                                         self.label_manager.has_regions else None,
                                                         ignore_label=self.label_manager.ignore_label)
         
-        #FIXME: disable transform
-        # tr_transforms=None
-        # val_transforms=None
+  
 
         dl_tr, dl_val = self.get_plain_dataloaders(initial_patch_size, dim)
 
         
-        #FIXME: 24 cpu
+        #FIXME: 26 cpu
         allowed_num_processes = 26#get_allowed_n_proc_DA()
         print(allowed_num_processes)
         if allowed_num_processes == 0:
-            #print("single tread[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")
+            
             mt_gen_train = SingleThreadedAugmenter(dl_tr, tr_transforms)
             mt_gen_val = SingleThreadedAugmenter(dl_val, val_transforms)
         else:
-            #print("LimitedLenWrapper[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")
+            
             mt_gen_train = LimitedLenWrapper(self.num_iterations_per_epoch, data_loader=dl_tr, transform=tr_transforms,
                                              num_processes=allowed_num_processes, num_cached=6, seeds=None,
                                              pin_memory=self.device.type == 'cuda', wait_time=0.02)
@@ -696,9 +685,9 @@ class nnUNetTrainer(object):
                                 deep_supervision_scales: Union[List, Tuple],
                                 mirror_axes: Tuple[int, ...],
                                 do_dummy_2d_data_aug: bool,
-                                order_resampling_data: int = 1,#3
-                                order_resampling_seg: int = 1,#
-                                border_val_seg: int = -100,#FIXME:
+                                order_resampling_data: int = 1,# NOTE: changed order 3-->1
+                                order_resampling_seg: int = 1,
+                                border_val_seg: int = -1,
                                 use_mask_for_norm: List[bool] = None,
                                 is_cascaded: bool = False,
                                 foreground_labels: Union[Tuple[int, ...], List[int]] = None,
@@ -714,19 +703,6 @@ class nnUNetTrainer(object):
         else:
             patch_size_spatial = patch_size
             ignore_axes = None
-
-                # tr_transforms.append(SpatialTransform(
-                #     patch_size_spatial, patch_center_dist_from_border=None,
-                #     do_elastic_deform=False, alpha=(0, 0), sigma=(0, 0),
-                #     do_rotation=True, angle_x=rotation_for_DA['x'], angle_y=rotation_for_DA['y'], angle_z=rotation_for_DA['z'],
-                #     p_rot_per_axis=1,  # todo experiment with this
-                #     do_scale=False, scale=(0.7, 1.4),#do scale false
-                #     border_mode_data="constant", border_cval_data=0, order_data=3,# order-->3
-                #     border_mode_seg="constant", border_cval_seg=0, order_seg=3,#boarder seg0 oreder 0--?3
-                #     random_crop=False,  # random cropping is part of our dataloaders
-                #     p_el_per_sample=0, p_scale_per_sample=0.2, p_rot_per_sample=0.2,
-                #     independent_scale_for_each_axis=False  # todo experiment with this
-                # ))
 
         tr_transforms.append(SpatialTransform(
             patch_size_spatial, patch_center_dist_from_border=None,
@@ -762,7 +738,7 @@ class nnUNetTrainer(object):
             tr_transforms.append(MaskTransform([i for i in range(len(use_mask_for_norm)) if use_mask_for_norm[i]],
                                                mask_idx_in_seg=0, set_outside_to=0))
 
-        tr_transforms.append(RemoveLabelTransform(-100, 0))#FIXME: rmovelabel-1--.-100
+        tr_transforms.append(RemoveLabelTransform(-1, 0))
 
         if is_cascaded:
             assert foreground_labels is not None, 'We need foreground_labels for cascade augmentations'
@@ -811,14 +787,12 @@ class nnUNetTrainer(object):
         val_transforms.append(RenameTransform('seg', 'target', True))
 
         if regions is not None:
-            print("i goyt region?????? what?????????????????????????????")
             # the ignore label must also be converted
             val_transforms.append(ConvertSegmentationToRegionsTransform(list(regions) + [ignore_label]
                                                                         if ignore_label is not None else regions,
                                                                         'target', 'target'))
 
         if deep_supervision_scales is not None:
-            print("i goyt deep_supervision scale !!!!!!!!! ok make sense")
             val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
                                                                output_key='target'))
 
@@ -879,6 +853,10 @@ class nnUNetTrainer(object):
         # print(f"oversample: {self.oversample_foreground_percent}")
 
     def on_train_end(self):
+        self.current_epoch -= 1
+        self.save_checkpoint(join(self.output_folder, "checkpoint_final.pth"))
+        self.current_epoch += 1
+        
         if self.local_rank == 0 and isfile(join(self.output_folder, "checkpoint_latest.pth")):
             os.remove(join(self.output_folder, "checkpoint_latest.pth"))
 
@@ -924,41 +902,22 @@ class nnUNetTrainer(object):
         # If the device_type is 'mps' then it will complain that mps is not implemented, even if enabled=False is set. Whyyyyyyy. (this is why we don't make use of enabled=False)
         # So autocast will only be active if we have a cuda device.
         #print("b_autocast")
-        #FIXME: disable autocast
+        
+        #NOTE: changed disable autocast
         #with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
-            #print("b_outpiut")
         output = self.network(data)
-        # del data
-        #print("b_loss")
-
         l = self.loss(output, target)
-            #print("a_loss")
-        """
-                with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
-            #print("b_outpiut")
-            output = self.network(data)
-            # del data
-            #print("b_loss")
-
-            l = self.loss(output, target)
-            #print("a_loss")
-        """
+ 
 
         if self.grad_scaler is not None:
-            #print("grad_scaler=none////////////////////////////////////////////////////////////////////")
+            
             self.grad_scaler.scale(l).backward()
-            #print("backward")
             self.grad_scaler.unscale_(self.optimizer)
-           # print("unscale")
             torch.nn.utils.clip_grad_norm_(self.network.parameters(), 12)
-            #print("clip_grAD_NORM")
             self.grad_scaler.step(self.optimizer)
-            #print("STEP")
             self.grad_scaler.update()
-            #print("update")
+  
         else:
-            #print("grad_scaler!=none\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\")
-            l.backward()
             torch.nn.utils.clip_grad_norm_(self.network.parameters(), 12)
             self.optimizer.step()
             
@@ -966,7 +925,6 @@ class nnUNetTrainer(object):
         return {'loss': l.detach().cpu().numpy()}
 
     def on_train_epoch_end(self, train_outputs: List[dict]):
-        #print("print(epoch_end+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++)")
         outputs = collate_outputs(train_outputs)
 
         if self.is_ddp:
@@ -995,18 +953,14 @@ class nnUNetTrainer(object):
         # If the device_type is 'cpu' then it's slow as heck and needs to be disabled.
         # If the device_type is 'mps' then it will complain that mps is not implemented, even if enabled=False is set. Whyyyyyyy. (this is why we don't make use of enabled=False)
         # So autocast will only be active if we have a cuda device.
+        
+        #NOTE: changed disable autocast
         #with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
         output = self.network(data)
         del data
         l = self.loss(output, target)
             
             
-        """
-            with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
-                output = self.network(data)
-                del data
-                l = self.loss(output, target)
-        """
 
         # we only need the output with the highest output resolution
         output = output[0]
@@ -1014,7 +968,7 @@ class nnUNetTrainer(object):
 
         # the following is needed for online evaluation. Fake dice (green line)
         axes = [0] + list(range(2, len(output.shape)))
-## FIXME: validation might go wrong! arg max disable? 
+## FIXME: validation with region may get problem
         if self.label_manager.has_regions:
             predicted_segmentation_onehot = (torch.sigmoid(output) > 0.5).long()
         else:
@@ -1105,17 +1059,20 @@ class nnUNetTrainer(object):
         # handling periodic checkpointing
         current_epoch = self.current_epoch
         if (current_epoch + 1) % self.save_every == 0 and current_epoch != (self.num_epochs - 1):
+            self.print_to_log_file("saving this chk")
             self.save_checkpoint(join(self.output_folder, 'checkpoint_latest.pth'))
+        else:
+            self.print_to_log_file("not saving this chk")
 
         # handle 'best' checkpointing. ema_fg_dice is computed by the logger and can be accessed like this
         # if self._best_ema is None or self.logger.my_fantastic_logging['ema_fg_dice'][-1] > self._best_ema:
         #     self._best_ema = self.logger.my_fantastic_logging['ema_fg_dice'][-1]
         #     self.print_to_log_file(f"Yayy! New best EMA pseudo Dice: {np.round(self._best_ema, decimals=4)}")
         #     self.save_checkpoint(join(self.output_folder, 'checkpoint_best.pth'))
-        # FIXME: I am an idiot ....
+        # NOTE: chnaged best model evaluation with validation loss 
         if self._best_ema is None or self.logger.my_fantastic_logging['val_losses'][-1] < self._best_ema:
             self._best_ema = self.logger.my_fantastic_logging['val_losses'][-1]
-            self.print_to_log_file(f"Yayy! New best train_loss: {np.round(self._best_ema, decimals=4)}")
+            self.print_to_log_file(f"Yayy! New best validation_loss: {np.round(self._best_ema, decimals=4)}")
             self.save_checkpoint(join(self.output_folder, 'checkpoint_best.pth'))
 
         if self.local_rank == 0:
@@ -1228,11 +1185,10 @@ class nnUNetTrainer(object):
 
                 self.print_to_log_file(f"predicting {k}")
                 data, seg, properties = dataset_val.load_case(k)
-                #FIXME:
                 if self.is_cascaded:
                     data = np.vstack((data, convert_labelmap_to_one_hot(seg[-1], self.label_manager.foreground_labels,
                                                                    output_dtype=data.dtype)))
-                # data = np.vstack((data, seg))    
+   
                 with warnings.catch_warnings():
                     # ignore 'The given NumPy array is not writable' warning
                     warnings.simplefilter("ignore")
@@ -1326,12 +1282,7 @@ class nnUNetTrainer(object):
             self.on_train_epoch_start()
             train_outputs = []
             for batch_id in range(self.num_iterations_per_epoch):
-                #self.print_to_log_file("batch id ", batch_id)
-                ##print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
                 train_outputs.append(self.train_step(next(self.dataloader_train)))
-                #self.print_to_log_file("batch id ", batch_id," finish")
-                #print("batch",batch_id,"    finish")
-            #print("end!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             self.on_train_epoch_end(train_outputs)
 
             with torch.no_grad():

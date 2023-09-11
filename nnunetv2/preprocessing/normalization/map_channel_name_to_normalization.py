@@ -2,7 +2,7 @@ from typing import Type
 
 from nnunetv2.preprocessing.normalization.default_normalization_schemes import CTNormalization, NoNormalization, \
     ZScoreNormalization, RescaleTo01Normalization, RGBTo01Normalization, ImageNormalization,NoNormalization_mask
-#FIXME: disable normalization for PTV
+#NOTE: changed add PTV OAR mask default normalization
 channel_name_to_normalization_mapping = {
     'CT': CTNormalization,
     'noNorm': NoNormalization,

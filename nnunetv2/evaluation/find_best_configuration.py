@@ -98,9 +98,7 @@ def find_best_configuration(dataset_name_or_id,
         identifier = os.path.basename(output_folder)
         merged_output_folder = join(output_folder, f'crossval_results_folds_{folds_tuple_to_string(folds)}')
         accumulate_cv_results(output_folder, merged_output_folder, folds, num_processes, overwrite)
-        
-#FIXME: 
-        
+
         all_results[identifier] = {
             'source': merged_output_folder,
             'result': load_summary_json(join(merged_output_folder, 'summary.json'))['mean']        

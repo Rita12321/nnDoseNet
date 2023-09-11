@@ -109,7 +109,7 @@ class SimpleITKIO(BaseReaderWriter):
             # are returned x,y,z but spacing is returned z,y,x. Duh.
             'spacing': spacings_for_nnunet[0]
         }
-        #FIXME: changed float64-->32
+
         return stacked_images.astype(np.float64), dict
 
     def read_seg(self, seg_fname: str) -> Tuple[np.ndarray, dict]:

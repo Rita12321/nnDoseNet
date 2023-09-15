@@ -2,8 +2,9 @@ import torch
 from nnunetv2.training.loss.dice import SoftDiceLoss, MemoryEfficientSoftDiceLoss
 from nnunetv2.training.loss.robust_ce_loss import RobustCrossEntropyLoss, TopKLoss
 from nnunetv2.utilities.helpers import softmax_helper_dim1
+from nnunetv2.training.loss.DVH_loss import value_DVH_Loss
 from torch import nn
-
+from torch.nn import MSELoss
 
 class DC_and_CE_loss(nn.Module):
     def __init__(self, soft_dice_kwargs, ce_kwargs, weight_ce=1, weight_dice=1, ignore_label=None,
@@ -63,7 +64,7 @@ class DC_and_BCE_loss(nn.Module):
         """
         DO NOT APPLY NONLINEARITY IN YOUR NETWORK!
 
-        target mut be one hot encoded
+        target must be one hot encoded
         IMPORTANT: We assume use_ignore_label is located in target[:, -1]!!!
 
         :param soft_dice_kwargs:
@@ -149,3 +150,69 @@ class DC_and_topk_loss(nn.Module):
 
         result = self.weight_ce * ce_loss + self.weight_dice * dc_loss
         return result
+
+class MSE_and_DVH_loss(nn.Module):
+    def __init__(self, DVH_kwargs, MSE_kwargs, weight_mse=1, weight_dvh=1,
+                 DVH_class=value_DVH_Loss):
+        """ #FIXME: change description
+        Weights for CE and Dice do not need to sum to one. You can set whatever you want.
+        :param soft_dice_kwargs:
+        :param ce_kwargs:
+        :param aggregate:
+        :param square_dice:
+        :param weight_ce:
+        :param weight_dice:
+        """
+        super(MSE_and_DVH_loss, self).__init__()
+
+        self.weight_dvh = weight_dvh
+        self.weight_mse = weight_mse
+
+
+        self.MSE = MSELoss(**MSE_kwargs)
+        self.DVH = DVH_class(**DVH_kwargs)
+        
+
+
+    def forward(self, net_output: torch.Tensor, target: torch.Tensor,data: torch.Tensor=None):
+        """
+        target must be b, c, x, y(, z) with c=1
+        :param net_output:
+        :param target:
+        :return:
+        """
+        print("net_output.shape",net_output.shape,"target.shape",target.shape,"data.shape",data.shape)
+    
+
+        # dvh_loss = self.DVH(net_output, target, mask_index=get_roi_indexs(data)) \
+        #     if self.weight_dvh != 0 else 0
+        dvh_loss=torch.tensor(1)
+        mse_loss = self.MSE(net_output, target) \
+            if self.weight_mse != 0 else 0
+
+        result = self.weight_mse * mse_loss+ self.weight_dvh * dvh_loss
+        return result
+    
+def get_roi_indexs(data:torch.Tensor, axes=None, square=False):
+    print(data.shape,"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    #data shape? (b,c,x,y,z)#c=1, c=2 
+
+    with torch.no_grad():
+        #FIXME: list moght go wrong
+        indexs = []
+        for c in (1,2):#PTV=1, OAR=2
+            map=data[c]
+            labels=torch.unique(map)
+            for label in labels:
+                # print(label)
+                # if indexs !=None:
+                #     indexs=torch.stack((indexs,(map == label).nonzero(as_tuple=True)))
+                # else:
+                #     indexs=(map == label).nonzero(as_tuple=True)
+                indexs.append((map == label).nonzero(as_tuple=False))
+                # print((map == label).nonzero(as_tuple=False))
+                # print(indexs)
+    return indexs
+
+
+

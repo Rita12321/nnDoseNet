@@ -181,11 +181,11 @@ class MSE_and_DVH_loss(nn.Module):
         :param target:
         :return:
         """
-        print("net_output.shape",net_output.shape,"target.shape",target.shape,"data.shape",data.shape)
+        #print("net_output.shape",net_output.shape,"target.shape",target.shape,"data.shape",data.shape)
     
 
-        # dvh_loss = self.DVH(net_output, target, mask_index=get_roi_indexs(data)) \
-        #     if self.weight_dvh != 0 else 0
+        dvh_loss = self.DVH(net_output, target, mask_index=get_roi_indexs(data)) \
+            if self.weight_dvh != 0 else 0
         dvh_loss=torch.tensor(1)
         mse_loss = self.MSE(net_output, target) \
             if self.weight_mse != 0 else 0
@@ -194,24 +194,26 @@ class MSE_and_DVH_loss(nn.Module):
         return result
     
 def get_roi_indexs(data:torch.Tensor, axes=None, square=False):
-    print(data.shape,"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    #print(data.shape,"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
     #data shape? (b,c,x,y,z)#c=1, c=2 
 
     with torch.no_grad():
         #FIXME: list moght go wrong
+        
+        data=data.to(torch.int8)
         indexs = []
         for c in (1,2):#PTV=1, OAR=2
-            map=data[c]
+            map=data[:,c,...]
+            
+            #print(map.shape)
             labels=torch.unique(map)
+            #print(c,"label",len(labels),labels,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1")
             for label in labels:
-                # print(label)
-                # if indexs !=None:
-                #     indexs=torch.stack((indexs,(map == label).nonzero(as_tuple=True)))
-                # else:
-                #     indexs=(map == label).nonzero(as_tuple=True)
-                indexs.append((map == label).nonzero(as_tuple=False))
-                # print((map == label).nonzero(as_tuple=False))
-                # print(indexs)
+                if label!=0:
+                    indexs.append((map == label).nonzero(as_tuple=False))
+
+        # print(len(indexs),indexs[0][0],"1111111111111111111111")
+            
     return indexs
 
 

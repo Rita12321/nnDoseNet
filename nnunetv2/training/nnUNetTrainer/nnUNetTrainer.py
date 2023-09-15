@@ -764,10 +764,12 @@ class nnUNetTrainer(object):
                                                                        if ignore_label is not None else regions,
                                                                        'target', 'target'))
 
-        if deep_supervision_scales is not None:
+        if deep_supervision_scales is not None:#FIXME:
             tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
                                                               output_key='target'))
-        tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
+            tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data',
+                                                              output_key='ddp_data'))
+        tr_transforms.append(NumpyToTensor(['data', 'target','ddp_data'], 'float'))
         tr_transforms = Compose(tr_transforms)
         return tr_transforms
 
@@ -791,9 +793,11 @@ class nnUNetTrainer(object):
                                                                         if ignore_label is not None else regions,
                                                                         'target', 'target'))
 
-        if deep_supervision_scales is not None:
+        if deep_supervision_scales is not None:#FIXME:
             val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
                                                                output_key='target'))
+            val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data',
+                                                              output_key='ddp_data'))
 
         val_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
         val_transforms = Compose(val_transforms)
@@ -883,12 +887,15 @@ class nnUNetTrainer(object):
         self.logger.log('lrs', self.optimizer.param_groups[0]['lr'], self.current_epoch)
 
     def train_step(self, batch: dict) -> dict:
-        print(batch.keys())#dict_keys(['data', 'properties', 'keys', 'target'])
+        #print(batch.keys())#dict_keys(['data', 'properties', 'keys', 'target'])
         data = batch['data']#(b,c,x,y,z) check basedataloader shape
         target = batch['target']
-        print(data.shape,torch.max(data[:,0,...]),torch.max(data[:,1,...]),torch.max(data[:,2,...]))
-        print(len(target),target[0].shape,target[1].shape)
-
+        ddp_data=batch['ddp_data']
+        # print(data.shape,torch.max(data[:,0,...]),torch.max(data[:,1,...]),torch.max(data[:,2,...]))
+        # #print(ddp_data.shape,torch.max(data[:,0,...]),torch.max(ddp_data[:,1,...]),torch.max(ddp_data[:,2,...]))
+        # print(len(target),target[0].shape,target[1].shape)
+        # print("ddp",len(ddp_data),ddp_data[0].shape,ddp_data[1].shape)
+        
         data = data.to(self.device, non_blocking=True)
         if isinstance(target, list):
 
@@ -896,6 +903,14 @@ class nnUNetTrainer(object):
         else:
 
             target = target.to(self.device, non_blocking=True)
+            
+            
+        if isinstance(ddp_data, list):
+
+            ddp_data = [i.to(self.device, non_blocking=True) for i in ddp_data]
+        else:
+
+            ddp_data = ddp_data.to(self.device, non_blocking=True)
         #print("b_optimizer")
         self.optimizer.zero_grad()
         #print("a_optimizer")
@@ -909,8 +924,9 @@ class nnUNetTrainer(object):
         #with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
         output = self.network(data)
         #FIXME: is loss is MSE_value_dvh dose:
-        print(len(target),target[1].shape,"    ",len(output),output[1].shape,"    ",data.shape,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
-        l = self.loss(output, target,[data,data,data,data,data])#)#
+        #print(len(target),target[1].shape,"    ",len(output),output[1].shape,"    ",data.shape,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
+        
+        l = self.loss(output, target,ddp_data)#)#,ddp_data
         #print("hi~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
  
 
@@ -963,7 +979,7 @@ class nnUNetTrainer(object):
         #with autocast(self.device.type,,[data,data,data,data,data] enabled=True) if self.device.type == 'cuda' else dummy_context():
         output = self.network(data)
         
-        l = self.loss(output, target,[data,data,data,data,data])##FIXME: pass mask/data
+        l = self.loss(output, target)##FIXME: pass mask/data
         del data
             
             

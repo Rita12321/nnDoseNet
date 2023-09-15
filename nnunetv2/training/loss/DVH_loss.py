@@ -16,6 +16,7 @@ class value_DVH_Loss(nn.Module):
         self.ddp = ddp
 
     def forward(self, x, y, mask_index):
+        # print(x.shape,"!!!!!!!!!!!!!!!!!!!!!!11")
         maes=torch.tensor(0)
         L=len(mask_index)
         for l in range(0,L):
@@ -24,12 +25,12 @@ class value_DVH_Loss(nn.Module):
                 dose_y=torch.Tensor([])
 
                 for i  in mask_index[l]:
-                    dose_x=torch.cat((dose_x,torch.Tensor([x[1,i[0],i[1],i[2]]])),0)
-                    dose_y=torch.cat((dose_y,torch.Tensor([y[1,i[0],i[1],i[2]]])),0)
+                    dose_x=torch.cat((dose_x,torch.Tensor([x[i[0],0,i[1],i[2],i[3]]])),0)
+                    dose_y=torch.cat((dose_y,torch.Tensor([y[i[0],0,i[1],i[2],i[3]]])),0)
                     
                 dose_x,_=torch.sort(dose_x)
                 dose_y,_=torch.sort(dose_y) 
-            maes=maes+torch.mean(torch.abs(dose_x-dose_y))
+                maes=maes+torch.mean(torch.abs(dose_x-dose_y))
             
         # if self.ddp and self.batch_dice: #3dnet bath_dice false, so basically wont use this
         #     tp = AllGatherGrad.apply(tp).sum(0)

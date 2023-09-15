@@ -46,9 +46,10 @@ from nnunetv2.training.dataloading.data_loader_3d import nnUNetDataLoader3D
 from nnunetv2.training.dataloading.nnunet_dataset import nnUNetDataset
 from nnunetv2.training.dataloading.utils import get_case_identifiers, unpack_dataset
 from nnunetv2.training.logging.nnunet_logger import nnUNetLogger
-from nnunetv2.training.loss.compound_losses import DC_and_CE_loss, DC_and_BCE_loss
+from nnunetv2.training.loss.compound_losses import DC_and_CE_loss, DC_and_BCE_loss,MSE_and_DVH_loss
 from nnunetv2.training.loss.deep_supervision import DeepSupervisionWrapper
 from nnunetv2.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
+from nnunetv2.training.loss.DVH_loss import value_DVH_Loss
 from nnunetv2.training.lr_scheduler.polylr import PolyLRScheduler
 from nnunetv2.utilities.collate_outputs import collate_outputs
 from nnunetv2.utilities.default_n_proc_DA import get_allowed_n_proc_DA
@@ -63,7 +64,6 @@ from torch import distributed as dist
 from torch.cuda import device_count
 from torch.cuda.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
-
 
 class nnUNetTrainer(object):
     def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
@@ -349,7 +349,7 @@ class nnUNetTrainer(object):
         print("self.label_manager.num_segmentation_heads",self.label_manager.num_segmentation_heads)
         if self.label_manager.dose_label==True:
             print("self.label_manager.dose_label==True----->loss=torch.nn.MSELoss()")
-            loss= MSELoss()
+            loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=1, weight_dvh=1,DVH_class=value_DVH_Loss)#FIXME: change loss
         elif self.label_manager.has_regions:
             loss = DC_and_BCE_loss({},
                                    {'batch_dice': self.configuration_manager.batch_dice,
@@ -368,7 +368,6 @@ class nnUNetTrainer(object):
         weights = np.array([1 / (2 ** i) for i in range(len(deep_supervision_scales))])
         weights[-1] = 0
         
-  
 
         # we don't use the lowest 2 outputs. Normalize weights so that they sum to 1
         weights = weights / weights.sum()
@@ -884,8 +883,11 @@ class nnUNetTrainer(object):
         self.logger.log('lrs', self.optimizer.param_groups[0]['lr'], self.current_epoch)
 
     def train_step(self, batch: dict) -> dict:
-        data = batch['data']
+        print(batch.keys())#dict_keys(['data', 'properties', 'keys', 'target'])
+        data = batch['data']#(b,c,x,y,z) check basedataloader shape
         target = batch['target']
+        print(data.shape,torch.max(data[:,0,...]),torch.max(data[:,1,...]),torch.max(data[:,2,...]))
+        print(len(target),target[0].shape,target[1].shape)
 
         data = data.to(self.device, non_blocking=True)
         if isinstance(target, list):
@@ -906,7 +908,10 @@ class nnUNetTrainer(object):
         #NOTE: changed disable autocast
         #with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
         output = self.network(data)
-        l = self.loss(output, target)
+        #FIXME: is loss is MSE_value_dvh dose:
+        print(len(target),target[1].shape,"    ",len(output),output[1].shape,"    ",data.shape,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
+        l = self.loss(output, target,[data,data,data,data,data])#)#
+        #print("hi~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
  
 
         if self.grad_scaler is not None:
@@ -955,10 +960,11 @@ class nnUNetTrainer(object):
         # So autocast will only be active if we have a cuda device.
         
         #NOTE: changed disable autocast
-        #with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
+        #with autocast(self.device.type,,[data,data,data,data,data] enabled=True) if self.device.type == 'cuda' else dummy_context():
         output = self.network(data)
+        
+        l = self.loss(output, target,[data,data,data,data,data])##FIXME: pass mask/data
         del data
-        l = self.loss(output, target)
             
             
 
@@ -1059,10 +1065,9 @@ class nnUNetTrainer(object):
         # handling periodic checkpointing
         current_epoch = self.current_epoch
         if (current_epoch + 1) % self.save_every == 0 and current_epoch != (self.num_epochs - 1):
-            self.print_to_log_file("saving this chk")
+
             self.save_checkpoint(join(self.output_folder, 'checkpoint_latest.pth'))
-        else:
-            self.print_to_log_file("not saving this chk")
+     
 
         # handle 'best' checkpointing. ema_fg_dice is computed by the logger and can be accessed like this
         # if self._best_ema is None or self.logger.my_fantastic_logging['ema_fg_dice'][-1] > self._best_ema:

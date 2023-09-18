@@ -8,7 +8,7 @@ class nnUNetDataLoader3D(nnUNetDataLoaderBase):
     def generate_train_batch(self):
         selected_keys = self.get_indices()
         # preallocate memory for data and seg
-        data_all = np.zeros(self.data_shape, dtype=np.float32)
+        data_all = np.zeros(self.data_shape, dtype=np.float32)#FIXME: 
         seg_all = np.zeros(self.seg_shape, dtype=np.int16)
         case_properties = []
 
@@ -18,6 +18,8 @@ class nnUNetDataLoader3D(nnUNetDataLoaderBase):
             force_fg = self.get_do_oversample(j)
 
             data, seg, properties = self._data.load_case(i)
+       
+
 
             # If we are doing the cascade then the segmentation from the previous stage will already have been loaded by
             # self._data.load_case(i) (see nnUNetDataset.load_case)

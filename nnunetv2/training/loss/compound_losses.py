@@ -200,20 +200,21 @@ def get_roi_indexs(data:torch.Tensor, axes=None, square=False):
     with torch.no_grad():
         #FIXME: list moght go wrong
         
-        data=data.to(torch.int8)
+    # data=data.to(torch.int8)
         indexs = []
-        for c in (1,2):#PTV=1, OAR=2
-            map=data[:,c,...]
-            
-            #print(map.shape)
-            labels=torch.unique(map)
-            #print(c,"label",len(labels),labels,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1")
-            for label in labels:
-                if label!=0:
-                    indexs.append((map == label).nonzero(as_tuple=False))
+        #for c in (1,2):#PTV=1, OAR=2
+        map=data#[:,c,...]
+        
+        #print(map.shape)
+        labels=torch.unique(map)
+        #print("label",len(labels),labels,"!!!!!!",map.shape)
+        for label in labels:
+            if label!=0:
+                where=(map == label).nonzero(as_tuple=False)
+                indexs.append(where)
 
-        # print(len(indexs),indexs[0][0],"1111111111111111111111")
-            
+    #print(len(indexs),indexs[0][0],"1111111111111111111111")
+        
     return indexs
 
 

@@ -16,9 +16,10 @@ class nnUNetLogger(object):
     """
     def __init__(self, verbose: bool = False):
         self.my_fantastic_logging = {
-            'mean_fg_dice': list(),
-            'ema_fg_dice': list(),
-            'dice_per_class_or_region': list(),
+            #FIXME: disable everything with dice
+            # 'mean_fg_dice': list(),
+            # 'ema_fg_dice': list(),
+            # 'dice_per_class_or_region': list(),
             'train_losses': list(),
             'val_losses': list(),
             'lrs': list(),
@@ -46,10 +47,10 @@ class nnUNetLogger(object):
             self.my_fantastic_logging[key][epoch] = value
 
         # handle the ema_fg_dice special case! It is automatically logged when we add a new mean_fg_dice
-        if key == 'mean_fg_dice':
-            new_ema_pseudo_dice = self.my_fantastic_logging['ema_fg_dice'][epoch - 1] * 0.9 + 0.1 * value \
-                if len(self.my_fantastic_logging['ema_fg_dice']) > 0 else value
-            self.log('ema_fg_dice', new_ema_pseudo_dice, epoch)
+        # if key == 'mean_fg_dice':
+        #     new_ema_pseudo_dice = self.my_fantastic_logging['ema_fg_dice'][epoch - 1] * 0.9 + 0.1 * value \
+        #         if len(self.my_fantastic_logging['ema_fg_dice']) > 0 else value
+        #     self.log('ema_fg_dice', new_ema_pseudo_dice, epoch)
 
     def plot_progress_png(self, output_folder):
         # we infer the epoch form our internal logging
@@ -58,19 +59,19 @@ class nnUNetLogger(object):
         fig, ax_all = plt.subplots(3, 1, figsize=(30, 54))
         # regular progress.png as we are used to from previous nnU-Net versions
         ax = ax_all[0]
-        ax2 = ax.twinx()
+        # ax2 = ax.twinx()#FIXME: for dice disable
         x_values = list(range(epoch + 1))
         ax.plot(x_values, self.my_fantastic_logging['train_losses'][:epoch + 1], color='b', ls='-', label="loss_tr", linewidth=4)
         ax.plot(x_values, self.my_fantastic_logging['val_losses'][:epoch + 1], color='r', ls='-', label="loss_val", linewidth=4)
-        ax2.plot(x_values, self.my_fantastic_logging['mean_fg_dice'][:epoch + 1], color='g', ls='dotted', label="pseudo dice",
-                 linewidth=3)
-        ax2.plot(x_values, self.my_fantastic_logging['ema_fg_dice'][:epoch + 1], color='g', ls='-', label="pseudo dice (mov. avg.)",
-                 linewidth=4)
+        # ax2.plot(x_values, self.my_fantastic_logging['mean_fg_dice'][:epoch + 1], color='g', ls='dotted', label="pseudo dice",
+        #          linewidth=3)
+        # ax2.plot(x_values, self.my_fantastic_logging['ema_fg_dice'][:epoch + 1], color='g', ls='-', label="pseudo dice (mov. avg.)",
+        #          linewidth=4)
         ax.set_xlabel("epoch")
         ax.set_ylabel("loss")
-        ax2.set_ylabel("pseudo dice")
+        # ax2.set_ylabel("pseudo dice")
         ax.legend(loc=(0, 1))
-        ax2.legend(loc=(0.2, 1))
+        # ax2.legend(loc=(0.2, 1))
 
         # epoch times to see whether the training speed is consistent (inconsistent means there are other jobs
         # clogging up the system)

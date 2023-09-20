@@ -48,7 +48,7 @@ from nnunetv2.training.dataloading.utils import get_case_identifiers, unpack_dat
 from nnunetv2.training.logging.nnunet_logger import nnUNetLogger
 from nnunetv2.training.loss.compound_losses import DC_and_CE_loss, DC_and_BCE_loss,MSE_and_DVH_loss
 from nnunetv2.training.loss.deep_supervision import DeepSupervisionWrapper
-from nnunetv2.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
+#from nnunetv2.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
 from nnunetv2.training.loss.DVH_loss import value_DVH_Loss
 from nnunetv2.training.lr_scheduler.polylr import PolyLRScheduler
 from nnunetv2.utilities.collate_outputs import collate_outputs
@@ -142,7 +142,7 @@ class nnUNetTrainer(object):
         self.weight_decay = 3e-5
         self.oversample_foreground_percent = 0.33
         self.num_iterations_per_epoch = 250
-        self.num_val_iterations_per_epoch = 50
+        self.num_val_iterations_per_epoch =50
         #NOTE: epoch
         self.num_epochs =250
         self.current_epoch = 0
@@ -181,7 +181,7 @@ class nnUNetTrainer(object):
         ### checkpoint saving stuff
         
         #FIXME: change check point save
-        self.save_every = 10
+        self.save_every = 1
         
         self.disable_checkpointing = False
 
@@ -350,16 +350,16 @@ class nnUNetTrainer(object):
         if self.label_manager.dose_label==True:
             print("self.label_manager.dose_label==True----->loss=torch.nn.MSELoss()")
             loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=1, weight_dvh=1,DVH_class=value_DVH_Loss)#FIXME: change loss
-        elif self.label_manager.has_regions:
-            loss = DC_and_BCE_loss({},
-                                   {'batch_dice': self.configuration_manager.batch_dice,
-                                    'do_bg': True, 'smooth': 1e-5, 'ddp': self.is_ddp},
-                                   use_ignore_label=self.label_manager.ignore_label is not None,
-                                   dice_class=MemoryEfficientSoftDiceLoss)
-        else:
-            loss = DC_and_CE_loss({'batch_dice': self.configuration_manager.batch_dice,
-                                   'smooth': 1e-5, 'do_bg': False, 'ddp': self.is_ddp}, {}, weight_ce=1, weight_dice=1,
-                                  ignore_label=self.label_manager.ignore_label, dice_class=MemoryEfficientSoftDiceLoss)
+        # elif self.label_manager.has_regions:
+        #     loss = DC_and_BCE_loss({},
+        #                            {'batch_dice': self.configuration_manager.batch_dice,
+        #                             'do_bg': True, 'smooth': 1e-5, 'ddp': self.is_ddp},
+        #                            use_ignore_label=self.label_manager.ignore_label is not None,
+        #                            dice_class=MemoryEfficientSoftDiceLoss)
+        # else:
+        #     loss = DC_and_CE_loss({'batch_dice': self.configuration_manager.batch_dice,
+        #                            'smooth': 1e-5, 'do_bg': False, 'ddp': self.is_ddp}, {}, weight_ce=1, weight_dice=1,
+        #                           ignore_label=self.label_manager.ignore_label, dice_class=MemoryEfficientSoftDiceLoss)
 
         deep_supervision_scales = self._get_deep_supervision_scales()
 
@@ -497,7 +497,7 @@ class nnUNetTrainer(object):
                 make_dot(tuple(self.network(torch.rand((1, self.num_input_channels,
                                                         *self.configuration_manager.patch_size),
                                                        device=self.device)))).render(
-                    join(self.output_folder, "network_architecture.pdf"), format='pdf')
+                    join(self.output_folder, "network_architecture"), format='pdf')
                 self.optimizer.zero_grad()
 
                 # broken.
@@ -956,10 +956,12 @@ class nnUNetTrainer(object):
             self.optimizer.step()
             
         #print("b_return_loss")
+        #print(l,"!!!!!!!!!!!!!!!!!!!!")
         return {'loss': l.detach().cpu().numpy()}
 
     def on_train_epoch_end(self, train_outputs: List[dict]):
         outputs = collate_outputs(train_outputs)
+        #print(outputs['loss'],"#################################")
 
         if self.is_ddp:
             losses_tr = [None for _ in range(dist.get_world_size())]
@@ -1008,16 +1010,16 @@ class nnUNetTrainer(object):
         target = target[0]
 
         # the following is needed for online evaluation. Fake dice (green line)
-        axes = [0] + list(range(2, len(output.shape)))
+        #axes = [0] + list(range(2, len(output.shape)))
 ## FIXME: validation with region may get problem
-        if self.label_manager.has_regions:
-            predicted_segmentation_onehot = (torch.sigmoid(output) > 0.5).long()
-        else:
-            # no need for softmax
-            output_seg = output.argmax(1)[:, None]
-            predicted_segmentation_onehot = torch.zeros(output.shape, device=output.device, dtype=torch.float32)
-            predicted_segmentation_onehot.scatter_(1, output_seg, 1)
-            del output_seg
+        # if self.label_manager.has_regions:
+        #     predicted_segmentation_onehot = (torch.sigmoid(output) > 0.5).long()
+        # else:
+        #     # no need for softmax
+        #     output_seg = output.argmax(1)[:, None]
+        #     predicted_segmentation_onehot = torch.zeros(output.shape, device=output.device, dtype=torch.float32)
+        #     predicted_segmentation_onehot.scatter_(1, output_seg, 1)
+        #     del output_seg
 
         if self.label_manager.has_ignore_label:
             if not self.label_manager.has_regions:
@@ -1030,43 +1032,43 @@ class nnUNetTrainer(object):
                 target = target[:, :-1]
         else:
             mask = None
+        return {'loss': l.detach().cpu().numpy()}
+        # tp, fp, fn, _ = get_tp_fp_fn_tn(predicted_segmentation_onehot, target, axes=axes, mask=mask)
 
-        tp, fp, fn, _ = get_tp_fp_fn_tn(predicted_segmentation_onehot, target, axes=axes, mask=mask)
+        # tp_hard = tp.detach().cpu().numpy()
+        # fp_hard = fp.detach().cpu().numpy()
+        # fn_hard = fn.detach().cpu().numpy()
+        # if not self.label_manager.has_regions:
+        #     # if we train with regions all segmentation heads predict some kind of foreground. In conventional
+        #     # (softmax training) there needs tobe one output for the background. We are not interested in the
+        #     # background Dice
+        #     # [1:] in order to remove background
+        #     tp_hard = tp_hard[1:]
+        #     fp_hard = fp_hard[1:]
+        #     fn_hard = fn_hard[1:]
 
-        tp_hard = tp.detach().cpu().numpy()
-        fp_hard = fp.detach().cpu().numpy()
-        fn_hard = fn.detach().cpu().numpy()
-        if not self.label_manager.has_regions:
-            # if we train with regions all segmentation heads predict some kind of foreground. In conventional
-            # (softmax training) there needs tobe one output for the background. We are not interested in the
-            # background Dice
-            # [1:] in order to remove background
-            tp_hard = tp_hard[1:]
-            fp_hard = fp_hard[1:]
-            fn_hard = fn_hard[1:]
-
-        return {'loss': l.detach().cpu().numpy(), 'tp_hard': tp_hard, 'fp_hard': fp_hard, 'fn_hard': fn_hard}
+        #return {'loss': l.detach().cpu().numpy(), 'tp_hard': tp_hard, 'fp_hard': fp_hard, 'fn_hard': fn_hard}
 
     def on_validation_epoch_end(self, val_outputs: List[dict]):
         outputs_collated = collate_outputs(val_outputs)
-        tp = np.sum(outputs_collated['tp_hard'], 0)
-        fp = np.sum(outputs_collated['fp_hard'], 0)
-        fn = np.sum(outputs_collated['fn_hard'], 0)
+        # tp = np.sum(outputs_collated['tp_hard'], 0)
+        # fp = np.sum(outputs_collated['fp_hard'], 0)
+        # fn = np.sum(outputs_collated['fn_hard'], 0)
 
         if self.is_ddp:
             world_size = dist.get_world_size()
 
-            tps = [None for _ in range(world_size)]
-            dist.all_gather_object(tps, tp)
-            tp = np.vstack([i[None] for i in tps]).sum(0)
+            # tps = [None for _ in range(world_size)]
+            # dist.all_gather_object(tps, tp)
+            # tp = np.vstack([i[None] for i in tps]).sum(0)
 
-            fps = [None for _ in range(world_size)]
-            dist.all_gather_object(fps, fp)
-            fp = np.vstack([i[None] for i in fps]).sum(0)
+            # fps = [None for _ in range(world_size)]
+            # dist.all_gather_object(fps, fp)
+            # fp = np.vstack([i[None] for i in fps]).sum(0)
 
-            fns = [None for _ in range(world_size)]
-            dist.all_gather_object(fns, fn)
-            fn = np.vstack([i[None] for i in fns]).sum(0)
+            # fns = [None for _ in range(world_size)]
+            # dist.all_gather_object(fns, fn)
+            # fn = np.vstack([i[None] for i in fns]).sum(0)
 
             losses_val = [None for _ in range(world_size)]
             dist.all_gather_object(losses_val, outputs_collated['loss'])
@@ -1074,11 +1076,11 @@ class nnUNetTrainer(object):
         else:
             loss_here = np.mean(outputs_collated['loss'])
 
-        global_dc_per_class = [i for i in [2 * i / (2 * i + j + k) for i, j, k in
-                                           zip(tp, fp, fn)]]
-        mean_fg_dice = np.nanmean(global_dc_per_class)
-        self.logger.log('mean_fg_dice', mean_fg_dice, self.current_epoch)
-        self.logger.log('dice_per_class_or_region', global_dc_per_class, self.current_epoch)
+        # global_dc_per_class = [i for i in [2 * i / (2 * i + j + k) for i, j, k in
+        #                                    zip(tp, fp, fn)]]
+        # mean_fg_dice = np.nanmean(global_dc_per_class)
+        # self.logger.log('mean_fg_dice', mean_fg_dice, self.current_epoch)
+        # self.logger.log('dice_per_class_or_region', global_dc_per_class, self.current_epoch)
         self.logger.log('val_losses', loss_here, self.current_epoch)
 
     def on_epoch_start(self):
@@ -1092,8 +1094,8 @@ class nnUNetTrainer(object):
         self.print_to_log_file('val_loss', np.round(self.logger.my_fantastic_logging['val_losses'][-1], decimals=4))
         
         #FIXME: pseudo dice disable
-        self.print_to_log_file('Pseudo dice', [np.round(i, decimals=4) for i in
-                                               self.logger.my_fantastic_logging['dice_per_class_or_region'][-1]])
+        # self.print_to_log_file('Pseudo dice', [np.round(i, decimals=4) for i in
+        #                                        self.logger.my_fantastic_logging['dice_per_class_or_region'][-1]])
         self.print_to_log_file(
             f"Epoch time: {np.round(self.logger.my_fantastic_logging['epoch_end_timestamps'][-1] - self.logger.my_fantastic_logging['epoch_start_timestamps'][-1], decimals=2)} s")
 

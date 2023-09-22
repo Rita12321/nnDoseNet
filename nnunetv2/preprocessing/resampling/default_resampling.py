@@ -152,7 +152,7 @@ def resample_data_or_seg(data: np.ndarray, new_shape: Union[Tuple[float, ...], L
 #NOTE: changed change the setting 
     if is_seg:
         resize_fn = resize #it would change to onehot encoded
-        kwargs = {'mode':'constant','cval': 0 ,'anti_aliasing': False}#OrderedDict() #FIXME: add mode nearest  ,'cval':0
+        kwargs = {'mode':'constant','cval':0}#OrderedDict() #FIXME: add mode nearest
 
     else:
         resize_fn = resize

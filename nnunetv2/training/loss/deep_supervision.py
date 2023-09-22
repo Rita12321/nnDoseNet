@@ -32,5 +32,4 @@ class DeepSupervisionWrapper(nn.Module):
             if i == 0:
                 continue
             l += weights[i] * self.loss(*inputs)
-           
         return l

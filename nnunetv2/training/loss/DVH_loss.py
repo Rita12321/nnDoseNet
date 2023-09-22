@@ -15,41 +15,35 @@ class value_DVH_Loss(nn.Module):
 
         self.ddp = ddp
 
-    def forward(self, x:torch.Tensor, y:torch.Tensor, mask_index):
+    def forward(self, x, y, mask_index):
         # print(x.shape,"!!!!!!!!!!!!!!!!!!!!!!11")
         with torch.no_grad():
-            # print(x.is_cuda,"net_output!!!!!!!!!!!!!!!!!!!!!!!!!!111111")
-            # print(y.is_cuda,"target!!!!!!!!!!!!!!!!!!!!!!!!!!111111")
-
-
-            maes=torch.tensor(0).cuda()
+            maes=torch.tensor(0)
             L=len(mask_index)
-            if L>0:
+            for l in range(0,L):
                 
-                for l in range(0,L):
+                dose_x=torch.Tensor([])
+                dose_y=torch.Tensor([])
+
+                for i  in mask_index[l]:
+                    index=(i[0],0,i[2],i[3],i[4])
+                    # print("x",x.shape,"  ",index)
+                    # print("x_dose",x[index], index)
+                    dose_x=torch.cat((dose_x,torch.Tensor([x[index]])),0)
+                    dose_y=torch.cat((dose_y,torch.Tensor([y[index]])),0)
                     
-                    dose_x=torch.Tensor([]).cuda()
-                    dose_y=torch.Tensor([]).cuda()
+                dose_x,_=torch.sort(dose_x)
+                dose_y,_=torch.sort(dose_y) 
+                maes=maes+torch.mean(torch.abs(dose_x-dose_y))
+                
+        # if self.ddp and self.batch_dice: #3dnet bath_dice false, so basically wont use this
+        #     tp = AllGatherGrad.apply(tp).sum(0)
+        #     fp = AllGatherGrad.apply(fp).sum(0)
+        #     fn = AllGatherGrad.apply(fn).sum(0)
 
-                    for i  in mask_index[l]:
-                        index=(i[0],0,i[2],i[3],i[4])
 
-                        dose_x=torch.cat((dose_x,torch.Tensor([x[index]]).cuda()),0)
-                        dose_y=torch.cat((dose_y,torch.Tensor([y[index]]).cuda()),0)
-                        
-                    dose_x,_=torch.sort(dose_x)
-                    dose_y,_=torch.sort(dose_y) 
-                    maes=maes+torch.mean(torch.abs(dose_x-dose_y))
-                    
-                    # if self.ddp and self.batch_dice: #3dnet batch_dice false, so basically wont use this
-                    #     tp = AllGatherGrad.apply(tp).sum(0)
-                    #     fp = AllGatherGrad.apply(fp).sum(0)
-                    #     fn = AllGatherGrad.apply(fn).sum(0)
-                    #print(maes.is_cuda,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
 
-                    # print(maes)
-            else:
-                L=1# prevent from /0-->nan
+        # print(maes)
 
         return maes/L
 

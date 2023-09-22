@@ -144,7 +144,7 @@ class nnUNetTrainer(object):
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
         #NOTE: epoch
-        self.num_epochs =250
+        self.num_epochs =50
         self.current_epoch = 0
 
         ### Dealing with labels/regions
@@ -501,7 +501,6 @@ class nnUNetTrainer(object):
                 self.optimizer.zero_grad()
 
                 # broken.
-                print("plot_network_architecture")
 
 
             except Exception as e:
@@ -716,6 +715,8 @@ class nnUNetTrainer(object):
             p_el_per_sample=0, p_scale_per_sample=0.2, p_rot_per_sample=0.2,
             independent_scale_for_each_axis=False  # todo experiment with this
         ))
+        if mirror_axes is not None and len(mirror_axes) > 0:
+            tr_transforms.append(MirrorTransform(mirror_axes))
         
         if deep_supervision_scales is not None:#FIXME:
             tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data',
@@ -739,8 +740,8 @@ class nnUNetTrainer(object):
         tr_transforms.append(GammaTransform((0.7, 1.5), True, True, retain_stats=True, p_per_sample=0.1))
         tr_transforms.append(GammaTransform((0.7, 1.5), False, True, retain_stats=True, p_per_sample=0.3))
 
-        if mirror_axes is not None and len(mirror_axes) > 0:
-            tr_transforms.append(MirrorTransform(mirror_axes))
+        # if mirror_axes is not None and len(mirror_axes) > 0:
+        #     tr_transforms.append(MirrorTransform(mirror_axes))
 
         if use_mask_for_norm is not None and any(use_mask_for_norm):
             tr_transforms.append(MaskTransform([i for i in range(len(use_mask_for_norm)) if use_mask_for_norm[i]],
@@ -903,8 +904,11 @@ class nnUNetTrainer(object):
         #print(batch.keys())#dict_keys(['data', 'properties', 'keys', 'target'])
         data = batch['data']#(b,c,x,y,z) check basedataloader shape
         target = batch['target']
-        ddp_data=batch['ddp_data']
-        # print(data.shape,torch.max(data[:,0,...]),torch.max(data[:,1,...]),torch.max(data[:,2,...]))
+        ddp_data = batch['ddp_data']
+        temp=ddp_data[0]
+        # print(temp.shape)
+        # print(torch.max(temp[:,0,...]),torch.max(temp[:,1,...]))
+        # print(torch.unique(temp[:,0,...]),torch.unique(temp[:,1,...]))
         # #print(ddp_data.shape,torch.max(data[:,0,...]),torch.max(ddp_data[:,1,...]),torch.max(ddp_data[:,2,...]))
         # print(len(target),target[0].shape,target[1].shape)
         # print("ddp",len(ddp_data),ddp_data[0].shape,ddp_data[1].shape)

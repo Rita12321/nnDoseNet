@@ -29,6 +29,9 @@ from nnunetv2.utilities.utils import get_identifiers_from_splitted_dataset_folde
 
 
 def verify_labels(label_file: str, readerclass: Type[BaseReaderWriter], expected_labels: List[int]) -> bool:
+    
+
+    
     rw = readerclass()
     seg, properties = rw.read_seg(label_file)
     found_labels = np.sort(pd.unique(seg.ravel()))  # np.unique(seg)
@@ -45,6 +48,7 @@ def verify_labels(label_file: str, readerclass: Type[BaseReaderWriter], expected
 
 def check_cases(base_folder: str, case_identifier: str, expected_num_channels: int,
                 readerclass: Type[BaseReaderWriter], file_ending: str) -> bool:
+    
     rw = readerclass()
     ret = True
     file_seg = join(base_folder, 'labelsTr', case_identifier + file_ending)
@@ -120,7 +124,7 @@ def check_cases(base_folder: str, case_identifier: str, expected_num_channels: i
     return ret
 
 
-def verify_dataset_integrity(folder: str, num_processes: int = 8) -> None:
+def verify_dataset_integrity(folder: str, num_processes: int = 8,dose: bool=False) -> None:
     """
     folder needs the imagesTr, imagesTs and labelsTr subfolders. There also needs to be a dataset.json
     checks if the expected number of training cases and labels are present
@@ -168,7 +172,7 @@ def verify_dataset_integrity(folder: str, num_processes: int = 8) -> None:
 
     # no plans exist yet, so we can't use PlansManager and gotta roll with the default. It's unlikely to cause
     # problems anyway
-    label_manager = LabelManager(dataset_json['labels'], regions_class_order=dataset_json.get('regions_class_order'))
+    label_manager = LabelManager(dataset_json['labels'], regions_class_order=dataset_json.get('regions_class_order'),dose_label=dose)
     expected_labels = label_manager.all_labels
     if label_manager.has_ignore_label:
         expected_labels.append(label_manager.ignore_label)

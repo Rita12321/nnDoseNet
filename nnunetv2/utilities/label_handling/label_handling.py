@@ -20,11 +20,11 @@ if TYPE_CHECKING:
 
 class LabelManager(object):
     def __init__(self, label_dict: dict, regions_class_order: Union[List[int], None], force_use_labels: bool = False,
-                 inference_nonlin=None):
+                 dose_label:bool = False, inference_nonlin=None):
         self._sanity_check(label_dict)
         self.label_dict = label_dict      
 #NOTE: add dose_label
-        self.dose_label = None
+        self.dose_label = dose_label
              
         self.regions_class_order = regions_class_order
         self._force_use_labels = force_use_labels
@@ -55,7 +55,6 @@ class LabelManager(object):
 
 ## NOTE no need to change, it only check if there is label back ground.
     def _sanity_check(self, label_dict: dict):
-        #print(" I don't care, I am ignoring the sanity check ")
         if not 'background' in label_dict.keys():
             raise RuntimeError('Background label not declared (remeber that this should be label 0!)')
         bg_label = label_dict['background']

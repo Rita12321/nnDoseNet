@@ -22,19 +22,20 @@ from nnunetv2.utilities.utils import get_identifiers_from_splitted_dataset_folde
 class ExperimentPlanner(object):
     def __init__(self, dataset_name_or_id: Union[str, int],
                  gpu_memory_target_in_gb: float = 8,
-                 preprocessor_name: str = 'DefaultPreprocessor', plans_name: str = 'nnUNetPlans',
-                 overwrite_target_spacing: Union[List[float], Tuple[float, ...]] = None,
+                 preprocessor_name: str = 'DefaultPreprocessor', plans_name: str = 'nnUNetPlans',dose=False,
+                 overwrite_target_spacing: Union[List[float], Tuple[float, ...]] = None, 
                  suppress_transpose: bool = False):
         """
         overwrite_target_spacing only affects 3d_fullres! (but by extension 3d_lowres which starts with fullres may
         also be affected
         """
-
+        self.dose=dose
         self.dataset_name = maybe_convert_to_dataset_name(dataset_name_or_id)
         self.suppress_transpose = suppress_transpose
         self.raw_dataset_folder = join(nnUNet_raw, self.dataset_name)
         preprocessed_folder = join(nnUNet_preprocessed, self.dataset_name)
         self.dataset_json = load_json(join(self.raw_dataset_folder, 'dataset.json'))
+        self.mask_channel=None
 
         # load dataset fingerprint
         if not isfile(join(preprocessed_folder, 'dataset_fingerprint.json')):
@@ -82,6 +83,13 @@ class ExperimentPlanner(object):
         return determine_reader_writer_from_dataset_json(self.dataset_json, join(self.raw_dataset_folder, 'imagesTr',
                                                                                  training_identifiers[0] + '_0000' +
                                                                                  self.dataset_json['file_ending']))
+    def check_if_masked_channel(self):
+        #print(self.dataset_json.keys(),"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        if 'mask_channel' in self.dataset_json.keys() and self.dataset_json['mask_channel'] != 'None':
+            self.mask_channel=self.dataset_json['mask_channel'] 
+            return True
+        return False
+      
 
     @staticmethod
     @lru_cache(maxsize=None)
@@ -125,22 +133,42 @@ class ExperimentPlanner(object):
         
         resampling_data = resample_data_or_seg_to_shape
         resampling_data_kwargs = {
+            "is_seg": False,         
+            "order": 3,
+            "order_z": 0,
+            "force_separate_z": None,
+        }
+        if self.dose:
+            resampling_target = resample_data_or_seg_to_shape
+            resampling_target_kwargs = {
+                "is_seg": False,
+                "order": 3,     
+                "order_z": 0,
+                "force_separate_z": None,
+            }
+        else:
+            resampling_target = resample_data_or_seg_to_shape
+            resampling_target_kwargs = {
+                "is_seg": True,
+                "order": 0,     
+                "order_z": 0,
+                "force_separate_z": None,
+            }           
+        
+  
+        return resampling_data, resampling_data_kwargs, resampling_target, resampling_target_kwargs
+    def determine_mask_channel_resampling(self, *args, **kwargs):
+     
+        
+        resampling_data_mask = resample_data_or_seg_to_shape
+        resampling_data_mask_kwargs = {
             "is_seg": True,         
             "order": 0,
             "order_z": 0,
             "force_separate_z": None,
         }
-        resampling_seg = resample_data_or_seg_to_shape
-        resampling_seg_kwargs = {
-            "is_seg": False,
-            "order": 0,     
-            "order_z": 0,
-            "force_separate_z": None,
-        }
-        
   
-        return resampling_data, resampling_data_kwargs, resampling_seg, resampling_seg_kwargs
-
+        return resampling_data_mask, resampling_data_mask_kwargs
     def determine_segmentation_softmax_export_fn(self, *args, **kwargs):
         """
         function must be callable(data, new_shape, current_spacing, new_spacing, **kwargs). The new_shape should be
@@ -179,7 +207,6 @@ class ExperimentPlanner(object):
         sizes = self.dataset_fingerprint['shapes_after_crop']
 
         target = np.percentile(np.vstack(spacings), 50, 0)
-        #target = np.min(np.vstack(spacings), 0)
 
         # todo sizes_after_resampling = [compute_new_shape(j, i, target) for i, j in zip(spacings, sizes)]
         
@@ -346,7 +373,14 @@ class ExperimentPlanner(object):
         bs_corresponding_to_5_percent = round(
             approximate_n_voxels_dataset * 0.05 / np.prod(patch_size, dtype=np.float64))
         batch_size = max(min(batch_size, bs_corresponding_to_5_percent), self.UNet_min_batch_size)
-
+        dose=self.dose
+        resampling_data_mask=None
+        resampling_data_mask_kwargs=None
+        mask_channel=None
+        if self.check_if_masked_channel():
+            mask_channel=self.mask_channel
+            resampling_data_mask, resampling_data_mask_kwargs=self.determine_mask_channel_resampling()            
+        
         resampling_data, resampling_data_kwargs, resampling_seg, resampling_seg_kwargs = self.determine_resampling()
         resampling_softmax, resampling_softmax_kwargs = self.determine_segmentation_softmax_export_fn()
 
@@ -356,6 +390,7 @@ class ExperimentPlanner(object):
         plan = {
             'data_identifier': data_identifier,
             'preprocessor_name': self.preprocessor_name,
+            'dose': dose,
             'batch_size': batch_size,
             'patch_size': patch_size,
             'median_image_size_in_voxels': median_shape,
@@ -376,6 +411,9 @@ class ExperimentPlanner(object):
             'resampling_fn_seg_kwargs': resampling_seg_kwargs,
             'resampling_fn_probabilities': resampling_softmax.__name__,
             'resampling_fn_probabilities_kwargs': resampling_softmax_kwargs,
+            'mask_channel' : mask_channel,
+            'resampling_fn_data_mask' : resampling_data_mask.__name__,
+            'resampling_fn_data_mask_kwargs': resampling_data_mask_kwargs
         }
         return plan
 

@@ -17,7 +17,8 @@ from nnunetv2.configuration import default_num_processes
 def extract_fingerprint_dataset(dataset_id: int,
                                 fingerprint_extractor_class: Type[
                                     DatasetFingerprintExtractor] = DatasetFingerprintExtractor,
-                                num_processes: int = default_num_processes, check_dataset_integrity: bool = False,
+                                num_processes: int = default_num_processes, check_dataset_integrity: bool = False, 
+                                dose: bool = False,
                                 clean: bool = True, verbose: bool = True):
     """
     Returns the fingerprint as a dictionary (additionally to saving it)
@@ -26,14 +27,14 @@ def extract_fingerprint_dataset(dataset_id: int,
     print(dataset_name)
 
     if check_dataset_integrity:
-        verify_dataset_integrity(join(nnUNet_raw, dataset_name), num_processes)
+        verify_dataset_integrity(join(nnUNet_raw, dataset_name), num_processes,dose)
 
     fpe = fingerprint_extractor_class(dataset_id, num_processes, verbose=verbose)
     return fpe.run(overwrite_existing=clean)
 
 
 def extract_fingerprints(dataset_ids: List[int], fingerprint_extractor_class_name: str = 'DatasetFingerprintExtractor',
-                         num_processes: int = default_num_processes, check_dataset_integrity: bool = False,
+                         num_processes: int = default_num_processes, check_dataset_integrity: bool = False, dose: bool =False,
                          clean: bool = True, verbose: bool = True):
     """
     clean = False will not actually run this. This is just a switch for use with nnUNetv2_plan_and_preprocess where
@@ -43,7 +44,7 @@ def extract_fingerprints(dataset_ids: List[int], fingerprint_extractor_class_nam
                                                               fingerprint_extractor_class_name,
                                                               current_module="nnunetv2.experiment_planning")
     for d in dataset_ids:
-        extract_fingerprint_dataset(d, fingerprint_extractor_class, num_processes, check_dataset_integrity, clean,
+        extract_fingerprint_dataset(d, fingerprint_extractor_class, num_processes, check_dataset_integrity, dose, clean,
                                     verbose)
 
 
@@ -51,7 +52,7 @@ def plan_experiment_dataset(dataset_id: int,
                             experiment_planner_class: Type[ExperimentPlanner] = ExperimentPlanner,
                             gpu_memory_target_in_gb: float = 8, preprocess_class_name: str = 'DefaultPreprocessor',
                             overwrite_target_spacing: Optional[Tuple[float, ...]] = None,
-                            overwrite_plans_name: Optional[str] = None) -> dict:
+                            overwrite_plans_name: Optional[str] = None,dose=False) -> dict:
     """
     overwrite_target_spacing ONLY applies to 3d_fullres and 3d_cascade fullres!
     """
@@ -61,6 +62,7 @@ def plan_experiment_dataset(dataset_id: int,
     return experiment_planner_class(dataset_id,
                                     gpu_memory_target_in_gb=gpu_memory_target_in_gb,
                                     preprocessor_name=preprocess_class_name,
+                                    dose=dose,
                                     overwrite_target_spacing=[float(i) for i in overwrite_target_spacing] if
                                     overwrite_target_spacing is not None else overwrite_target_spacing,
                                     suppress_transpose=False,  # might expose this later,
@@ -71,7 +73,7 @@ def plan_experiment_dataset(dataset_id: int,
 def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str = 'ExperimentPlanner',
                      gpu_memory_target_in_gb: float = 8, preprocess_class_name: str = 'DefaultPreprocessor',
                      overwrite_target_spacing: Optional[Tuple[float, ...]] = None,
-                     overwrite_plans_name: Optional[str] = None):
+                     overwrite_plans_name: Optional[str] = None, dose=False):
     """
     overwrite_target_spacing ONLY applies to 3d_fullres and 3d_cascade fullres!
     """
@@ -82,7 +84,7 @@ def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str 
                                                      current_module="nnunetv2.experiment_planning")
     for d in dataset_ids:
         plan_experiment_dataset(d, experiment_planner, gpu_memory_target_in_gb, preprocess_class_name,
-                                overwrite_target_spacing, overwrite_plans_name)
+                                overwrite_target_spacing, overwrite_plans_name,dose)
 
 
 def preprocess_dataset(dataset_id: int,

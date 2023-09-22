@@ -2,7 +2,9 @@ from nnunetv2.configuration import default_num_processes
 from nnunetv2.experiment_planning.plan_and_preprocess_api import extract_fingerprints, plan_experiments, preprocess
 
 
-def extract_fingerprint_entry():
+
+
+def extract_fingerprint_entry():#nnUNetv2_extract_fingerprint
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', nargs='+', type=int,
@@ -17,6 +19,9 @@ def extract_fingerprint_entry():
     parser.add_argument("--verify_dataset_integrity", required=False, default=False, action="store_true",
                         help="[RECOMMENDED] set this flag to check the dataset integrity. This is useful and should be done once for "
                              "each dataset!")
+    parser.add_argument('--dose', type=bool, default=False, required=False,
+                        help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
+                             f'Default: {False}') #FIXME: add dose mode
     parser.add_argument("--clean", required=False, default=False, action="store_true",
                         help='[OPTIONAL] Set this flag to overwrite existing fingerprints. If this flag is not set and a '
                              'fingerprint already exists, the fingerprint extractor will not run.')
@@ -24,10 +29,10 @@ def extract_fingerprint_entry():
                         help='Set this to print a lot of stuff. Useful for debugging. Will disable progrewss bar! '
                              'Recommended for cluster environments')
     args, unrecognized_args = parser.parse_known_args()
-    extract_fingerprints(args.d, args.fpe, args.np, args.verify_dataset_integrity, args.clean, args.verbose)
+    extract_fingerprints(args.d, args.fpe, args.np, args.verify_dataset_integrity, args.dose, args.clean, args.verbose)
 
 
-def plan_experiment_entry():
+def plan_experiment_entry():#nnUNetv2_plan_experiment
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', nargs='+', type=int,
@@ -61,9 +66,12 @@ def plan_experiment_entry():
                              'differently named plans file such that the nnunet default plans are not '
                              'overwritten. You will then need to specify your custom plans file with -p whenever '
                              'running other nnunet commands (training, inference etc)')
+    parser.add_argument('--dose', default=False, required=False, action="store_true",
+                        help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
+                             f'Default: {False}') #FIXME: add dose mode
     args, unrecognized_args = parser.parse_known_args()
     plan_experiments(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing,
-                     args.overwrite_plans_name)
+                     args.overwrite_plans_name,args.dose)
 
 
 def preprocess_entry():
@@ -106,7 +114,7 @@ def preprocess_entry():
     preprocess(args.d, args.plans_name, configurations=args.c, num_processes=np, verbose=args.verbose)
 
 
-def plan_and_preprocess_entry():
+def plan_and_preprocess_entry():#nnUNetv2_plan_and_preprocess
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', nargs='+', type=int,
@@ -120,6 +128,9 @@ def plan_and_preprocess_entry():
     parser.add_argument("--verify_dataset_integrity", required=False, default=False, action="store_true",
                         help="[RECOMMENDED] set this flag to check the dataset integrity. This is useful and should be done once for "
                              "each dataset!")
+    parser.add_argument('--dose', default=False, required=False, action="store_true",
+                        help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
+                             f'Default: {False}') #FIXME: add dose mode
     parser.add_argument('--no_pp', default=False, action='store_true', required=False,
                         help='[OPTIONAL] Set this to only run fingerprint extraction and experiment planning (no '
                              'preprocesing). Useful for debugging.')
@@ -181,22 +192,12 @@ def plan_and_preprocess_entry():
 
     # fingerprint extraction
     print("Fingerprint extraction...")
-    extract_fingerprints(args.d, args.fpe, args.npfp, args.verify_dataset_integrity, args.clean, args.verbose)
+    extract_fingerprints(args.d, args.fpe, args.npfp, args.verify_dataset_integrity, args.dose, args.clean, args.verbose)
 
     # experiment planning
-    print('Experiment planning...')        # all_labels = []
-        # for k, r in self.label_dict.items():
-        #     # ignore label is not going to be used, hence the name. Duh.
-        #     if k == 'ignore':
-        #         continue
-        #     if isinstance(r, (tuple, list)):
-        #         for ri in r:
-        #             all_labels.append(int(ri))
-        #     else:
-        #         all_labels.append(int(r))
-        # all_labels = list(np.unique(all_labels))
-        # all_labels.sort()
-    plan_experiments(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing, args.overwrite_plans_name)
+    print('Experiment planning...')        
+    print(args.dose)
+    plan_experiments(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing, args.overwrite_plans_name, args.dose)
 
     # manage default np
     

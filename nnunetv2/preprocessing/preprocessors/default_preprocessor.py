@@ -80,8 +80,27 @@ class DefaultPreprocessor(object):
         # print('current shape', data.shape[1:], 'current_spacing', original_spacing,
         #       '\ntarget shape', new_shape, 'target_spacing', target_spacing)
         old_shape = data.shape[1:]
-     
-        data = configuration_manager.resampling_fn_data(data, new_shape, original_spacing, target_spacing)
+     #FIXME: add masked_channel process
+        mask_channel=configuration_manager.mask_channel
+
+        if mask_channel is not None:   
+        #if False:  
+            
+            for i in range(0,len(data.shape[0])):
+                if i in mask_channel:
+                    if i==0:
+                        data_out=configuration_manager.resampling_fn_data_mask(data[i], new_shape, original_spacing, target_spacing)
+                    else:
+                        data_out.stack(configuration_manager.resampling_fn_data_mask(data[i], new_shape, original_spacing, target_spacing))
+                else:
+                    if i==0:
+                        data_out=configuration_manager.resampling_fn_data_mask(data[i], new_shape, original_spacing, target_spacing)
+                    else:
+                        data_out.stack(configuration_manager.resampling_fn_data(data[i], new_shape, original_spacing, target_spacing))
+
+            data=data_out
+        else:        
+            data = configuration_manager.resampling_fn_data(data, new_shape, original_spacing, target_spacing)
         seg = configuration_manager.resampling_fn_seg(seg, new_shape, original_spacing, target_spacing)
         if self.verbose:
             print(f'old shape: {old_shape}, new_shape: {new_shape}, old_spacing: {original_spacing}, '

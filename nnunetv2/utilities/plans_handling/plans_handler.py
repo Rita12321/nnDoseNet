@@ -43,7 +43,9 @@ class ConfigurationManager(object):
     @property
     def preprocessor_name(self) -> str:
         return self.configuration['preprocessor_name']
-
+    @property
+    def dose(self) -> bool:
+        return self.configuration['dose']
     @property
     @lru_cache(maxsize=1)
     def preprocessor_class(self) -> Type[DefaultPreprocessor]:
@@ -159,7 +161,23 @@ class ConfigurationManager(object):
         fn = recursive_find_resampling_fn_by_name(self.configuration['resampling_fn_seg'])
         fn = partial(fn, **self.configuration['resampling_fn_seg_kwargs'])
         return fn
-
+    
+    @property
+    @lru_cache(maxsize=1)
+    def resampling_fn_data_mask(self) -> Callable[
+        [Union[torch.Tensor, np.ndarray],
+         Union[Tuple[int, ...], List[int], np.ndarray],
+         Union[Tuple[float, ...], List[float], np.ndarray],
+         Union[Tuple[float, ...], List[float], np.ndarray]
+         ],
+        Union[torch.Tensor, np.ndarray]]:
+        fn = recursive_find_resampling_fn_by_name(self.configuration['resampling_fn_data_mask'])
+        fn = partial(fn, **self.configuration['resampling_fn_data_mask_kwargs'])
+        return fn
+    @property
+    def mask_channel(self) :
+        return self.configuration['mask_channel']
+    
     @property
     def batch_dice(self) -> bool:
         return self.configuration['batch_dice']

@@ -85,7 +85,7 @@ def resample_data_or_seg_to_shape(data: Union[torch.Tensor, np.ndarray],
     """
     needed for segmentation export. Stupid, I know. Maybe we can fix that with Leos new resampling functions
     """
-    #print(" resample_data_or_seg_to_shape")
+    print(" resample_data_or_seg_to_shape")
     if isinstance(data, torch.Tensor):
         data = data.cpu().numpy()
 
@@ -152,7 +152,7 @@ def resample_data_or_seg(data: np.ndarray, new_shape: Union[Tuple[float, ...], L
 #NOTE: changed change the setting 
     if is_seg:
         resize_fn = resize #it would change to onehot encoded
-        kwargs = {'mode':'constant','cval':0}#OrderedDict() #FIXME: add mode nearest
+        kwargs = {'mode':'nearest'}#OrderedDict()
 
     else:
         resize_fn = resize

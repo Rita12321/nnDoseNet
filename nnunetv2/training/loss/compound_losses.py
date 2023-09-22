@@ -152,7 +152,7 @@ class DC_and_topk_loss(nn.Module):
         return result
 
 class MSE_and_DVH_loss(nn.Module):
-    def __init__(self, DVH_kwargs, MSE_kwargs, weight_mse=0.5, weight_dvh=0.5,
+    def __init__(self, DVH_kwargs, MSE_kwargs, weight_mse=1, weight_dvh=1,
                  DVH_class=value_DVH_Loss):
         """ #FIXME: change description
         Weights for CE and Dice do not need to sum to one. You can set whatever you want.
@@ -182,11 +182,11 @@ class MSE_and_DVH_loss(nn.Module):
         :return:
         """
         #print("net_output.shape",net_output.shape,"target.shape",target.shape,"data.shape",data.shape)
+    
 
-        
         dvh_loss = self.DVH(net_output, target, mask_index=get_roi_indexs(data)) \
             if self.weight_dvh != 0 else 0
-            
+        dvh_loss=torch.tensor(1)
         mse_loss = self.MSE(net_output, target) \
             if self.weight_mse != 0 else 0
 
@@ -203,14 +203,14 @@ def get_roi_indexs(data:torch.Tensor, axes=None, square=False):
     # data=data.to(torch.int8)
         indexs = []
         #for c in (1,2):#PTV=1, OAR=2
-        #data.cuda()#[:,c,...]
-        #print(data.is_cuda,"!!!!!!!!!!!!!!!!!!!!!!!!!!111111")
+        map=data#[:,c,...]
+        
         #print(map.shape)
-        labels=torch.unique(data)
+        labels=torch.unique(map)
         #print("label",len(labels),labels,"!!!!!!",map.shape)
         for label in labels:
             if label!=0:
-                where=(data==label).nonzero(as_tuple=False)
+                where=(map == label).nonzero(as_tuple=False)
                 indexs.append(where)
 
     #print(len(indexs),indexs[0][0],"1111111111111111111111")

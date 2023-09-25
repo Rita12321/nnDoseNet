@@ -82,26 +82,22 @@ class DefaultPreprocessor(object):
         old_shape = data.shape[1:]
      #FIXME: add masked_channel process
         mask_channel=configuration_manager.mask_channel
-
-        if mask_channel is not None:   
-        #if False:  
-            
-            for i in range(0,len(data.shape[0])):
+        if mask_channel is not None:  
+            for i in range(0,data.shape[0]):
                 if i in mask_channel:
-                    if i==0:
-                        data_out=configuration_manager.resampling_fn_data_mask(data[i], new_shape, original_spacing, target_spacing)
-                    else:
-                        data_out.stack(configuration_manager.resampling_fn_data_mask(data[i], new_shape, original_spacing, target_spacing))
+                    temp=configuration_manager.resampling_fn_data_mask(np.expand_dims(data[i],axis=0), new_shape, original_spacing, target_spacing)
                 else:
-                    if i==0:
-                        data_out=configuration_manager.resampling_fn_data_mask(data[i], new_shape, original_spacing, target_spacing)
-                    else:
-                        data_out.stack(configuration_manager.resampling_fn_data(data[i], new_shape, original_spacing, target_spacing))
+                    temp=configuration_manager.resampling_fn_data(np.expand_dims(data[i],axis=0), new_shape, original_spacing, target_spacing)
+                if i ==0:
+                    data_out=temp
+                else:
+                    data_out=np.vstack((data_out,temp))
 
-            data=data_out
         else:        
             data = configuration_manager.resampling_fn_data(data, new_shape, original_spacing, target_spacing)
+
         seg = configuration_manager.resampling_fn_seg(seg, new_shape, original_spacing, target_spacing)
+       
         if self.verbose:
             print(f'old shape: {old_shape}, new_shape: {new_shape}, old_spacing: {original_spacing}, '
                   f'new_spacing: {target_spacing}, fn_data: {configuration_manager.resampling_fn_data}')

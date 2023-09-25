@@ -85,7 +85,7 @@ def resample_data_or_seg_to_shape(data: Union[torch.Tensor, np.ndarray],
     """
     needed for segmentation export. Stupid, I know. Maybe we can fix that with Leos new resampling functions
     """
-    print(" resample_data_or_seg_to_shape")
+    # print(" resample_data_or_seg_to_shape")
     if isinstance(data, torch.Tensor):
         data = data.cpu().numpy()
 

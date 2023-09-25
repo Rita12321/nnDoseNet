@@ -176,7 +176,10 @@ class ConfigurationManager(object):
         return fn
     @property
     def mask_channel(self) :
-        return self.configuration['mask_channel']
+        try:
+            return self.configuration['mask_channel']
+        except:
+            return None
     
     @property
     def batch_dice(self) -> bool:

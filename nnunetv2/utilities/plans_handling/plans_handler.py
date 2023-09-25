@@ -175,7 +175,8 @@ class ConfigurationManager(object):
         fn = partial(fn, **self.configuration['resampling_fn_data_mask_kwargs'])
         return fn
     @property
-    def mask_channel(self) :
+    def mask_channel(self) : #FIXME: add a none, otherwise old plan cannot run
+        
         try:
             return self.configuration['mask_channel']
         except:

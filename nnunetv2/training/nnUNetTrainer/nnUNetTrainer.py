@@ -34,6 +34,7 @@ from nnunetv2.training.data_augmentation.custom_transforms.cascade_transforms im
     ApplyRandomBinaryOperatorTransform, RemoveRandomConnectedComponentFromOneHotEncodingTransform
 from nnunetv2.training.data_augmentation.custom_transforms.deep_supervision_donwsampling import \
     DownsampleSegForDSTransform2
+from nnunetv2.training.data_augmentation.custom_transforms.seperate_channel_transform import SeperateDataMask,revert_SeperateDataMask,CopyDataMask
 from nnunetv2.training.data_augmentation.custom_transforms.limited_length_multithreaded_augmenter import \
     LimitedLenWrapper
 from nnunetv2.training.data_augmentation.custom_transforms.masking import MaskTransform
@@ -48,7 +49,7 @@ from nnunetv2.training.dataloading.utils import get_case_identifiers, unpack_dat
 from nnunetv2.training.logging.nnunet_logger import nnUNetLogger
 from nnunetv2.training.loss.compound_losses import DC_and_CE_loss, DC_and_BCE_loss,MSE_and_DVH_loss
 from nnunetv2.training.loss.deep_supervision import DeepSupervisionWrapper
-from nnunetv2.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
+#from nnunetv2.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
 from nnunetv2.training.loss.DVH_loss import value_DVH_Loss
 from nnunetv2.training.lr_scheduler.polylr import PolyLRScheduler
 from nnunetv2.utilities.collate_outputs import collate_outputs
@@ -144,11 +145,12 @@ class nnUNetTrainer(object):
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
         #NOTE: epoch
-        self.num_epochs =50
+        self.num_epochs =100
         self.current_epoch = 0
 
         ### Dealing with labels/regions
         self.label_manager = self.plans_manager.get_label_manager(dataset_json)
+        
         # labels can either be a list of int (regular training) or a list of tuples of int (region-based training)
         # needed for predictions. We do sigmoid in case of (overlapping) regions
 
@@ -181,7 +183,7 @@ class nnUNetTrainer(object):
         ### checkpoint saving stuff
         
         #FIXME: change check point save
-        self.save_every = 10
+        self.save_every = 1
         
         self.disable_checkpointing = False
 
@@ -346,20 +348,23 @@ class nnUNetTrainer(object):
             self.oversample_foreground_percent = oversample_percents[my_rank]
 #NOTE: changed: add dose label condition to MSE
     def _build_loss(self):
-        print("self.label_manager.num_segmentation_heads",self.label_manager.num_segmentation_heads)
-        if self.label_manager.dose_label==True:
-            print("self.label_manager.dose_label==True----->loss=torch.nn.MSELoss()")
-            loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=1, weight_dvh=1,DVH_class=value_DVH_Loss)#FIXME: change loss
-        elif self.label_manager.has_regions:
-            loss = DC_and_BCE_loss({},
-                                   {'batch_dice': self.configuration_manager.batch_dice,
-                                    'do_bg': True, 'smooth': 1e-5, 'ddp': self.is_ddp},
-                                   use_ignore_label=self.label_manager.ignore_label is not None,
-                                   dice_class=MemoryEfficientSoftDiceLoss)
-        else:
-            loss = DC_and_CE_loss({'batch_dice': self.configuration_manager.batch_dice,
-                                   'smooth': 1e-5, 'do_bg': False, 'ddp': self.is_ddp}, {}, weight_ce=1, weight_dice=1,
-                                  ignore_label=self.label_manager.ignore_label, dice_class=MemoryEfficientSoftDiceLoss)
+        #print("self.label_manager.num_segmentation_heads",self.label_manager.num_segmentation_heads)
+        if (self.configuration_manager.dose==True) or self.label_manager.dose_label:
+            print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()")
+            if self.configuration_manager.mask_channel != None:
+                loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,DVH_class=value_DVH_Loss)#FIXME: change loss
+            else:
+                loss=torch.nn.MSELoss()
+        # elif self.label_manager.has_regions:
+        #     loss = DC_and_BCE_loss({},
+        #                            {'batch_dice': self.configuration_manager.batch_dice,
+        #                             'do_bg': True, 'smooth': 1e-5, 'ddp': self.is_ddp},
+        #                            use_ignore_label=self.label_manager.ignore_label is not None,
+        #                            dice_class=MemoryEfficientSoftDiceLoss)
+        # else:
+        #     loss = DC_and_CE_loss({'batch_dice': self.configuration_manager.batch_dice,
+        #                            'smooth': 1e-5, 'do_bg': False, 'ddp': self.is_ddp}, {}, weight_ce=1, weight_dice=1,
+        #                           ignore_label=self.label_manager.ignore_label, dice_class=MemoryEfficientSoftDiceLoss)
 
         deep_supervision_scales = self._get_deep_supervision_scales()
 
@@ -612,7 +617,7 @@ class nnUNetTrainer(object):
             use_mask_for_norm=self.configuration_manager.use_mask_for_norm,
             is_cascaded=self.is_cascaded, foreground_labels=self.label_manager.foreground_labels,
             regions=self.label_manager.foreground_regions if self.label_manager.has_regions else None,
-            ignore_label=self.label_manager.ignore_label)
+            ignore_label=self.label_manager.ignore_label,mask_channel=self.configuration_manager.mask_channel)
 
         # validation pipeline
         val_transforms = self.get_validation_transforms(deep_supervision_scales,
@@ -620,7 +625,8 @@ class nnUNetTrainer(object):
                                                         foreground_labels=self.label_manager.foreground_labels,
                                                         regions=self.label_manager.foreground_regions if
                                                         self.label_manager.has_regions else None,
-                                                        ignore_label=self.label_manager.ignore_label)
+                                                        ignore_label=self.label_manager.ignore_label
+                                                        ,mask_channel=self.configuration_manager.mask_channel)
         
   
 
@@ -690,12 +696,12 @@ class nnUNetTrainer(object):
                                 is_cascaded: bool = False,
                                 foreground_labels: Union[Tuple[int, ...], List[int]] = None,
                                 regions: List[Union[List[int], Tuple[int, ...], int]] = None,
-                                ignore_label: int = None) -> AbstractTransform:
+                                ignore_label: int = None,mask_channel=None) -> AbstractTransform:
         
         
         tr_transforms = []
 
-        if do_dummy_2d_data_aug:
+        if do_dummy_2d_data_aug: #False
             ignore_axes = (0,)
             tr_transforms.append(Convert3DTo2DTransform())
             patch_size_spatial = patch_size[1:]
@@ -718,15 +724,16 @@ class nnUNetTrainer(object):
         if mirror_axes is not None and len(mirror_axes) > 0:
             tr_transforms.append(MirrorTransform(mirror_axes))
         
-        if deep_supervision_scales is not None:#FIXME:
-            tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data',
-                                                              output_key='ddp_data'))             
-        if do_dummy_2d_data_aug:
+             
+        if do_dummy_2d_data_aug:#False
             tr_transforms.append(Convert2DTo3DTransform())
-        # #FIXME:
-        # if deep_supervision_scales is not None:#FIXME:
-        #     tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data',
-        #                                                       output_key='ddp_data'))
+        if mask_channel is not None :
+            if len(mask_channel)>0:
+                tr_transforms.append(SeperateDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask'))
+                
+        if deep_supervision_scales is not None:#FIXME:
+            tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data_mask',
+                                                              output_key='data_mask'))
             
         tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))#
         tr_transforms.append(GaussianBlurTransform((0.5, 1.), different_sigma_per_channel=True, p_per_sample=0.2,
@@ -743,13 +750,13 @@ class nnUNetTrainer(object):
         # if mirror_axes is not None and len(mirror_axes) > 0:
         #     tr_transforms.append(MirrorTransform(mirror_axes))
 
-        if use_mask_for_norm is not None and any(use_mask_for_norm):
+        if use_mask_for_norm is not None and any(use_mask_for_norm):#False
             tr_transforms.append(MaskTransform([i for i in range(len(use_mask_for_norm)) if use_mask_for_norm[i]],
                                                mask_idx_in_seg=0, set_outside_to=0))
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
 
-        if is_cascaded:
+        if is_cascaded:#false
             assert foreground_labels is not None, 'We need foreground_labels for cascade augmentations'
             tr_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg', 'data'))
             tr_transforms.append(ApplyRandomBinaryOperatorTransform(
@@ -768,7 +775,7 @@ class nnUNetTrainer(object):
 
         tr_transforms.append(RenameTransform('seg', 'target', True))
 
-        if regions is not None:
+        if regions is not None:#false
             # the ignore label must also be converted
             tr_transforms.append(ConvertSegmentationToRegionsTransform(list(regions) + [ignore_label]
                                                                        if ignore_label is not None else regions,
@@ -777,7 +784,10 @@ class nnUNetTrainer(object):
         if deep_supervision_scales is not None:
             tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
                                                               output_key='target'))
-        tr_transforms.append(NumpyToTensor(['data', 'target','ddp_data'], 'float'))
+        if mask_channel is not None :
+            if len(mask_channel)>0:
+                tr_transforms.append(revert_SeperateDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask',ddp=(deep_supervision_scales is not None)))
+        tr_transforms.append(NumpyToTensor(['data', 'target','data_mask'], 'float'))
 
         
         tr_transforms = Compose(tr_transforms)
@@ -788,13 +798,15 @@ class nnUNetTrainer(object):
                                   is_cascaded: bool = False,
                                   foreground_labels: Union[Tuple[int, ...], List[int]] = None,
                                   regions: List[Union[List[int], Tuple[int, ...], int]] = None,
-                                  ignore_label: int = None) -> AbstractTransform:
+                                  ignore_label: int = None,mask_channel=None) -> AbstractTransform:
         val_transforms = []
         val_transforms.append(RemoveLabelTransform(-1, 0))
-        
+        if mask_channel is not None :
+            if len(mask_channel)>0:
+                val_transforms.append(CopyDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask'))
         if deep_supervision_scales is not None:#FIXME:
-            val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data',
-                                                              output_key='ddp_data'))
+            val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data_mask',
+                                                              output_key='data_mask'))
 
         if is_cascaded:
             val_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg', 'data'))
@@ -812,7 +824,7 @@ class nnUNetTrainer(object):
                                                                output_key='target'))
   
 
-        val_transforms.append(NumpyToTensor(['data', 'target','ddp_data'], 'float'))
+        val_transforms.append(NumpyToTensor(['data', 'target','data_mask'], 'float'))
 
         val_transforms = Compose(val_transforms)
         return val_transforms
@@ -904,14 +916,14 @@ class nnUNetTrainer(object):
         #print(batch.keys())#dict_keys(['data', 'properties', 'keys', 'target'])
         data = batch['data']#(b,c,x,y,z) check basedataloader shape
         target = batch['target']
-        ddp_data = batch['ddp_data']
-        temp=ddp_data[0]
-        # print(temp.shape)
-        # print(torch.max(temp[:,0,...]),torch.max(temp[:,1,...]))
-        # print(torch.unique(temp[:,0,...]),torch.unique(temp[:,1,...]))
-        # #print(ddp_data.shape,torch.max(data[:,0,...]),torch.max(ddp_data[:,1,...]),torch.max(ddp_data[:,2,...]))
-        # print(len(target),target[0].shape,target[1].shape)
-        # print("ddp",len(ddp_data),ddp_data[0].shape,ddp_data[1].shape)
+        ddp_data = batch['data_mask']
+        
+        np.savez("/home/changh/Documents/2023_DosePredcition/temp/check.npz",data=data,
+                 target0=target[0],target1=target[1],target2=target[2],target3=target[3],target4=target[4],
+                 ddp_data0=ddp_data[0],ddp_data1=ddp_data[1],ddp_data2=ddp_data[2],ddp_data3=ddp_data[3],ddp_data4=ddp_data[4],)
+      
+
+
         
         data = data.to(self.device, non_blocking=True)
         if isinstance(target, list):
@@ -980,7 +992,7 @@ class nnUNetTrainer(object):
     def validation_step(self, batch: dict) -> dict:
         data = batch['data']
         target = batch['target']
-        ddp_data=batch['ddp_data']
+        ddp_data=batch['data_mask']
         
         data = data.to(self.device, non_blocking=True)
         if isinstance(target, list):
@@ -1012,16 +1024,16 @@ class nnUNetTrainer(object):
         target = target[0]
 
         # the following is needed for online evaluation. Fake dice (green line)
-        axes = [0] + list(range(2, len(output.shape)))
+        # axes = [0] + list(range(2, len(output.shape)))
 ## FIXME: validation with region may get problem
-        if self.label_manager.has_regions:
-            predicted_segmentation_onehot = (torch.sigmoid(output) > 0.5).long()
-        else:
-            # no need for softmax
-            output_seg = output.argmax(1)[:, None]
-            predicted_segmentation_onehot = torch.zeros(output.shape, device=output.device, dtype=torch.float32)
-            predicted_segmentation_onehot.scatter_(1, output_seg, 1)
-            del output_seg
+        # if self.label_manager.has_regions:
+        #     predicted_segmentation_onehot = (torch.sigmoid(output) > 0.5).long()
+        # else:
+        #     # no need for softmax
+        #     output_seg = output.argmax(1)[:, None]
+        #     predicted_segmentation_onehot = torch.zeros(output.shape, device=output.device, dtype=torch.float32)
+        #     predicted_segmentation_onehot.scatter_(1, output_seg, 1)
+        #     del output_seg
 
         if self.label_manager.has_ignore_label:
             if not self.label_manager.has_regions:
@@ -1035,42 +1047,42 @@ class nnUNetTrainer(object):
         else:
             mask = None
 
-        tp, fp, fn, _ = get_tp_fp_fn_tn(predicted_segmentation_onehot, target, axes=axes, mask=mask)
+        # tp, fp, fn, _ = get_tp_fp_fn_tn(predicted_segmentation_onehot, target, axes=axes, mask=mask)
 
-        tp_hard = tp.detach().cpu().numpy()
-        fp_hard = fp.detach().cpu().numpy()
-        fn_hard = fn.detach().cpu().numpy()
-        if not self.label_manager.has_regions:
-            # if we train with regions all segmentation heads predict some kind of foreground. In conventional
-            # (softmax training) there needs tobe one output for the background. We are not interested in the
-            # background Dice
-            # [1:] in order to remove background
-            tp_hard = tp_hard[1:]
-            fp_hard = fp_hard[1:]
-            fn_hard = fn_hard[1:]
+        # tp_hard = tp.detach().cpu().numpy()
+        # fp_hard = fp.detach().cpu().numpy()
+        # fn_hard = fn.detach().cpu().numpy()
+        # if not self.label_manager.has_regions:
+        #     # if we train with regions all segmentation heads predict some kind of foreground. In conventional
+        #     # (softmax training) there needs tobe one output for the background. We are not interested in the
+        #     # background Dice
+        #     # [1:] in order to remove background
+        #     tp_hard = tp_hard[1:]
+        #     fp_hard = fp_hard[1:]
+        #     fn_hard = fn_hard[1:]
 
-        return {'loss': l.detach().cpu().numpy(), 'tp_hard': tp_hard, 'fp_hard': fp_hard, 'fn_hard': fn_hard}
+        return {'loss': l.detach().cpu().numpy()}
 
     def on_validation_epoch_end(self, val_outputs: List[dict]):
         outputs_collated = collate_outputs(val_outputs)
-        tp = np.sum(outputs_collated['tp_hard'], 0)
-        fp = np.sum(outputs_collated['fp_hard'], 0)
-        fn = np.sum(outputs_collated['fn_hard'], 0)
+        # tp = np.sum(outputs_collated['tp_hard'], 0)
+        # fp = np.sum(outputs_collated['fp_hard'], 0)
+        # fn = np.sum(outputs_collated['fn_hard'], 0)
 
         if self.is_ddp:
             world_size = dist.get_world_size()
 
-            tps = [None for _ in range(world_size)]
-            dist.all_gather_object(tps, tp)
-            tp = np.vstack([i[None] for i in tps]).sum(0)
+            # tps = [None for _ in range(world_size)]
+            # dist.all_gather_object(tps, tp)
+            # tp = np.vstack([i[None] for i in tps]).sum(0)
 
-            fps = [None for _ in range(world_size)]
-            dist.all_gather_object(fps, fp)
-            fp = np.vstack([i[None] for i in fps]).sum(0)
+            # fps = [None for _ in range(world_size)]
+            # dist.all_gather_object(fps, fp)
+            # fp = np.vstack([i[None] for i in fps]).sum(0)
 
-            fns = [None for _ in range(world_size)]
-            dist.all_gather_object(fns, fn)
-            fn = np.vstack([i[None] for i in fns]).sum(0)
+            # fns = [None for _ in range(world_size)]
+            # dist.all_gather_object(fns, fn)
+            # fn = np.vstack([i[None] for i in fns]).sum(0)
 
             losses_val = [None for _ in range(world_size)]
             dist.all_gather_object(losses_val, outputs_collated['loss'])
@@ -1078,11 +1090,11 @@ class nnUNetTrainer(object):
         else:
             loss_here = np.mean(outputs_collated['loss'])
 
-        global_dc_per_class = [i for i in [2 * i / (2 * i + j + k) for i, j, k in
-                                           zip(tp, fp, fn)]]
-        mean_fg_dice = np.nanmean(global_dc_per_class)
-        self.logger.log('mean_fg_dice', mean_fg_dice, self.current_epoch)
-        self.logger.log('dice_per_class_or_region', global_dc_per_class, self.current_epoch)
+        # global_dc_per_class = [i for i in [2 * i / (2 * i + j + k) for i, j, k in
+        #                                    zip(tp, fp, fn)]]
+        # mean_fg_dice = np.nanmean(global_dc_per_class)
+        # self.logger.log('mean_fg_dice', mean_fg_dice, self.current_epoch)
+        # self.logger.log('dice_per_class_or_region', global_dc_per_class, self.current_epoch)
         self.logger.log('val_losses', loss_here, self.current_epoch)
 
     def on_epoch_start(self):
@@ -1096,8 +1108,8 @@ class nnUNetTrainer(object):
         self.print_to_log_file('val_loss', np.round(self.logger.my_fantastic_logging['val_losses'][-1], decimals=4))
         
         #FIXME: pseudo dice disable
-        self.print_to_log_file('Pseudo dice', [np.round(i, decimals=4) for i in
-                                               self.logger.my_fantastic_logging['dice_per_class_or_region'][-1]])
+        # self.print_to_log_file('Pseudo dice', [np.round(i, decimals=4) for i in
+        #                                        self.logger.my_fantastic_logging['dice_per_class_or_region'][-1]])
         self.print_to_log_file(
             f"Epoch time: {np.round(self.logger.my_fantastic_logging['epoch_end_timestamps'][-1] - self.logger.my_fantastic_logging['epoch_start_timestamps'][-1], decimals=2)} s")
 

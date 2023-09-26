@@ -8,8 +8,8 @@ class nnUNetDataLoader3D(nnUNetDataLoaderBase):
     def generate_train_batch(self):
         selected_keys = self.get_indices()
         # preallocate memory for data and seg
-        data_all = np.zeros(self.data_shape, dtype=np.float32)#FIXME: 
-        seg_all = np.zeros(self.seg_shape, dtype=np.int16)
+        data_all = np.zeros(self.data_shape, dtype=np.float32)
+        seg_all = np.zeros(self.seg_shape, dtype=np.float32)#FIXME: np.int16-->np.float32
         case_properties = []
 
         for j, i in enumerate(selected_keys):

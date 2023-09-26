@@ -92,12 +92,23 @@ class DefaultPreprocessor(object):
                     data_out=temp
                 else:
                     data_out=np.vstack((data_out,temp))
-
+            
+            #print("b ",data.shape,data_out.shape)
+            data=data_out.copy()
+            #print("a ",data.shape,data_out.shape)
+            del data_out
         else:        
             data = configuration_manager.resampling_fn_data(data, new_shape, original_spacing, target_spacing)
 
         seg = configuration_manager.resampling_fn_seg(seg, new_shape, original_spacing, target_spacing)
-       
+        # if data.shape[1:]!=seg.shape[1:]:
+        #     print("how?",data.shape[1:],seg.shape[1:])
+        # else:
+        #     print("good")
+        # if new_shape!=data.shape[1:]:
+        #     print("what?",new_shape,data.shape[1:])
+        # else:
+        #     print("nice")
         if self.verbose:
             print(f'old shape: {old_shape}, new_shape: {new_shape}, old_spacing: {original_spacing}, '
                   f'new_spacing: {target_spacing}, fn_data: {configuration_manager.resampling_fn_data}')

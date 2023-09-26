@@ -186,36 +186,43 @@ class MSE_and_DVH_loss(nn.Module):
 
         dvh_loss = self.DVH(net_output, target, mask_index=get_roi_indexs(data)) \
             if self.weight_dvh != 0 else 0
-        dvh_loss=torch.tensor(1)
+        del data
+        
         mse_loss = self.MSE(net_output, target) \
             if self.weight_mse != 0 else 0
 
-        result = self.weight_mse * mse_loss+ self.weight_dvh * dvh_loss
-        return result
-    
-def get_roi_indexs(data:torch.Tensor, axes=None, square=False):
-    #print(data.shape,"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-    #data shape? (b,c,x,y,z)#c=1, c=2 
+       
+        return self.weight_mse * mse_loss+ self.weight_dvh * dvh_loss
+def get_roi_indexs(x:torch.Tensor, axes=None, square=False):
 
     with torch.no_grad():
-        #FIXME: list moght go wrong
-        
-    # data=data.to(torch.int8)
-        indexs = []
-        #for c in (1,2):#PTV=1, OAR=2
-        map=data#[:,c,...]
-        
-        #print(map.shape)
-        labels=torch.unique(map)
-        #print("label",len(labels),labels,"!!!!!!",map.shape)
-        for label in labels:
-            if label!=0:
-                where=(map == label).nonzero(as_tuple=False)
+        device=x.device
+        x=torch.split(x,1,dim=1)
+        indexs=[]
+        for c in range(0,len(x)):
+            temp=x[c].flatten()
+            label=temp.unique()
+            for l in label:
+                if l ==0: 
+                    continue
+                where=(temp == l).nonzero().flatten().to(device)
                 indexs.append(where)
 
-    #print(len(indexs),indexs[0][0],"1111111111111111111111")
-        
-    return indexs
+    return indexs   
+# def get_roi_indexs(data:torch.Tensor, axes=None, square=False):
+
+#     with torch.no_grad():
+
+#         indexs = []
+#         map=data#[:,c,...]
+
+#         labels=torch.unique(map)
+#         for label in labels:
+#             if label!=0:
+#                 where=(map == label).nonzero(as_tuple=False)
+#                 indexs.append(where)
+
+#     return indexs
 
 
 

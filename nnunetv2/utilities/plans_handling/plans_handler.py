@@ -44,7 +44,7 @@ class ConfigurationManager(object):
     def preprocessor_name(self) -> str:
         return self.configuration['preprocessor_name']
     @property
-    def dose(self) -> bool:
+    def dose(self) -> bool:#FIXME: changed add dose
         return self.configuration['dose']
     @property
     @lru_cache(maxsize=1)
@@ -175,7 +175,7 @@ class ConfigurationManager(object):
         fn = partial(fn, **self.configuration['resampling_fn_data_mask_kwargs'])
         return fn
     @property
-    def mask_channel(self) : #FIXME: add a none, otherwise old plan cannot run
+    def mask_channel(self) : #FIXME: changed mask_channel, add a none, otherwise old plan cannot run
         
         try:
             return self.configuration['mask_channel']

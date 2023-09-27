@@ -50,7 +50,7 @@ from nnunetv2.training.logging.nnunet_logger import nnUNetLogger
 from nnunetv2.training.loss.compound_losses import DC_and_CE_loss, DC_and_BCE_loss,MSE_and_DVH_loss
 from nnunetv2.training.loss.deep_supervision import DeepSupervisionWrapper
 #from nnunetv2.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
-from nnunetv2.training.loss.DVH_loss import value_DVH_Loss
+from nnunetv2.training.loss.DVH_loss import value_DVH_Loss,criteria_DVH_Loss
 from nnunetv2.training.lr_scheduler.polylr import PolyLRScheduler
 from nnunetv2.utilities.collate_outputs import collate_outputs
 from nnunetv2.utilities.default_n_proc_DA import get_allowed_n_proc_DA
@@ -145,7 +145,7 @@ class nnUNetTrainer(object):
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
         #NOTE: epoch
-        self.num_epochs =100
+        self.num_epochs =120
         self.current_epoch = 0
 
         ### Dealing with labels/regions
@@ -183,7 +183,7 @@ class nnUNetTrainer(object):
         ### checkpoint saving stuff
         
         #FIXME: change check point save
-        self.save_every = 1
+        self.save_every = 5
         
         self.disable_checkpointing = False
 
@@ -351,8 +351,8 @@ class nnUNetTrainer(object):
         #print("self.label_manager.num_segmentation_heads",self.label_manager.num_segmentation_heads)
         if (self.configuration_manager.dose==True) or self.label_manager.dose_label:
             print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()")
-            if self.configuration_manager.mask_channel != None:
-                loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,DVH_class=value_DVH_Loss)#FIXME: change loss
+            if self.configuration_manager.mask_channel != None:# if use criteria loss ptv_oar_channel is required
+                loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,channel_ptv_oar=[0,1],DVH_class=criteria_DVH_Loss)#FIXME: change loss
             else:
                 loss=torch.nn.MSELoss()
         # elif self.label_manager.has_regions:
@@ -756,22 +756,22 @@ class nnUNetTrainer(object):
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
 
-        if is_cascaded:#false
-            assert foreground_labels is not None, 'We need foreground_labels for cascade augmentations'
-            tr_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg', 'data'))
-            tr_transforms.append(ApplyRandomBinaryOperatorTransform(
-                channel_idx=list(range(-len(foreground_labels), 0)),
-                p_per_sample=0.4,
-                key="data",
-                strel_size=(1, 8),
-                p_per_label=1))
-            tr_transforms.append(
-                RemoveRandomConnectedComponentFromOneHotEncodingTransform(
-                    channel_idx=list(range(-len(foreground_labels), 0)),
-                    key="data",
-                    p_per_sample=0.2,
-                    fill_with_other_class_p=0,
-                    dont_do_if_covers_more_than_x_percent=0.15))
+        # if is_cascaded:#false
+        #     assert foreground_labels is not None, 'We need foreground_labels for cascade augmentations'
+        #     tr_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg', 'data'))
+        #     tr_transforms.append(ApplyRandomBinaryOperatorTransform(
+        #         channel_idx=list(range(-len(foreground_labels), 0)),
+        #         p_per_sample=0.4,
+        #         key="data",
+        #         strel_size=(1, 8),
+        #         p_per_label=1))
+        #     tr_transforms.append(
+        #         RemoveRandomConnectedComponentFromOneHotEncodingTransform(
+        #             channel_idx=list(range(-len(foreground_labels), 0)),
+        #             key="data",
+        #             p_per_sample=0.2,
+        #             fill_with_other_class_p=0,
+        #             dont_do_if_covers_more_than_x_percent=0.15))
 
         tr_transforms.append(RenameTransform('seg', 'target', True))
 
@@ -808,16 +808,16 @@ class nnUNetTrainer(object):
             val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data_mask',
                                                               output_key='data_mask'))
 
-        if is_cascaded:
-            val_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg', 'data'))
+        # if is_cascaded:
+        #     val_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg', 'data'))
 
         val_transforms.append(RenameTransform('seg', 'target', True))
 
-        if regions is not None:
-            # the ignore label must also be converted
-            val_transforms.append(ConvertSegmentationToRegionsTransform(list(regions) + [ignore_label]
-                                                                        if ignore_label is not None else regions,
-                                                                        'target', 'target'))
+        # if regions is not None:
+        #     # the ignore label must also be converted
+        #     val_transforms.append(ConvertSegmentationToRegionsTransform(list(regions) + [ignore_label]
+        #                                                                 if ignore_label is not None else regions,
+        #                                                                 'target', 'target'))
 
         if deep_supervision_scales is not None:
             val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
@@ -918,9 +918,9 @@ class nnUNetTrainer(object):
         target = batch['target']
         ddp_data = batch['data_mask']
         
-        np.savez("/home/changh/Documents/2023_DosePredcition/temp/check.npz",data=data,
-                 target0=target[0],target1=target[1],target2=target[2],target3=target[3],target4=target[4],
-                 ddp_data0=ddp_data[0],ddp_data1=ddp_data[1],ddp_data2=ddp_data[2],ddp_data3=ddp_data[3],ddp_data4=ddp_data[4],)
+        # np.savez("/home/changh/Documents/2023_DosePredcition/temp/check.npz",data=data,
+        #          target0=target[0],target1=target[1],target2=target[2],target3=target[3],target4=target[4],
+        #          ddp_data0=ddp_data[0],ddp_data1=ddp_data[1],ddp_data2=ddp_data[2],ddp_data3=ddp_data[3],ddp_data4=ddp_data[4],)
       
 
 
@@ -1035,17 +1035,17 @@ class nnUNetTrainer(object):
         #     predicted_segmentation_onehot.scatter_(1, output_seg, 1)
         #     del output_seg
 
-        if self.label_manager.has_ignore_label:
-            if not self.label_manager.has_regions:
-                mask = (target != self.label_manager.ignore_label).float()
-                # CAREFUL that you don't rely on target after this line!
-                target[target == self.label_manager.ignore_label] = 0
-            else:
-                mask = 1 - target[:, -1:]
-                # CAREFUL that you don't rely on target after this line!
-                target = target[:, :-1]
-        else:
-            mask = None
+        # if self.label_manager.has_ignore_label:
+        #     if not self.label_manager.has_regions:
+        #         mask = (target != self.label_manager.ignore_label).float()
+        #         # CAREFUL that you don't rely on target after this line!
+        #         target[target == self.label_manager.ignore_label] = 0
+        #     else:
+        #         mask = 1 - target[:, -1:]
+        #         # CAREFUL that you don't rely on target after this line!
+        #         target = target[:, :-1]
+        # else:
+        #     mask = None
 
         # tp, fp, fn, _ = get_tp_fp_fn_tn(predicted_segmentation_onehot, target, axes=axes, mask=mask)
 

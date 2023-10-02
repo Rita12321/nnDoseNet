@@ -14,7 +14,7 @@ class value_DVH_Loss(nn.Module):
 
         self.ddp = ddp
 
-    def forward(self, x, y, mask_index):
+    def forward(self, x, y, mask_index,channel_ptv_oar=None):
         #FIXME: error with value_DvH+critera_DVH
         with torch.no_grad():
             x=x.flatten()
@@ -63,9 +63,9 @@ class criteria_DVH_Loss(nn.Module):#FIXME: haven't test yet
 
                 dose_x=torch.take(x,l)
                 dose_y=torch.take(y,l)  
-                criteria+=torch.quantile(dose_x,0.99)-torch.quantile(dose_y,0.99)#d99
-                criteria+=torch.quantile(dose_x,0.95)-torch.quantile(dose_y,0.95)#d95
-                criteria+=torch.quantile(dose_x,0.01)-torch.quantile(dose_y,0.01)#d01
+                criteria+=torch.abs(torch.quantile(dose_x,0.01)-torch.quantile(dose_y,0.01))#d99
+                criteria+=torch.abs(torch.quantile(dose_x,0.05)-torch.quantile(dose_y,0.05))#d95
+                criteria+=torch.abs(torch.quantile(dose_x,0.99)-torch.quantile(dose_y,0.99))#d01
 
             #OAR
             c_oar=channel_ptv_oar[1]
@@ -77,8 +77,8 @@ class criteria_DVH_Loss(nn.Module):#FIXME: haven't test yet
                 dose_y=torch.take(y,l)  
 
 
-                criteria+=torch.max(dose_x)-torch.max(dose_y)#cc01
-                criteria+=torch.mean(dose_x)-torch.mean(dose_y)#mean              
+                criteria+=torch.abs(torch.max(dose_x)-torch.max(dose_y))#cc01
+                criteria+=torch.abs(torch.mean(dose_x)-torch.mean(dose_y))#mean              
                
 #FIXME: L might equal 0 choose what to return , <---nan in loss
         return criteria/L

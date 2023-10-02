@@ -169,6 +169,12 @@ class ExperimentPlanner(object):
         }
   
         return resampling_data_mask, resampling_data_mask_kwargs
+    # def determine_resampling_dummy(self, *args, **kwargs):
+     
+        
+    #     resampling_data_mask = resample_data_or_seg_to_shape
+    #     resampling_data_mask_kwargs = None
+    #     return resampling_data_mask, resampling_data_mask_kwargs
     def determine_segmentation_softmax_export_fn(self, *args, **kwargs):
         """
         function must be callable(data, new_shape, current_spacing, new_spacing, **kwargs). The new_shape should be
@@ -379,7 +385,8 @@ class ExperimentPlanner(object):
         mask_channel=None
         if self.check_if_masked_channel():
             mask_channel=self.mask_channel
-            resampling_data_mask, resampling_data_mask_kwargs=self.determine_mask_channel_resampling()            
+            resampling_data_mask, resampling_data_mask_kwargs=self.determine_mask_channel_resampling()       
+ 
         
         resampling_data, resampling_data_kwargs, resampling_seg, resampling_seg_kwargs = self.determine_resampling()
         resampling_softmax, resampling_softmax_kwargs = self.determine_segmentation_softmax_export_fn()
@@ -412,9 +419,12 @@ class ExperimentPlanner(object):
             'resampling_fn_probabilities': resampling_softmax.__name__,
             'resampling_fn_probabilities_kwargs': resampling_softmax_kwargs,
             'mask_channel' : mask_channel,
-            'resampling_fn_data_mask' : resampling_data_mask.__name__,
-            'resampling_fn_data_mask_kwargs': resampling_data_mask_kwargs
+
         }
+        if self.check_if_masked_channel():
+            plan['resampling_fn_data_mask'] = resampling_data_mask.__name__
+            plan['resampling_fn_data_mask_kwargs']= resampling_data_mask_kwargs
+ 
         return plan
 
     def plan_experiment(self):

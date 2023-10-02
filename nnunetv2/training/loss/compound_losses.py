@@ -2,7 +2,7 @@ import torch
 from nnunetv2.training.loss.dice import SoftDiceLoss, MemoryEfficientSoftDiceLoss
 from nnunetv2.training.loss.robust_ce_loss import RobustCrossEntropyLoss, TopKLoss
 from nnunetv2.utilities.helpers import softmax_helper_dim1
-from nnunetv2.training.loss.DVH_loss import value_DVH_Loss
+from nnunetv2.training.loss.DVH_loss import value_DVH_Loss,criteria_DVH_Loss
 from torch import nn
 from torch.nn import MSELoss
 
@@ -195,8 +195,52 @@ class MSE_and_DVH_loss(nn.Module):
 
        
         return self.weight_mse * mse_loss+ self.weight_dvh * dvh_loss
+class MSE_and_2DVH_loss(nn.Module):
+    def __init__(self, DVH_kwargs, MSE_kwargs, weight_mse=1, weight_dvh=1, channel_ptv_oar=None):
+        """ #FIXME: change description
+        Weights for CE and Dice do not need to sum to one. You can set whatever you want.
+        :param soft_dice_kwargs:
+        :param ce_kwargs:
+        :param aggregate:
+        :param square_dice:
+        :param weight_ce:
+        :param weight_dice:
+        """
+        super(MSE_and_2DVH_loss, self).__init__()
 
-def get_roi_indexs(x:torch.Tensor,return_label=False, channel_ptv_oar=None):
+        self.weight_dvh = weight_dvh
+        self.weight_mse = weight_mse
+
+        self.channel_ptv_oar=channel_ptv_oar
+        self.MSE = MSELoss(**MSE_kwargs)
+        self.vDVH = value_DVH_Loss(**DVH_kwargs)
+        self.cDVH =criteria_DVH_Loss(**DVH_kwargs)
+        
+
+
+    def forward(self, net_output: torch.Tensor, target: torch.Tensor,data: torch.Tensor=None):
+        """
+        target must be b, c, x, y(, z) with c=1
+        :param net_output:
+        :param target:
+        :return:
+        """
+        #print("net_output.shape",net_output.shape,"target.shape",target.shape,"data.shape",data.shape)
+        c_ptv_oar,v_ptv_oar=get_roi_indexs(data, channel_ptv_oar=self.channel_ptv_oar,return_vptv_oar=True)
+        
+        cdvh_loss = self.cDVH(net_output, target, mask_index=c_ptv_oar,channel_ptv_oar=self.channel_ptv_oar) \
+            if self.weight_dvh != 0 else 0  
+               
+           
+        vdvh_loss = self.vDVH(net_output, target, mask_index=v_ptv_oar,channel_ptv_oar=None) \
+            if self.weight_dvh != 0 else 0        
+        
+        mse_loss = self.MSE(net_output, target) \
+            if self.weight_mse != 0 else 0
+
+       
+        return self.weight_mse * mse_loss+ self.weight_dvh * vdvh_loss+ self.weight_dvh * cdvh_loss
+def get_roi_indexs(x:torch.Tensor,return_label=False, channel_ptv_oar=None,return_vptv_oar=False):
     with torch.no_grad():
         device=x.device
         x=torch.split(x,1,dim=1)
@@ -217,6 +261,7 @@ def get_roi_indexs(x:torch.Tensor,return_label=False, channel_ptv_oar=None):
             
         else:
             indexs=[]
+            v_ptv_oar=[]
             for c in range(0,len(x)):
                 index=[]#
                 temp=x[c].flatten()
@@ -228,8 +273,12 @@ def get_roi_indexs(x:torch.Tensor,return_label=False, channel_ptv_oar=None):
                         continue
                     where=(temp == l).nonzero().flatten().to(device)
                     index.append(where)#
+                    v_ptv_oar.append(where)
                 indexs.append(index)
-                    
+ 
+        
+    if return_vptv_oar:
+        return indexs,v_ptv_oar       
     if return_label:
         return indexs,labels
     return indexs   

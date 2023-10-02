@@ -47,7 +47,7 @@ from nnunetv2.training.dataloading.data_loader_3d import nnUNetDataLoader3D
 from nnunetv2.training.dataloading.nnunet_dataset import nnUNetDataset
 from nnunetv2.training.dataloading.utils import get_case_identifiers, unpack_dataset
 from nnunetv2.training.logging.nnunet_logger import nnUNetLogger
-from nnunetv2.training.loss.compound_losses import DC_and_CE_loss, DC_and_BCE_loss,MSE_and_DVH_loss
+from nnunetv2.training.loss.compound_losses import DC_and_CE_loss, DC_and_BCE_loss,MSE_and_DVH_loss,MSE_and_2DVH_loss
 from nnunetv2.training.loss.deep_supervision import DeepSupervisionWrapper
 #from nnunetv2.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
 from nnunetv2.training.loss.DVH_loss import value_DVH_Loss,criteria_DVH_Loss
@@ -145,7 +145,7 @@ class nnUNetTrainer(object):
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
         #NOTE: epoch
-        self.num_epochs =120
+        self.num_epochs =500
         self.current_epoch = 0
 
         ### Dealing with labels/regions
@@ -352,7 +352,9 @@ class nnUNetTrainer(object):
         if (self.configuration_manager.dose==True) or self.label_manager.dose_label:
             print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()")
             if self.configuration_manager.mask_channel != None:# if use criteria loss ptv_oar_channel is required
-                loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,channel_ptv_oar=[0,1],DVH_class=criteria_DVH_Loss)#FIXME: change loss
+                #loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,DVH_class=value_DVH_Loss)
+                #loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,channel_ptv_oar=[0,1],DVH_class=criteria_DVH_Loss)#FIXME: change loss
+                loss= MSE_and_2DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.4, weight_dvh=0.3,channel_ptv_oar=[0,1])
             else:
                 loss=torch.nn.MSELoss()
         # elif self.label_manager.has_regions:

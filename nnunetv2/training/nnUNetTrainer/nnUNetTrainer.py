@@ -145,7 +145,7 @@ class nnUNetTrainer(object):
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
         #NOTE: epoch
-        self.num_epochs =500
+        self.num_epochs =1000
         self.current_epoch = 0
 
         ### Dealing with labels/regions
@@ -350,11 +350,15 @@ class nnUNetTrainer(object):
     def _build_loss(self):
         #print("self.label_manager.num_segmentation_heads",self.label_manager.num_segmentation_heads)
         if (self.configuration_manager.dose==True) or self.label_manager.dose_label:
-            print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()")
-            if self.configuration_manager.mask_channel != None:# if use criteria loss ptv_oar_channel is required
-                #loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,DVH_class=value_DVH_Loss)
-                #loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,channel_ptv_oar=[0,1],DVH_class=criteria_DVH_Loss)#FIXME: change loss
-                loss= MSE_and_2DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.4, weight_dvh=0.3,channel_ptv_oar=[0,1])
+            #print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()")
+            if self.configuration_manager.mask_channel != None:# if use criteria loss ptv_oar_channel is required 
+                #loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,DVH_class=value_DVH_Loss)#060
+                #loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,channel_ptv_oar=[0,1],DVH_class=criteria_DVH_Loss)#061
+                loss= MSE_and_2DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.4, weight_dvh=0.3,channel_ptv_oar=[0,1])#062
+                #loss= MAE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mae=0.5, weight_dvh=0.5,DVH_class=value_DVH_Loss)#070
+                #loss= MAE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mae=0.5, weight_dvh=0.5,channel_ptv_oar=[0,1],DVH_class=criteria_DVH_Loss)#071
+                #loss= MAE_and_2DVH_loss({'ddp': self.is_ddp},{},weight_mae=0.4, weight_dvh=0.3,channel_ptv_oar=[0,1])#072
+
             else:
                 loss=torch.nn.MSELoss()
         # elif self.label_manager.has_regions:

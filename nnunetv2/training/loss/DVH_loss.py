@@ -58,7 +58,7 @@ class criteria_DVH_Loss(nn.Module):#FIXME: haven't test yet
             #PTV
             c_ptv=channel_ptv_oar[0]
             label=mask_index[c_ptv]
-            L+=len(label)
+            L+=len(label)*3
             for l in label:
 
                 dose_x=torch.take(x,l)
@@ -70,7 +70,7 @@ class criteria_DVH_Loss(nn.Module):#FIXME: haven't test yet
             #OAR
             c_oar=channel_ptv_oar[1]
             label=mask_index[c_oar]
-            L+=len(label)
+            L+=len(label)*2
             for l in label:
 
                 dose_x=torch.take(x,l)

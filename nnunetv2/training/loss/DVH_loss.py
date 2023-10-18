@@ -20,9 +20,23 @@ class value_DVH_Loss(nn.Module):
             x=x.flatten()
             y=y.flatten()
             maes=torch.tensor(0.)
-            L=len(mask_index)
+            # L=len(mask_index)
             
-            for l in mask_index:
+            # for l in mask_index:
+
+            #     dose_x=torch.take(x,l)
+            #     dose_y=torch.take(y,l) 
+                                
+            #     dose_x,_=torch.sort(dose_x)
+            #     dose_y,_=torch.sort(dose_y) 
+                
+            #     maes=maes+torch.mean(torch.abs(dose_x-dose_y))
+                
+            # FIXME: change to this after training
+            mask_indexs=mask_index[0]+mask_index[1]
+            L=len(mask_indexs)
+            
+            for l in mask_indexs:
 
                 dose_x=torch.take(x,l)
                 dose_y=torch.take(y,l) 
@@ -47,7 +61,7 @@ class criteria_DVH_Loss(nn.Module):#FIXME: haven't test yet
                 print("there is no channel_ptv_oar !!!!! c-dvh return 0")
                 return 0
             if len(mask_index)!=len(channel_ptv_oar):
-                print(" channel_ptv_oar len don't match !!!!! c-dvh return 0")
+                print(" channel_ptv_oar len don't match !!!!! c-dvh return 0",len(mask_index),len(channel_ptv_oar))
                 return 0
             
             criteria=torch.tensor(0.).to(x.device)
@@ -56,7 +70,7 @@ class criteria_DVH_Loss(nn.Module):#FIXME: haven't test yet
             L=0
             
             #PTV
-            c_ptv=channel_ptv_oar[0]
+            c_ptv=0#channel_ptv_oar[0]
             label=mask_index[c_ptv]
             L+=len(label)*3
             for l in label:
@@ -68,7 +82,7 @@ class criteria_DVH_Loss(nn.Module):#FIXME: haven't test yet
                 criteria+=torch.abs(torch.quantile(dose_x,0.99)-torch.quantile(dose_y,0.99))#d01
 
             #OAR
-            c_oar=channel_ptv_oar[1]
+            c_oar=1#channel_ptv_oar[1]
             label=mask_index[c_oar]
             L+=len(label)*2
             for l in label:

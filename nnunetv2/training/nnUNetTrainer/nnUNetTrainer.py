@@ -11,7 +11,7 @@ from typing import Union, Tuple, List
 
 import numpy as np
 import torch
-from torch.nn import MSELoss
+from torch.nn import MSELoss,L1Loss
 from batchgenerators.dataloading.single_threaded_augmenter import SingleThreadedAugmenter
 from batchgenerators.transforms.abstract_transforms import AbstractTransform, Compose
 from batchgenerators.transforms.color_transforms import BrightnessMultiplicativeTransform, \
@@ -47,7 +47,7 @@ from nnunetv2.training.dataloading.data_loader_3d import nnUNetDataLoader3D
 from nnunetv2.training.dataloading.nnunet_dataset import nnUNetDataset
 from nnunetv2.training.dataloading.utils import get_case_identifiers, unpack_dataset
 from nnunetv2.training.logging.nnunet_logger import nnUNetLogger
-from nnunetv2.training.loss.compound_losses import DC_and_CE_loss, DC_and_BCE_loss,MSE_and_DVH_loss,MSE_and_2DVH_loss
+from nnunetv2.training.loss.compound_losses import Err_and_DVH_Loss,MSE_and_DVH_loss,MSE_and_2DVH_loss,MAE_and_DVH_loss,MAE_and_2DVH_loss
 from nnunetv2.training.loss.deep_supervision import DeepSupervisionWrapper
 #from nnunetv2.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
 from nnunetv2.training.loss.DVH_loss import value_DVH_Loss,criteria_DVH_Loss
@@ -354,13 +354,14 @@ class nnUNetTrainer(object):
             if self.configuration_manager.mask_channel != None:# if use criteria loss ptv_oar_channel is required 
                 #loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,DVH_class=value_DVH_Loss)#060
                 #loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,channel_ptv_oar=[0,1],DVH_class=criteria_DVH_Loss)#061
-                loss= MSE_and_2DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.4, weight_dvh=0.3,channel_ptv_oar=[0,1])#062
+                #loss= MSE_and_2DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.4, weight_dvh=0.3,channel_ptv_oar=[0,1])#062
                 #loss= MAE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mae=0.5, weight_dvh=0.5,DVH_class=value_DVH_Loss)#070
                 #loss= MAE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mae=0.5, weight_dvh=0.5,channel_ptv_oar=[0,1],DVH_class=criteria_DVH_Loss)#071
                 #loss= MAE_and_2DVH_loss({'ddp': self.is_ddp},{},weight_mae=0.4, weight_dvh=0.3,channel_ptv_oar=[0,1])#072
-
+                loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=[0,1],dose_mask=2)
             else:
-                loss=torch.nn.MSELoss()
+                loss=Err_and_DVH_Loss()
+                #torch.nn.MSELoss()
         # elif self.label_manager.has_regions:
         #     loss = DC_and_BCE_loss({},
         #                            {'batch_dice': self.configuration_manager.batch_dice,

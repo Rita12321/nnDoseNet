@@ -47,7 +47,7 @@ from nnunetv2.training.dataloading.data_loader_3d import nnUNetDataLoader3D
 from nnunetv2.training.dataloading.nnunet_dataset import nnUNetDataset
 from nnunetv2.training.dataloading.utils import get_case_identifiers, unpack_dataset
 from nnunetv2.training.logging.nnunet_logger import nnUNetLogger
-from nnunetv2.training.loss.compound_losses import Err_and_DVH_Loss,MSE_and_DVH_loss,MSE_and_2DVH_loss,MAE_and_DVH_loss,MAE_and_2DVH_loss
+from nnunetv2.training.loss.compound_losses import Err_and_DVH_Loss#,MSE_and_DVH_loss,MSE_and_2DVH_loss,MAE_and_DVH_loss,MAE_and_2DVH_loss
 from nnunetv2.training.loss.deep_supervision import DeepSupervisionWrapper
 #from nnunetv2.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
 from nnunetv2.training.loss.DVH_loss import value_DVH_Loss,criteria_DVH_Loss
@@ -67,7 +67,7 @@ from torch.cuda.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 class nnUNetTrainer(object):
-    def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
+    def __init__(self, plans: dict, configuration: str, fold: int,loss_mode: str, dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         # From https://grugbrain.dev/. Worth a read ya big brains ;-)
 
@@ -86,6 +86,7 @@ class nnUNetTrainer(object):
 
         self.is_ddp = dist.is_available() and dist.is_initialized()
         self.local_rank = 0 if not self.is_ddp else dist.get_rank()
+        self.loss_mode=loss_mode
 
         self.device = device
 
@@ -347,20 +348,50 @@ class nnUNetTrainer(object):
             self.batch_size = batch_sizes[my_rank]
             self.oversample_foreground_percent = oversample_percents[my_rank]
 #NOTE: changed: add dose label condition to MSE
-    def _build_loss(self):
-        #print("self.label_manager.num_segmentation_heads",self.label_manager.num_segmentation_heads)
+    def _build_loss(self):         
+            
         if (self.configuration_manager.dose==True) or self.label_manager.dose_label:
             #print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()")
             if self.configuration_manager.mask_channel != None:# if use criteria loss ptv_oar_channel is required 
-                #loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,DVH_class=value_DVH_Loss)#060
-                #loss= MSE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.5, weight_dvh=0.5,channel_ptv_oar=[0,1],DVH_class=criteria_DVH_Loss)#061
-                #loss= MSE_and_2DVH_loss({'ddp': self.is_ddp},{},weight_mse=0.4, weight_dvh=0.3,channel_ptv_oar=[0,1])#062
-                #loss= MAE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mae=0.5, weight_dvh=0.5,DVH_class=value_DVH_Loss)#070
-                #loss= MAE_and_DVH_loss({'ddp': self.is_ddp},{},weight_mae=0.5, weight_dvh=0.5,channel_ptv_oar=[0,1],DVH_class=criteria_DVH_Loss)#071
-                #loss= MAE_and_2DVH_loss({'ddp': self.is_ddp},{},weight_mae=0.4, weight_dvh=0.3,channel_ptv_oar=[0,1])#072
-                loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=[0,1],dose_mask=2)
+                if self.loss_mode=='0':
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)
+                elif self.loss_mode=='1':
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=[0,1],dose_mask=2)
+                elif self.loss_mode=='2':
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=[0,1],dose_mask=2)            
+                elif self.loss_mode=='3':
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=[0,1],dose_mask=2)
+                elif self.loss_mode=='4':
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=[0,1],dose_mask=2)
+                elif self.loss_mode=='5':
+                    loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)
+                elif self.loss_mode=='6':
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=[0,1],dose_mask=2)
+                elif self.loss_mode=='7':
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=[0,1],dose_mask=2)            
+                elif self.loss_mode=='8':
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=[0,1],dose_mask=2)
+                elif self.loss_mode=='9':
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=[0,1],dose_mask=2)
+                else:
+                    print("unknown loss mode, set to default: MSE")
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)    
             else:
-                loss=Err_and_DVH_Loss()
+                if self.loss_mode=='0':
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)
+                elif self.loss_mode=='5':
+                    loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)
+                else:
+                    print("there aren't any masked channel, so you can't use DVH based loss. The only option left is mode 0:MSE(default) and 5:MAE(L1Loss)")
+                    print("set to default loss: MSE")
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)
+
+        else:
+            print("Somehow it's not running in dose mode. Please check did you")
+            print("1. put dose as label in dataset.json") 
+            print("2. Or put --dose argument when planning")
+            
+        #print(loss)
                 #torch.nn.MSELoss()
         # elif self.label_manager.has_regions:
         #     loss = DC_and_BCE_loss({},
@@ -388,7 +419,7 @@ class nnUNetTrainer(object):
         # now wrap the loss
 
         loss = DeepSupervisionWrapper(loss, weights)
-        print(loss)
+        #print(loss)
         return loss
 
     def configure_rotation_dummyDA_mirroring_and_inital_patch_size(self):

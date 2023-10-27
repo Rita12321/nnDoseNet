@@ -90,8 +90,10 @@ class criteria_DVH_Loss(nn.Module):#FIXME: haven't test yet
                 dose_x=torch.take(x,l)
                 dose_y=torch.take(y,l)  
 
-
-                criteria+=torch.abs(torch.max(dose_x)-torch.max(dose_y))#cc01
+  
+                fractional_volume_to_evaluate = 1 - 1 / len(l)
+                criteria+=torch.abs(torch.quantile(dose_x, fractional_volume_to_evaluate)-torch.quantile(dose_y, fractional_volume_to_evaluate))
+                # criteria+=torch.abs(torch.max(dose_x)-torch.max(dose_y))#cc01
                 criteria+=torch.abs(torch.mean(dose_x)-torch.mean(dose_y))#mean              
                
 #FIXME: L might equal 0 choose what to return , <---nan in loss

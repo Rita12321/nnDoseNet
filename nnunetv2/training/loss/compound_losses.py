@@ -203,8 +203,8 @@ class Err_and_DVH_Loss(nn.Module):
         #print("net_output.shape",net_output.shape,"target.shape",target.shape,"data.shape",data.shape)
         # dose_mask_indx=None
         # dvh_mask_index=None
-        
-        losses=torch.tensor(0.)
+        device=data.device
+        losses=torch.tensor(0.).to(device)
         if  len(self.dvh_losses)>0:
             
             if self.channel_ptv_oar is not None:
@@ -212,15 +212,16 @@ class Err_and_DVH_Loss(nn.Module):
             
             for i,loss in  enumerate(self.dvh_losses):
                 #if self.weight_dvh[i]!=0:
-                losses=losses+self.weight_dvh[i]*loss(net_output, target, mask_index=ptv_oar,channel_ptv_oar=self.channel_ptv_oar) 
+                losses=losses+(self.weight_dvh[i]*loss(net_output, target, mask_index=ptv_oar,channel_ptv_oar=self.channel_ptv_oar)).to(device) 
                 #losses=losses+loss(net_output, target, mask_index=ptv_oar,channel_ptv_oar=self.channel_ptv_oar)             
     
         if len(self.err_losses)>0:
-
+            #print(data.shape,"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",data.device)
+            
             if self.dose_mask is not None:
-                dose_mask_indx=data[self.dose_mask].flatten().nonzero()
-                dose_x=torch.take(net_output,dose_mask_indx)
-                dose_y=torch.take(target,dose_mask_indx) 
+                dose_mask_indx=data[:,self.dose_mask,...].flatten().nonzero()
+                dose_x=torch.take(net_output,dose_mask_indx).to(device)
+                dose_y=torch.take(target,dose_mask_indx).to(device) 
             else:
                 dose_x=net_output
                 dose_y=target
@@ -228,7 +229,7 @@ class Err_and_DVH_Loss(nn.Module):
                 
             for i,loss in enumerate(self.err_losses):
                 #if self.weight_err[i]!=0:
-                losses=losses+self.weight_err[i]*loss(dose_x, dose_y)
+                losses=losses+(self.weight_err[i]*loss(dose_x, dose_y)).to(device)
                 #losses=losses+loss(dose_x, dose_y)
                     
 
@@ -417,7 +418,9 @@ class Err_and_DVH_Loss(nn.Module):
 def get_roi_indexs(x:torch.Tensor,return_label=False, channel_ptv_oar=[0,1],return_vptv_oar=False):
     with torch.no_grad():
         device=x.device
+        #print("x_shape",x.shape )
         x=torch.split(x,1,dim=1)
+        
         if return_label:
             labels=[]
 

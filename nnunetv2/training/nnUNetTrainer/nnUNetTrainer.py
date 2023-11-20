@@ -183,8 +183,8 @@ class nnUNetTrainer(object):
 
         ### checkpoint saving stuff
         
-        #FIXME: change check point save
-        self.save_every = 5
+        
+        self.save_every = 50
         
         self.disable_checkpointing = False
 
@@ -391,7 +391,8 @@ class nnUNetTrainer(object):
             print("1. put dose as label in dataset.json") 
             print("2. Or put --dose argument when planning")
             
-        #print(loss)
+        print(loss)
+        print("Using loss mode: ",self.loss_mode)
                 #torch.nn.MSELoss()
         # elif self.label_manager.has_regions:
         #     loss = DC_and_BCE_loss({},
@@ -672,7 +673,7 @@ class nnUNetTrainer(object):
 
         
         #FIXME: 26 cpu
-        allowed_num_processes = 26#get_allowed_n_proc_DA()
+        allowed_num_processes = get_allowed_n_proc_DA()
         print(allowed_num_processes)
         if allowed_num_processes == 0:
             
@@ -766,6 +767,7 @@ class nnUNetTrainer(object):
         if do_dummy_2d_data_aug:#False
             tr_transforms.append(Convert2DTo3DTransform())
         if mask_channel is not None :
+            print("mask_channel ", mask_channel,"###################################################")
             if len(mask_channel)>0:
                 tr_transforms.append(SeperateDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask'))
                 
@@ -992,7 +994,7 @@ class nnUNetTrainer(object):
         output = self.network(data)
         #FIXME: is loss is MSE_value_dvh dose:
         #print(len(target),target[1].shape,"    ",len(output),output[1].shape,"    ",data.shape,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
-        
+        #print(ddp_data[0].shape,"#############################################################")
         l = self.loss(output, target,ddp_data)#)#,ddp_data
         #print("hi~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
  

@@ -31,7 +31,7 @@ class DownsampleSegForDSTransform2(AbstractTransform):
             axes = self.axes
 
         output = []
-       
+        #print("data_mask_len before ddp",len(data_dict[self.input_key]))
        
         for s in self.ds_scales:
             if not isinstance(s, (tuple, list)):
@@ -54,4 +54,5 @@ class DownsampleSegForDSTransform2(AbstractTransform):
                         out_seg[b, c] = resize_segmentation(data_dict[self.input_key][b, c], new_shape[2:], self.order)#self.order
                 output.append(out_seg)
         data_dict[self.output_key] = output
+        #print("data_mask_len before ddp",len(output[0]))
         return data_dict

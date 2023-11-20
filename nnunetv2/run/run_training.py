@@ -214,7 +214,7 @@ def run_training_entry():
                         help='[OPTIONAL] Use this flag to specify a custom trainer. Default: nnUNetTrainer')
     parser.add_argument('-p', type=str, required=False, default='nnUNetPlans',
                         help='[OPTIONAL] Use this flag to specify a custom plans identifier. Default: nnUNetPlans')
-    parser.add_argument('-loss', type=str, required=False, default='0',
+    parser.add_argument('-loss', type=str, required=False, default='3',
                         help='[OPTIONAL] Choose a loss mode for training. Default is MSE')
     parser.add_argument('-pretrained_weights', type=str, required=False, default=None,
                         help='[OPTIONAL] path to nnU-Net checkpoint file to be used as pretrained model. Will only '

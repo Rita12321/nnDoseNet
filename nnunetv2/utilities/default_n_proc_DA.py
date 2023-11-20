@@ -23,6 +23,8 @@ def get_allowed_n_proc_DA():
         hostname = subprocess.getoutput(['hostname'])
         if hostname in ['Fabian', ]:
             use_this = 12
+        elif hostname in ['radonphys-dl-002', ]:
+            use_this = 27
         elif hostname in ['hdf19-gpu16', 'hdf19-gpu17', 'hdf19-gpu18', 'hdf19-gpu19', 'e230-AMDworkstation']:
             use_this = 16
         elif hostname.startswith('e230-dgx1'):

@@ -67,7 +67,8 @@ from torch.cuda.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 class nnUNetTrainer(object):
-    def __init__(self, plans: dict, configuration: str, fold: int,loss_mode: str, dataset_json: dict, unpack_dataset: bool = True,
+    def __init__(self, plans: dict, configuration: str, fold: int,loss_mode: str, 
+                 epoch_num:int,dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         # From https://grugbrain.dev/. Worth a read ya big brains ;-)
 
@@ -87,7 +88,7 @@ class nnUNetTrainer(object):
         self.is_ddp = dist.is_available() and dist.is_initialized()
         self.local_rank = 0 if not self.is_ddp else dist.get_rank()
         self.loss_mode=loss_mode
-
+        self.num_epochs=epoch_num
         self.device = device
 
         # print what device we are using
@@ -146,7 +147,7 @@ class nnUNetTrainer(object):
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
         #NOTE: epoch
-        self.num_epochs =1000
+        #self.num_epochs =1000
         self.current_epoch = 0
 
         ### Dealing with labels/regions
@@ -767,7 +768,7 @@ class nnUNetTrainer(object):
         if do_dummy_2d_data_aug:#False
             tr_transforms.append(Convert2DTo3DTransform())
         if mask_channel is not None :
-            print("mask_channel ", mask_channel,"###################################################")
+            #print("mask_channel ", mask_channel,"###################################################")
             if len(mask_channel)>0:
                 tr_transforms.append(SeperateDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask'))
                 

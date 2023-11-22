@@ -188,7 +188,7 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, image_reader
     # print(results.keys())
     # print("############################################################")
     return results
-
+#FIXME: few still didn't import dose label
 def compute_metrics_on_folder(folder_ref: str, folder_pred: str, output_file: str,
                               image_reader_writer: BaseReaderWriter,
                               file_ending: str,
@@ -323,8 +323,8 @@ def compute_metrics_on_folder_simple(folder_ref: str, folder_pred: str, labels: 
 def evaluate_folder_entry_point():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('gt_folder', type=str, help='folder with gt segmentations')
-    parser.add_argument('pred_folder', type=str, help='folder with predicted segmentations')
+    parser.add_argument('gt_folder', type=str, help='folder with ground truth label')
+    parser.add_argument('pred_folder', type=str, help='folder with predicted label')
     parser.add_argument('-djfile', type=str, required=True,
                         help='dataset.json file')
     parser.add_argument('-pfile', type=str, required=True,

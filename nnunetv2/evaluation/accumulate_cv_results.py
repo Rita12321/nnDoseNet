@@ -52,4 +52,5 @@ def accumulate_cv_results(trained_model_folder,
                                   label_manager.foreground_regions if label_manager.has_regions else
                                   label_manager.foreground_labels,
                                   label_manager.ignore_label,
+                                  label_manager.dose_label,
                                   num_processes)

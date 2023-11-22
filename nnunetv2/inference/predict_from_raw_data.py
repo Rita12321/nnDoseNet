@@ -358,6 +358,7 @@ class nnUNetPredictor(object):
                     proceed = not check_workers_alive_and_busy(export_pool, worker_list, r, allowed_num_queued=2)
 
                 prediction = self.predict_logits_from_preprocessed_data(data).cpu()
+
 #
                 if ofile is not None:
                     # this needs to go into background processes
@@ -418,6 +419,7 @@ class nnUNetPredictor(object):
 
         if self.verbose:
             print('predicting')
+            
         predicted_logits = self.predict_logits_from_preprocessed_data(dct['data']).cpu()
 
         if self.verbose:
@@ -496,6 +498,8 @@ class nnUNetPredictor(object):
             print('Prediction done, transferring to CPU if needed')
             prediction = prediction.to('cpu')
             self.perform_everything_on_gpu = original_perform_everything_on_gpu
+        #print("prediction shape",prediction.shape,"data_shape",data.shape,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        prediction = prediction*data[3,...]
         return prediction
 
     def _internal_get_sliding_window_slicers(self, image_size: Tuple[int, ...]):

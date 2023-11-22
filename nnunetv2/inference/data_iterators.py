@@ -38,9 +38,6 @@ def preprocess_fromfiles_save_to_queue(list_of_lists: List[List[str]],
             if list_of_segs_from_prev_stage_files is not None and list_of_segs_from_prev_stage_files[idx] is not None:
                 seg_onehot = convert_labelmap_to_one_hot(seg[0], label_manager.foreground_labels, data.dtype)
                 data = np.vstack((data, seg_onehot))
-            #     print("Trueeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-            # else:
-            #     print("Falseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 
             data = torch.from_numpy(data).contiguous().float()
 

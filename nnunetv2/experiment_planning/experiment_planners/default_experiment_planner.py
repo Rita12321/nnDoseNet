@@ -214,14 +214,6 @@ class ExperimentPlanner(object):
         # print("target, spacing min", np.min(np.vstack(spacings), 0))
         # print(type(np.min(np.vstack(spacings), 0)),np.min(np.vstack(spacings), 0).shape)
         target = np.percentile(np.vstack(spacings), 50, 0)
-        #np.min(np.vstack(spacings), 0) #np.array([1.0,1.0,1.0])
-        # print("target, spacing ", target)
-        # print("target, spacing 25", np.percentile(np.vstack(spacings), 25, 0))
-        # print("target, spacing 75", np.percentile(np.vstack(spacings), 75, 0))
-        # print("target, spacing 15", np.percentile(np.vstack(spacings), 15, 0))
-        # print("target, spacing 1", np.percentile(np.vstack(spacings), 1, 0))
-        # print("target, spacing 99", np.percentile(np.vstack(spacings), 99, 0))
-        # print("target, spacing min", np.min(np.vstack(spacings), 0))
 
         # todo sizes_after_resampling = [compute_new_shape(j, i, target) for i, j in zip(spacings, sizes)]
         

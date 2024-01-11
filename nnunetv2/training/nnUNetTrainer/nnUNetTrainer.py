@@ -211,7 +211,7 @@ class nnUNetTrainer(object):
             self.network = self.build_network_architecture(self.plans_manager, self.dataset_json,
                                                            self.configuration_manager,
                                                            self.num_input_channels,
-                                                           enable_deep_supervision=True).to(self.device)#FIXME: ddp
+                                                           enable_deep_supervision=False).to(self.device)#FIXME: dspTrue-->False
             # compile network for free speedup
             if ('nnUNet_compile' in os.environ.keys()) and (
                     os.environ['nnUNet_compile'].lower() in ('true', '1', 't')):
@@ -271,7 +271,7 @@ class nnUNetTrainer(object):
                                    dataset_json,
                                    configuration_manager: ConfigurationManager,
                                    num_input_channels,
-                                   enable_deep_supervision: bool = True) -> nn.Module:#FIXME: ddp
+                                   enable_deep_supervision: bool = True) -> nn.Module:#FIXME: dsp
         """
         his is where you build the architecture according to the plans. There is no obligation to use
         get_network_from_plans, this is just a utility we use for the nnU-Net default architectures. You can do what
@@ -864,16 +864,29 @@ class nnUNetTrainer(object):
         val_transforms = Compose(val_transforms)
         return val_transforms
 
-    def set_deep_supervision_enabled(self, enabled: bool):
+    # def set_deep_supervision_enabled(self, enabled: bool):
+    #     """
+    #     This function is specific for the default architecture in nnU-Net. If you change the architecture, there are
+    #     chances you need to change this as well!
+    #     """
+    #     if self.is_ddp: #FIXME: ddp problem very different in the new one
+    #         self.network.module.decoder.deep_supervision = enabled
+    #     else:
+    #         self.network.decoder.deep_supervision = enabled
+    def set_deep_supervision_enabled(self, enabled: bool):#NOTE: fixed  #FIXME: v2 update try
         """
         This function is specific for the default architecture in nnU-Net. If you change the architecture, there are
         chances you need to change this as well!
         """
-        if self.is_ddp: #FIXME: ddp problem very different in the new one
-            self.network.module.decoder.deep_supervision = enabled
+        if self.is_ddp:
+            mod = self.network.module
         else:
-            self.network.decoder.deep_supervision = enabled
+            mod = self.network
+        if isinstance(mod, OptimizedModule):
+            mod = mod._orig_mod
 
+        mod.decoder.deep_supervision = enabled
+        
     def on_train_start(self):
         if not self.was_initialized:
             self.initialize()
@@ -881,7 +894,7 @@ class nnUNetTrainer(object):
         maybe_mkdir_p(self.output_folder)
 
         # make sure deep supervision is on in the network
-        self.set_deep_supervision_enabled(True)
+        self.set_deep_supervision_enabled(self.enable_deep_supervision)
 
         self.print_plans()
         empty_cache(self.device)
@@ -1361,7 +1374,7 @@ class nnUNetTrainer(object):
             self.print_to_log_file("Validation complete", also_print_to_console=True)
             #self.print_to_log_file("Mean Validation Dice: ", (metrics['foreground_mean']["Dice"]), also_print_to_console=True)
 
-        self.set_deep_supervision_enabled(True)
+        #self.set_deep_supervision_enabled(True) #FIXME: dsp weired 
         compute_gaussian.cache_clear()
 
     def run_training(self):
@@ -1380,7 +1393,6 @@ class nnUNetTrainer(object):
                 self.on_validation_epoch_start()
                 val_outputs = []
                 for batch_id in range(self.num_val_iterations_per_epoch):
-                    #print("batch idddddddddd    ",batch_id)
                     val_outputs.append(self.validation_step(next(self.dataloader_val)))
                 self.on_validation_epoch_end(val_outputs)
 

@@ -85,7 +85,7 @@ class nnUNetTrainer(object):
 
         # OK OK I am guilty. But I tried. http://tiny.cc/gzgwuz
 
-        self.is_ddp = dist.is_available() and dist.is_initialized()
+        self.is_ddp = dist.is_available() and dist.is_initialized() #FIXME: ddp
         self.local_rank = 0 if not self.is_ddp else dist.get_rank()
         self.loss_mode=loss_mode
         self.num_epochs=epoch_num
@@ -211,7 +211,7 @@ class nnUNetTrainer(object):
             self.network = self.build_network_architecture(self.plans_manager, self.dataset_json,
                                                            self.configuration_manager,
                                                            self.num_input_channels,
-                                                           enable_deep_supervision=True).to(self.device)
+                                                           enable_deep_supervision=True).to(self.device)#FIXME: ddp
             # compile network for free speedup
             if ('nnUNet_compile' in os.environ.keys()) and (
                     os.environ['nnUNet_compile'].lower() in ('true', '1', 't')):
@@ -271,7 +271,7 @@ class nnUNetTrainer(object):
                                    dataset_json,
                                    configuration_manager: ConfigurationManager,
                                    num_input_channels,
-                                   enable_deep_supervision: bool = True) -> nn.Module:
+                                   enable_deep_supervision: bool = True) -> nn.Module:#FIXME: ddp
         """
         his is where you build the architecture according to the plans. There is no obligation to use
         get_network_from_plans, this is just a utility we use for the nnU-Net default architectures. You can do what
@@ -394,34 +394,25 @@ class nnUNetTrainer(object):
             
         print(loss)
         print("Using loss mode: ",self.loss_mode)
-                #torch.nn.MSELoss()
-        # elif self.label_manager.has_regions:
-        #     loss = DC_and_BCE_loss({},
-        #                            {'batch_dice': self.configuration_manager.batch_dice,
-        #                             'do_bg': True, 'smooth': 1e-5, 'ddp': self.is_ddp},
-        #                            use_ignore_label=self.label_manager.ignore_label is not None,
-        #                            dice_class=MemoryEfficientSoftDiceLoss)
-        # else:
-        #     loss = DC_and_CE_loss({'batch_dice': self.configuration_manager.batch_dice,
-        #                            'smooth': 1e-5, 'do_bg': False, 'ddp': self.is_ddp}, {}, weight_ce=1, weight_dice=1,
-        #                           ignore_label=self.label_manager.ignore_label, dice_class=MemoryEfficientSoftDiceLoss)
+        
+        if self.enable_deep_supervision:
 
-        deep_supervision_scales = self._get_deep_supervision_scales()
+            deep_supervision_scales = self._get_deep_supervision_scales()
 
-        # we give each output a weight which decreases exponentially (division by 2) as the resolution decreases
-        # this gives higher resolution outputs more weight in the loss
-        weights = np.array([1 / (2 ** i) for i in range(len(deep_supervision_scales))])
-        weights[-1] = 0
+            # we give each output a weight which decreases exponentially (division by 2) as the resolution decreases
+            # this gives higher resolution outputs more weight in the loss
+            weights = np.array([1 / (2 ** i) for i in range(len(deep_supervision_scales))])
+            weights[-1] = 0
+            
+
+            # we don't use the lowest 2 outputs. Normalize weights so that they sum to 1
+            weights = weights / weights.sum()
         
 
-        # we don't use the lowest 2 outputs. Normalize weights so that they sum to 1
-        weights = weights / weights.sum()
-      
+            # now wrap the loss
 
-        # now wrap the loss
-
-        loss = DeepSupervisionWrapper(loss, weights)
-        #print(loss)
+            loss = DeepSupervisionWrapper(loss, weights)
+            #print(loss)
         return loss
 
     def configure_rotation_dummyDA_mirroring_and_inital_patch_size(self):
@@ -644,7 +635,10 @@ class nnUNetTrainer(object):
 
         # needed for deep supervision: how much do we need to downscale the segmentation targets for the different
         # outputs?
-        deep_supervision_scales = self._get_deep_supervision_scales()
+        if self.enable_deep_supervision: #NOTE: fixed
+            deep_supervision_scales = self._get_deep_supervision_scales()
+        else:
+            deep_supervision_scales=None
 
         rotation_for_DA, do_dummy_2d_data_aug, initial_patch_size, mirror_axes = \
             self.configure_rotation_dummyDA_mirroring_and_inital_patch_size()
@@ -772,7 +766,7 @@ class nnUNetTrainer(object):
             if len(mask_channel)>0:
                 tr_transforms.append(SeperateDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask'))
                 
-        if deep_supervision_scales is not None:#FIXME:
+        if deep_supervision_scales is not None:#NOTE: fixed
             tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data_mask',
                                                               output_key='data_mask'))
             
@@ -845,7 +839,7 @@ class nnUNetTrainer(object):
         if mask_channel is not None :
             if len(mask_channel)>0:
                 val_transforms.append(CopyDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask'))
-        if deep_supervision_scales is not None:#FIXME:
+        if deep_supervision_scales is not None:#NOTE: fixed
             val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data_mask',
                                                               output_key='data_mask'))
 
@@ -875,7 +869,7 @@ class nnUNetTrainer(object):
         This function is specific for the default architecture in nnU-Net. If you change the architecture, there are
         chances you need to change this as well!
         """
-        if self.is_ddp:
+        if self.is_ddp: #FIXME: ddp problem very different in the new one
             self.network.module.decoder.deep_supervision = enabled
         else:
             self.network.decoder.deep_supervision = enabled
@@ -1225,7 +1219,7 @@ class nnUNetTrainer(object):
             'inference_allowed_mirroring_axes'] if 'inference_allowed_mirroring_axes' in checkpoint.keys() else self.inference_allowed_mirroring_axes
 
         # messing with state dict naming schemes. Facepalm.
-        if self.is_ddp:
+        if self.is_ddp: #fFIXME: ddp
             if isinstance(self.network.module, OptimizedModule):
                 self.network.module._orig_mod.load_state_dict(new_state_dict)
             else:

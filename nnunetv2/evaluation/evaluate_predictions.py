@@ -72,11 +72,11 @@ def load_summary_json(filename: str):
         print("no metric_per_case")
     return results
 
-
+# This function is for sementation with region input
 def labels_to_list_of_regions(labels: List[int]):
     return [(i,) for i in labels]
 
-
+# This function is for sementation
 def region_or_label_to_mask(segmentation: np.ndarray, region_or_label: Union[int, Tuple[int, ...]]) -> np.ndarray:
     if np.isscalar(region_or_label):
         return segmentation == region_or_label
@@ -86,7 +86,7 @@ def region_or_label_to_mask(segmentation: np.ndarray, region_or_label: Union[int
             mask[segmentation == r] = True
     return mask
 
-
+# This function is for sementation
 def compute_tp_fp_fn_tn(mask_ref: np.ndarray, mask_pred: np.ndarray, ignore_mask: np.ndarray = None):
     if ignore_mask is None:
         use_mask = np.ones_like(mask_ref, dtype=bool)
@@ -98,7 +98,7 @@ def compute_tp_fp_fn_tn(mask_ref: np.ndarray, mask_pred: np.ndarray, ignore_mask
     tn = np.sum(((~mask_ref) & (~mask_pred)) & use_mask)
     return tp, fp, fn, tn
 
-
+# This function is for sementation
 def compute_metrics(reference_file: str, prediction_file: str, image_reader_writer: BaseReaderWriter,
                     labels_or_regions: Union[List[int], List[Union[int, Tuple[int, ...]]]],
                     ignore_label: int = None) -> dict:
@@ -146,7 +146,7 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, image_reader
     seg_pred, seg_pred_dict = image_reader_writer.read_seg(prediction_file)
     # spacing = seg_ref_dict['spacing']
 
-    #FIXME: Do we need to keep ignore label
+    #TODO: keep ignore label?
     #ignore_mask = seg_ref == ignore_label if ignore_label is not None else None
     print("computing dose metrics")
 
@@ -159,36 +159,11 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, image_reader
     print(seg_ref.squeeze().shape,seg_pred.squeeze().shape)
     results['metrics']['MSE']=MSE(seg_ref.squeeze().flatten(),seg_pred.squeeze().flatten())
     
-
-        
-## FIXME: validation metrics for dose
+## TODO: more validation metrics for dose
 
 
-
-    # for r in labels_or_regions:
-        # results['metrics'][r] = {}
-        # mask_ref = region_or_label_to_mask(seg_ref, r)
-        # mask_pred = region_or_label_to_mask(seg_pred, r)
-        # tp, fp, fn, tn = compute_tp_fp_fn_tn(mask_ref, mask_pred, ignore_mask)
-        # if tp + fp + fn == 0:
-        #     results['metrics'][r]['Dice'] = np.nan
-        #     results['metrics'][r]['IoU'] = np.nan
-        # else:
-        #     results['metrics'][r]['Dice'] = 2 * tp / (2 * tp + fp + fn)
-        #     results['metrics'][r]['IoU'] = tp / (tp + fp + fn)
-        # results['metrics'][r]['FP'] = fp
-        # results['metrics'][r]['TP'] = tp
-        # results['metrics'][r]['FN'] = fn
-        # results['metrics'][r]['TN'] = tn
-        # results['metrics'][r]['n_pred'] = fp + tp
-        # results['metrics'][r]['n_ref'] = fn + tp
-    # print("############################################################")
-    # print(results)
-    # print("############################################################")
-    # print(results.keys())
-    # print("############################################################")
     return results
-#FIXME: few still didn't import dose label
+#FIXME: few still didn't import dose label ? I don't know what was I writing about-02/13/2024
 def compute_metrics_on_folder(folder_ref: str, folder_pred: str, output_file: str,
                               image_reader_writer: BaseReaderWriter,
                               file_ending: str,
@@ -213,7 +188,7 @@ def compute_metrics_on_folder(folder_ref: str, folder_pred: str, output_file: st
         # for i in list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred), [ignore_label] * len(files_pred))):
         #     compute_metrics(*i)
         
-        #FIXME: use compute_dose_metrics
+        # compute_dose_metrics or compute_metrics(for segmentation)
         if dose_label:
             results = pool.starmap(
                 compute_dose_metrics,
@@ -250,7 +225,7 @@ def compute_metrics_on_folder(folder_ref: str, folder_pred: str, output_file: st
         # print('DONE')
 
     else:
-        print("nondose?????????????????????????????")
+        print("non-dose? you should check out nnUNet if you want to do segmentation!")
         results = {}
 
         #mean metric per class
@@ -358,13 +333,19 @@ def evaluate_simple_entry_point():
 
 
 if __name__ == '__main__':
-    folder_ref = '/media/fabian/data/nnUNet_raw/Dataset004_Hippocampus/labelsTr'
-    folder_pred = '/home/fabian/results/nnUNet_remake/Dataset004_Hippocampus/nnUNetModule__nnUNetPlans__3d_fullres/fold_0/validation'
-    output_file = '/home/fabian/results/nnUNet_remake/Dataset004_Hippocampus/nnUNetModule__nnUNetPlans__3d_fullres/fold_0/validation/summary.json'
+    folder_ref = '/home/changh/Documents/nnUNet_prediction/labelsTs'
+    folder_pred = '/home/changh/Documents/nnUNet_prediction/Dataset004/'
+    output_file = '/home/changh/Documents/nnUNet_prediction/Dataset004/summary.json'
     image_reader_writer = SimpleITKIO()
     file_ending = '.nii.gz'
-    regions = labels_to_list_of_regions([1, 2])
+    regions = None
     ignore_label = None
+    dose_label= True
     num_processes = 12
-    compute_metrics_on_folder(folder_ref, folder_pred, output_file, image_reader_writer, file_ending, regions, ignore_label,
+    compute_metrics_on_folder(folder_ref, folder_pred, output_file,
+                              image_reader_writer,
+                              file_ending,
+                              regions,
+                              ignore_label,
+                              dose_label,
                               num_processes)

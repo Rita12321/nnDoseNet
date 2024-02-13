@@ -103,22 +103,7 @@ def find_best_configuration(dataset_name_or_id,
             'source': merged_output_folder,
             'result': load_summary_json(join(merged_output_folder, 'summary.json'))['mean']        
         }
-        # except:
-            
-        #     count=0
-        #     sum=0
-        #     for i in load_summary_json(join(merged_output_folder, 'summary.json')):
-        #         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        #         print(i)
-        #         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        #         print("mse",i['MSE'])
-        #         sum=sum+int(i['MSE'])
-        #         count=count+1
-        #     mse=sum/count
-        #     all_results[identifier] = {
-        #         'source': merged_output_folder,
-        #         'result': mse     
-        #     }
+
 
     if allow_ensembling:
         for i in range(len(allowed_trained_models)):
@@ -303,7 +288,7 @@ def find_best_configuration_entry_point():
                         help='Set this flag to disable ensembling')
     parser.add_argument('--no_overwrite', action='store_true',
                         help='If set we will not overwrite already ensembled files etc. May speed up concecutive '
-                             'runs of this command (why would oyu want to do that?) at the risk of not updating '
+                             'runs of this command (why would you want to do that?) at the risk of not updating '
                              'outdated results.')
     args = parser.parse_args()
 

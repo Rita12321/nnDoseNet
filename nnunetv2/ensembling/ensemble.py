@@ -172,7 +172,8 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
         for f in folds:
             for fi in files_per_folder[tr][f]:
                 # check for duplicates
-                assert fi not in file_mapping[-1].keys(), f"Duplicate detected. Case {fi} is present in more than " \
+                assert fi not in file_mapping[-1].keys(), f"
+                detected. Case {fi} is present in more than " \
                                                           f"one fold of model {tr}."
                 file_mapping[-1][fi] = join(tr, f'fold_{f}', 'validation', fi)
 

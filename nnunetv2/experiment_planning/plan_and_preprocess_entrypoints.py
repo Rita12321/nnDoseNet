@@ -61,7 +61,7 @@ def plan_experiment_entry():#nnUNetv2_plan_experiment
                              '(as a baseline). Changing the target spacing for the other configurations is currently '
                              'not implemented. New target spacing must be a list of three numbers!')
     parser.add_argument('-overwrite_plans_name', default=None, required=False,
-                        help='[OPTIONAL] DANGER ZONE! If you used -gpu_memory_target, -preprocessor_name or '
+                        help='[OPTIONAL] DANGER ZONE! If you used , -preprocessor_name or '
                              '-overwrite_target_spacing it is best practice to use -overwrite_plans_name to generate a '
                              'differently named plans file such that the nnunet default plans are not '
                              'overwritten. You will then need to specify your custom plans file with -p whenever '

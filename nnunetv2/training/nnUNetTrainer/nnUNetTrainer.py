@@ -211,7 +211,7 @@ class nnUNetTrainer(object):
             self.network = self.build_network_architecture(self.plans_manager, self.dataset_json,
                                                            self.configuration_manager,
                                                            self.num_input_channels,
-                                                           enable_deep_supervision=False).to(self.device)#FIXME: dspTrue-->False
+                                                           enable_deep_supervision=True).to(self.device)#FIXME: dspTrue-->False
             # compile network for free speedup
             if ('nnUNet_compile' in os.environ.keys()) and (
                     os.environ['nnUNet_compile'].lower() in ('true', '1', 't')):
@@ -395,23 +395,23 @@ class nnUNetTrainer(object):
         print(loss)
         print("Using loss mode: ",self.loss_mode)
         
-        if self.enable_deep_supervision:
+        #if self.enable_deep_supervision:
 
-            deep_supervision_scales = self._get_deep_supervision_scales()
+        deep_supervision_scales = self._get_deep_supervision_scales()
 
-            # we give each output a weight which decreases exponentially (division by 2) as the resolution decreases
-            # this gives higher resolution outputs more weight in the loss
-            weights = np.array([1 / (2 ** i) for i in range(len(deep_supervision_scales))])
-            weights[-1] = 0
-            
-
-            # we don't use the lowest 2 outputs. Normalize weights so that they sum to 1
-            weights = weights / weights.sum()
+        # we give each output a weight which decreases exponentially (division by 2) as the resolution decreases
+        # this gives higher resolution outputs more weight in the loss
+        weights = np.array([1 / (2 ** i) for i in range(len(deep_supervision_scales))])
+        weights[-1] = 0
         
 
-            # now wrap the loss
+        # we don't use the lowest 2 outputs. Normalize weights so that they sum to 1
+        weights = weights / weights.sum()
+    
 
-            loss = DeepSupervisionWrapper(loss, weights)
+        # now wrap the loss
+
+        loss = DeepSupervisionWrapper(loss, weights)
             #print(loss)
         return loss
 
@@ -635,10 +635,10 @@ class nnUNetTrainer(object):
 
         # needed for deep supervision: how much do we need to downscale the segmentation targets for the different
         # outputs?
-        if self.enable_deep_supervision: #NOTE: fixed
-            deep_supervision_scales = self._get_deep_supervision_scales()
-        else:
-            deep_supervision_scales=None
+        #if self.enable_deep_supervision: #NOTE: fixed
+        deep_supervision_scales = self._get_deep_supervision_scales()
+        # else:
+        #     deep_supervision_scales=None
 
         rotation_for_DA, do_dummy_2d_data_aug, initial_patch_size, mirror_axes = \
             self.configure_rotation_dummyDA_mirroring_and_inital_patch_size()
@@ -894,7 +894,7 @@ class nnUNetTrainer(object):
         maybe_mkdir_p(self.output_folder)
 
         # make sure deep supervision is on in the network
-        self.set_deep_supervision_enabled(self.enable_deep_supervision)
+        self.set_deep_supervision_enabled(True)#self.enable_deep_supervision
 
         self.print_plans()
         empty_cache(self.device)
@@ -1374,7 +1374,7 @@ class nnUNetTrainer(object):
             self.print_to_log_file("Validation complete", also_print_to_console=True)
             #self.print_to_log_file("Mean Validation Dice: ", (metrics['foreground_mean']["Dice"]), also_print_to_console=True)
 
-        #self.set_deep_supervision_enabled(True) #FIXME: dsp weired 
+        self.set_deep_supervision_enabled(True) #FIXME: dsp weired 
         compute_gaussian.cache_clear()
 
     def run_training(self):

@@ -84,11 +84,15 @@ class ExperimentPlanner(object):
                                                                                  training_identifiers[0] + '_0000' +
                                                                                  self.dataset_json['file_ending']))
     def check_if_masked_channel(self):
-        #print(self.dataset_json.keys(),"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         if 'mask_channel' in self.dataset_json.keys() and self.dataset_json['mask_channel'] != 'None':
             self.mask_channel=self.dataset_json['mask_channel'] 
             return True
         return False
+    # def check_if_masked_channel(self):
+    #     if 'mask_channel' in self.dataset_json.keys() and self.dataset_json['mask_channel'] != 'None':
+    #         self.mask_channel=self.dataset_json['mask_channel'] 
+    #         return True
+    #     return False
       
 
     @staticmethod
@@ -127,10 +131,9 @@ class ExperimentPlanner(object):
         determine_resampling is called within get_plans_for_configuration to allow for different functions for each
         configuration
         """
-        # NOTE: switch setting for seg and data
-        # order1-->3 in seg , if use 1 dose would be grid like,
-        # order3-->1 in data, if use 3 the edge of oar or ptv won't be sharp. The value in amsk won't be binary 
-        
+        # NOTE: switch setting for seg and data from nnunet
+
+        #data---CT
         resampling_data = resample_data_or_seg_to_shape
         resampling_data_kwargs = {
             "is_seg": False,         
@@ -138,6 +141,7 @@ class ExperimentPlanner(object):
             "order_z": 0,
             "force_separate_z": None,
         }
+        #label--Dose
         if self.dose:
             resampling_target = resample_data_or_seg_to_shape
             resampling_target_kwargs = {
@@ -157,8 +161,8 @@ class ExperimentPlanner(object):
         
   
         return resampling_data, resampling_data_kwargs, resampling_target, resampling_target_kwargs
+    # data---OAR,PTV... all mask-based data in input channel
     def determine_mask_channel_resampling(self, *args, **kwargs):
-     
         
         resampling_data_mask = resample_data_or_seg_to_shape
         resampling_data_mask_kwargs = {
@@ -169,12 +173,8 @@ class ExperimentPlanner(object):
         }
   
         return resampling_data_mask, resampling_data_mask_kwargs
-    # def determine_resampling_dummy(self, *args, **kwargs):
-     
-        
-    #     resampling_data_mask = resample_data_or_seg_to_shape
-    #     resampling_data_mask_kwargs = None
-    #     return resampling_data_mask, resampling_data_mask_kwargs
+
+#NOTE: please keep this function from nnunet
     def determine_segmentation_softmax_export_fn(self, *args, **kwargs):
         """
         function must be callable(data, new_shape, current_spacing, new_spacing, **kwargs). The new_shape should be
@@ -211,12 +211,8 @@ class ExperimentPlanner(object):
 
         spacings = self.dataset_fingerprint['spacings']
         sizes = self.dataset_fingerprint['shapes_after_crop']
-        # print("target, spacing min", np.min(np.vstack(spacings), 0))
-        # print(type(np.min(np.vstack(spacings), 0)),np.min(np.vstack(spacings), 0).shape)
-        target = np.percentile(np.vstack(spacings), 50, 0)
-
-        # todo sizes_after_resampling = [compute_new_shape(j, i, target) for i, j in zip(spacings, sizes)]
         
+        target = np.percentile(np.vstack(spacings), 50, 0)        
         target_size = np.percentile(np.vstack(sizes), 50, 0)
         
         # we need to identify datasets for which a different target spacing could be beneficial. These datasets have
@@ -241,13 +237,31 @@ class ExperimentPlanner(object):
             target[worst_spacing_axis] = target_spacing_of_that_axis
         return target
 
+#FIXME: cahnge to get OAR PTV location !!
     def determine_normalization_scheme_and_whether_mask_is_used_for_norm(self) -> Tuple[List[str], List[bool]]:
         if 'channel_names' not in self.dataset_json.keys():
-            print('WARNING: "modalities" should be renamed to "channel_names" in dataset.json. This will be '
-                  'enforced soon!')
-        modalities = self.dataset_json['channel_names'] if 'channel_names' in self.dataset_json.keys() else \
-            self.dataset_json['modality']
-        normalization_schemes = [get_normalization_scheme(m) for m in modalities.values()]
+            print('WARNING: "Please enter "channel_names" in nnDoseNets dataset.json. Thank U')
+        channel_names = self.dataset_json['channel_names']
+        # normalization_schemes = [get_normalization_scheme(m) for m in channel_names.values()]
+        normalization_schemes=[]
+        PTV_OAR_BODY=[-1,-1,-1]
+        for c in channel_names.keys() :
+            n=channel_names[c]
+            normalization_schemes.append(n)
+            if n=="PTV":
+                PTV_OAR_BODY[0]=c
+            elif n=="OAR":
+                PTV_OAR_BODY[1]=c
+            elif n=="BODY":
+                PTV_OAR_BODY[2]=c
+        if -1 in PTV_OAR_BODY:
+            print('WARNING: "PTV","OAR","BODY" should be mention in channel_names and please specific which channel it is in'\
+                '"PTV" is the planing target volume'\
+                '"OAR" is the oragn at risk'\
+                '"BODY" is the contour of the patient'\
+                'Preferred format:'\
+                '"channel_names": {"0": "CT", "1": "PTV", "2": "OAR", "3": "BODY"}')
+                
         if self.dataset_fingerprint['median_relative_size_after_cropping'] < (3 / 4.):
             use_nonzero_mask_for_norm = [i.leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true for i in
                                          normalization_schemes]
@@ -256,15 +270,12 @@ class ExperimentPlanner(object):
             assert all([i in (True, False) for i in use_nonzero_mask_for_norm]), 'use_nonzero_mask_for_norm must be ' \
                                                                                  'True or False and cannot be None'
         normalization_schemes = [i.__name__ for i in normalization_schemes]
-        return normalization_schemes, use_nonzero_mask_for_norm
+        return normalization_schemes, use_nonzero_mask_for_norm,PTV_OAR_BODY
 
     def determine_transpose(self):
         if self.suppress_transpose:
             return [0, 1, 2], [0, 1, 2]
-
-        # todo we should use shapes for that as well. Not quite sure how yet
         target_spacing = self.determine_fullres_target_spacing()
-
         max_spacing_axis = np.argmax(target_spacing)
         remaining_axes = [i for i in list(range(3)) if i != max_spacing_axis]
         transpose_forward = [max_spacing_axis] + remaining_axes
@@ -323,13 +334,13 @@ class ExperimentPlanner(object):
                                                    self.UNet_blocks_per_stage_decoder[:num_stages - 1],
                                                    len(self.dataset_json['labels'].keys()))
 
-        # how large is the reference for us here (batch size etc)?
+
         # adapt for our vram target
         reference = (self.UNet_reference_val_2d if len(spacing) == 2 else self.UNet_reference_val_3d) * \
                     (self.UNet_vram_target_GB / self.UNet_reference_val_corresp_GB)
 
         while estimate > reference:
-            # print(patch_size)
+   
             # patch size seems to be too large, so we need to reduce it. Reduce the axis that currently violates the
             # aspect ratio the most (that is the largest relative to median shape)
             axis_to_be_reduced = np.argsort(patch_size / median_shape[:len(spacing)])[-1]
@@ -392,7 +403,7 @@ class ExperimentPlanner(object):
         resampling_data, resampling_data_kwargs, resampling_seg, resampling_seg_kwargs = self.determine_resampling()
         resampling_softmax, resampling_softmax_kwargs = self.determine_segmentation_softmax_export_fn()
 
-        normalization_schemes, mask_is_used_for_norm = \
+        normalization_schemes, mask_is_used_for_norm,PTV_OAR_BODY = \
             self.determine_normalization_scheme_and_whether_mask_is_used_for_norm()
         num_stages = len(pool_op_kernel_sizes)
         plan = {
@@ -420,6 +431,7 @@ class ExperimentPlanner(object):
             'resampling_fn_probabilities': resampling_softmax.__name__,
             'resampling_fn_probabilities_kwargs': resampling_softmax_kwargs,
             'mask_channel' : mask_channel,
+            'PTV_OAR_BODY' : PTV_OAR_BODY 
 
         }
         if self.check_if_masked_channel():

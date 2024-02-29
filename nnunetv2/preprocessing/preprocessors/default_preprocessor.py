@@ -101,14 +101,7 @@ class DefaultPreprocessor(object):
             data = configuration_manager.resampling_fn_data(data, new_shape, original_spacing, target_spacing)
 
         seg = configuration_manager.resampling_fn_seg(seg, new_shape, original_spacing, target_spacing)
-        # if data.shape[1:]!=seg.shape[1:]:
-        #     print("how?",data.shape[1:],seg.shape[1:])
-        # else:
-        #     print("good")
-        # if new_shape!=data.shape[1:]:
-        #     print("what?",new_shape,data.shape[1:])
-        # else:
-        #     print("nice")
+
         if self.verbose:
             print(f'old shape: {old_shape}, new_shape: {new_shape}, old_spacing: {original_spacing}, '
                   f'new_spacing: {target_spacing}, fn_data: {configuration_manager.resampling_fn_data}')
@@ -226,7 +219,7 @@ class DefaultPreprocessor(object):
                 raise RuntimeError('Unable to locate class \'%s\' for normalization' % scheme)
             normalizer = normalizer_class(use_mask_for_norm=configuration_manager.use_mask_for_norm[c],
                                           intensityproperties=foreground_intensity_properties_per_channel[str(c)])
-            data[c] = normalizer.run(data[c], seg[0])# just passs the seg didn't doing anything
+            data[c] = normalizer.run(data[c], seg[3])# just passs the seg didn't doing anything, put 3 in bcz dose mask suppose to be in channel 3
         return data
 
     def run(self, dataset_name_or_id: Union[int, str], configuration_name: str, plans_identifier: str,

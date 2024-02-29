@@ -70,8 +70,24 @@ class NoNormalization(ImageNormalization):
 
     def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
         return image.astype(self.target_dtype)
-    
 class NoNormalization_mask(ImageNormalization):
+    leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
+
+    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
+        return image.astype(np.uint8)   
+    
+#TODO: merge the labeling thing here, please don't make me do this now it's driving me crazzzy
+class PTV_labeling(ImageNormalization):
+    leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
+
+    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
+        return image.astype(np.uint8)
+class OAR_labeling(ImageNormalization):
+    leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
+
+    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
+        return image.astype(np.uint8)
+class Body_mask_generater(ImageNormalization):
     leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
 
     def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:

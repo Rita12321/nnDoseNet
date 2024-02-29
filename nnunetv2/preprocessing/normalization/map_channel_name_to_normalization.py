@@ -11,7 +11,8 @@ channel_name_to_normalization_mapping = {
     'rgb_to_0_1': RGBTo01Normalization,
     'mask': NoNormalization_mask,
     'PTV': NoNormalization_mask,
-    'OAR' : NoNormalization_mask
+    'OAR' : NoNormalization_mask,
+    'BODY' : NoNormalization_mask
 }
 
 

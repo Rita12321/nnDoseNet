@@ -42,7 +42,7 @@ def extract_fingerprints(dataset_ids: List[int], fingerprint_extractor_class_nam
     """
     fingerprint_extractor_class = recursive_find_python_class(join(nndosenet.__path__[0], "experiment_planning"),
                                                               fingerprint_extractor_class_name,
-                                                              current_module="nnunetv2.experiment_planning")
+                                                              current_module="nndosenet.experiment_planning")
     for d in dataset_ids:
         extract_fingerprint_dataset(d, fingerprint_extractor_class, num_processes, check_dataset_integrity, dose, clean,
                                     verbose)
@@ -81,7 +81,7 @@ def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str 
  
     experiment_planner = recursive_find_python_class(join(nndosenet.__path__[0], "experiment_planning"),
                                                      experiment_planner_class_name,
-                                                     current_module="nnunetv2.experiment_planning")
+                                                     current_module="nndosenet.experiment_planning")
     for d in dataset_ids:
         plan_experiment_dataset(d, experiment_planner, gpu_memory_target_in_gb, preprocess_class_name,
                                 overwrite_target_spacing, overwrite_plans_name,dose)

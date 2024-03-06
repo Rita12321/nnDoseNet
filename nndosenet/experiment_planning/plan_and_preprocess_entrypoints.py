@@ -49,7 +49,7 @@ def plan_experiment_entry():#nnUNetv2_plan_experiment
                              'are doing and NEVER use this without running the default nnU-Net first (as a baseline).')
     parser.add_argument('-preprocessor_name', default='DefaultPreprocessor', type=str, required=False,
                         help='[OPTIONAL] DANGER ZONE! Sets a custom preprocessor class. This class must be located in '
-                             'nnunetv2.preprocessing. Default: \'DefaultPreprocessor\'. Changing this may affect your '
+                             'nndosenet.preprocessing. Default: \'DefaultPreprocessor\'. Changing this may affect your '
                              'models performance! Only use this if you really know what you '
                              'are doing and NEVER use this without running the default nnU-Net first (as a baseline).')
     parser.add_argument('-overwrite_target_spacing', default=None, nargs='+', required=False,
@@ -149,7 +149,7 @@ def plan_and_preprocess_entry():#nnUNetv2_plan_and_preprocess
                              'are doing and NEVER use this without running the default nnU-Net first (as a baseline).')
     parser.add_argument('-preprocessor_name', default='DefaultPreprocessor', type=str, required=False,
                         help='[OPTIONAL] DANGER ZONE! Sets a custom preprocessor class. This class must be located in '
-                             'nnunetv2.preprocessing. Default: \'DefaultPreprocessor\'. Changing this may affect your '
+                             'nndosenet.preprocessing. Default: \'DefaultPreprocessor\'. Changing this may affect your '
                              'models performance! Only use this if you really know what you '
                              'are doing and NEVER use this without running the default nnU-Net first (as a baseline).')
     parser.add_argument('-overwrite_target_spacing', default=None, nargs='+', required=False,

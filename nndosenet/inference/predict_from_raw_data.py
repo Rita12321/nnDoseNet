@@ -94,7 +94,7 @@ class nnUNetPredictor(object):
         # restore network
         num_input_channels = determine_num_input_channels(plans_manager, configuration_manager, dataset_json)
         trainer_class = recursive_find_python_class(join(nndosenet.__path__[0], "training", "nnUNetTrainer"),
-                                                    trainer_name, 'nnunetv2.training.nnUNetTrainer')
+                                                    trainer_name, 'nndosenet.training.nnUNetTrainer')
         network = trainer_class.build_network_architecture(plans_manager, dataset_json, configuration_manager,
                                                            num_input_channels, enable_deep_supervision=False)
         self.plans_manager = plans_manager
@@ -872,7 +872,7 @@ def predict_entry_point():
 if __name__ == '__main__':
     predict_entry_point()
     # # predict a bunch of files
-    # from nnunetv2.paths import nnUNet_results, nnUNet_raw
+    # from nndosenet.paths import nnUNet_results, nnUNet_raw
     # predictor = nnUNetPredictor(
     #     tile_step_size=0.5,
     #     use_gaussian=True,
@@ -895,7 +895,7 @@ if __name__ == '__main__':
     #                              folder_with_segs_from_prev_stage=None, num_parts=1, part_id=0)
 
     # # predict a numpy array
-    # from nnunetv2.imageio.simpleitk_reader_writer import SimpleITKIO
+    # from nndosenet.imageio.simpleitk_reader_writer import SimpleITKIO
     # img, props = SimpleITKIO().read_images([join(nnUNet_raw, 'Dataset003_Liver/imagesTr/liver_63_0000.nii.gz')])
     # ret = predictor.predict_single_npy_array(img, props, None, None, False)
 

@@ -26,7 +26,7 @@ def determine_reader_writer_from_dataset_json(dataset_json_content: dict, exampl
     if 'overwrite_image_reader_writer' in dataset_json_content.keys() and \
             dataset_json_content['overwrite_image_reader_writer'] != 'None':
         ioclass_name = dataset_json_content['overwrite_image_reader_writer']
-        # trying to find that class in the nnunetv2.imageio module
+        # trying to find that class in the nndosenet.imageio module
         try:
             ret = recursive_find_reader_writer_by_name(ioclass_name)
             if verbose: print('Using %s reader/writer' % ret)
@@ -71,9 +71,9 @@ def determine_reader_writer_from_file_ending(file_ending: str, example_file: str
 
 
 def recursive_find_reader_writer_by_name(rw_class_name: str) -> Type[BaseReaderWriter]:
-    ret = recursive_find_python_class(join(nndosenet.__path__[0], "imageio"), rw_class_name, 'nnunetv2.imageio')
+    ret = recursive_find_python_class(join(nndosenet.__path__[0], "imageio"), rw_class_name, 'nndosenet.imageio')
     if ret is None:
         raise RuntimeError("Unable to find reader writer class '%s'. Please make sure this class is located in the "
-                           "nnunetv2.imageio module." % rw_class_name)
+                           "nndosenet.imageio module." % rw_class_name)
     else:
         return ret

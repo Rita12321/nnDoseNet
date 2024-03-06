@@ -39,10 +39,10 @@ def get_trainer_from_args(dataset_name_or_id: Union[int, str],
                           device: torch.device = torch.device('cuda')):
     # load nnunet class and do sanity checks
     nnunet_trainer = recursive_find_python_class(join(nndosenet.__path__[0], "training", "nnUNetTrainer"),
-                                                trainer_name, 'nnunetv2.training.nnUNetTrainer')
+                                                trainer_name, 'nndosenet.training.nnUNetTrainer')
     if nnunet_trainer is None:
         raise RuntimeError(f'Could not find requested nnunet trainer {trainer_name} in '
-                           f'nnunetv2.training.nnUNetTrainer ('
+                           f'nndosenet.training.nnUNetTrainer ('
                            f'{join(nndosenet.__path__[0], "training", "nnUNetTrainer")}). If it is located somewhere '
                            f'else, please move it there.')
     assert issubclass(nnunet_trainer, nnUNetTrainer), 'The requested nnunet trainer class must inherit from ' \

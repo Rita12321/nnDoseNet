@@ -80,7 +80,7 @@ class criteria_DVH_Loss(nn.Module):
     
                     fractional_volume_to_evaluate = 1 - 1 / len(l)
                     criteria+=torch.abs(torch.quantile(dose_x, fractional_volume_to_evaluate)-torch.quantile(dose_y, fractional_volume_to_evaluate))
-                    criteria+=torch.abs(torch.max(dose_x)-torch.max(dose_y))#cc01
+                    # old dc0.01---criteria+=torch.abs(torch.max(dose_x)-torch.max(dose_y))#cc01
                     criteria+=torch.abs(torch.mean(dose_x)-torch.mean(dose_y))#mean  
             if L==0:
                 return None        

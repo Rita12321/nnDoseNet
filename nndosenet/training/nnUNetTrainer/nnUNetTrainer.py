@@ -49,7 +49,7 @@ from nndosenet.training.dataloading.utils import get_case_identifiers, unpack_da
 from nndosenet.training.logging.nnunet_logger import nnUNetLogger
 from nndosenet.training.loss.compound_losses import Err_and_DVH_Loss#,MSE_and_DVH_loss,MSE_and_2DVH_loss,MAE_and_DVH_loss,MAE_and_2DVH_loss
 from nndosenet.training.loss.deep_supervision import DeepSupervisionWrapper
-#from nnunetv2.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
+#from nndosenet.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
 from nndosenet.training.loss.DVH_loss import value_DVH_Loss,criteria_DVH_Loss
 from nndosenet.training.lr_scheduler.polylr import PolyLRScheduler
 from nndosenet.utilities.collate_outputs import collate_outputs

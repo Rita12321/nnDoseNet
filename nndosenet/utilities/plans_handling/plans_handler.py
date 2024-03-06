@@ -51,7 +51,7 @@ class ConfigurationManager(object):
     def preprocessor_class(self) -> Type[DefaultPreprocessor]:
         preprocessor_class = recursive_find_python_class(join(nndosenet.__path__[0], "preprocessing"),
                                                          self.preprocessor_name,
-                                                         current_module="nnunetv2.preprocessing")
+                                                         current_module="nndosenet.preprocessing")
         return preprocessor_class
 
     @property
@@ -288,7 +288,7 @@ class PlansManager(object):
         planner_name = self.experiment_planner_name
         experiment_planner = recursive_find_python_class(join(nndosenet.__path__[0], "experiment_planning"),
                                                          planner_name,
-                                                         current_module="nnunetv2.experiment_planning")
+                                                         current_module="nndosenet.experiment_planning")
         return experiment_planner
 
     @property

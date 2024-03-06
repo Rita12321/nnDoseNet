@@ -4,49 +4,42 @@ from nndosenet.formating_dataset.format_dataset_api import format_dataset_from_d
 
 
 def organize_and_convert_dicom_entry():#nnUNetv2_extract_fingerprint
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d', nargs='+', type=int,
-                        help="[REQUIRED] List of dataset IDs. Example: 2 4 5. This will run fingerprint extraction, experiment "
-                             "planning and preprocessing for these datasets. Can of course also be just one dataset")
-   
-    organize_and_convert_dicom(args.d, )
-
+     import argparse
+     parser = argparse.ArgumentParser()
+     parser.add_argument('-name', type=str,
+                         help="[REQUIRED] The name of dataset in nndose_dicom you want to convert. Example: openkbp. "
+                              "This will organize the folder and convert the ct, dose map and structure set in structure_name.json to nifti")
+     args, unrecognized_args = parser.parse_known_args()
+     format_dataset_from_dicom(args.d, )
 
 def label_nifti_and_format_dataset_entry():#nnUNetv2_plan_experiment
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d', nargs='+', type=int,
-                        help="[REQUIRED] List of dataset IDs. Example: 2 4 5. This will run fingerprint extraction, experiment "
-                             "planning and preprocessing for these datasets. Can of course also be just one dataset")
-    
-    args, unrecognized_args = parser.parse_known_args()
-    plan_experiments(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing,
-                     args.overwrite_plans_name,args.dose)
+     import argparse
+     parser = argparse.ArgumentParser()
+     parser.add_argument('-d', nargs='+', type=int,
+                         help="[REQUIRED] List of dataset IDs. Example: 2 4 5. This will run fingerprint extraction, experiment "
+                              "planning and preprocessing for these datasets. Can of course also be just one dataset")
 
-
-
-
+     args, unrecognized_args = parser.parse_known_args()
+     format_dataset_from_nifti(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing,
+                         args.overwrite_plans_name,args.dose)
 
 def format_dataset_entry():#nnUNetv2_plan_and_preprocess
-    import argparse
-    parser = argparse.ArgumentParser()
-    
+     import argparse
+     parser = argparse.ArgumentParser()
+     parser.add_argument('-d', nargs='+', type=int,
+                         help="[REQUIRED] List of dataset IDs. Example: 2 4 5. This will run fingerprint extraction, experiment "
+                              "planning and preprocessing for these datasets. Can of course also be just one dataset")
+     args, unrecognized_args = parser.parse_known_args()
+     # fingerprint extraction
+     print("Fingerprint extraction...")
+     format_dataset_from_dicom(args.d, args.fpe, args.npfp, args.verify_dataset_integrity, args.dose, args.clean, args.verbose)
 
-    # fingerprint extraction
-    print("Fingerprint extraction...")
-    extract_fingerprints(args.d, args.fpe, args.npfp, args.verify_dataset_integrity, args.dose, args.clean, args.verbose)
+     # experiment planning
+     print('Experiment planning...')        
+     print(args.dose)
+     format_dataset_from_nifti(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing, args.overwrite_plans_name, args.dose)
 
-    # experiment planning
-    print('Experiment planning...')        
-    print(args.dose)
-    plan_experiments(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing, args.overwrite_plans_name, args.dose)
-
-    # manage default np
-    
-
-    
-        
+     # manage default np     
      preprocess(args.d, args.overwrite_plans_name, args.c, np, args.verbose)
 
 

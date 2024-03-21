@@ -2,7 +2,7 @@ from typing import Type
 
 from nndosenet.preprocessing.normalization.default_normalization_schemes import CTNormalization, NoNormalization, \
     ZScoreNormalization, RescaleTo01Normalization, RGBTo01Normalization, ImageNormalization,\
-        NoNormalization_mask,PTV_labeling,OAR_labeling,Body_mask_generater
+        NoNormalization_mask#,PTV_labeling,OAR_labeling,Body_mask_generater
 channel_name_to_normalization_mapping = {
     'CT': CTNormalization,
     'noNorm': NoNormalization,
@@ -10,11 +10,16 @@ channel_name_to_normalization_mapping = {
     'rescale_0_1': RescaleTo01Normalization,
     'rgb_to_0_1': RGBTo01Normalization,
     'mask': NoNormalization_mask,
+    'PTV': NoNormalization_mask,
+    'OAR' : NoNormalization_mask,
+    'BODY' : NoNormalization_mask
+
+}
+"""
     'PTV': PTV_labeling,
     'OAR' : OAR_labeling,
     'BODY' : Body_mask_generater
-}
-
+"""
 
 def get_normalization_scheme(channel_name: str) -> Type[ImageNormalization]:
     """

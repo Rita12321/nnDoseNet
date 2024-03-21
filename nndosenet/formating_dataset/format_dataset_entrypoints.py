@@ -1,15 +1,29 @@
 from nndosenet.configuration import default_num_processes
-from nndosenet.formating_dataset.format_dataset_api import format_dataset_from_dicom, format_dataset_from_nifti,organize_folder,move_to_raw
-
-
+from nndosenet.formating_dataset.format_dataset_api import format_dataset_from_dicom, format_dataset_from_nifti,organize_dicom
+from nndosenet.paths import nnUNet_raw,nnUNet_dicom
+from batchgenerators.utilities.file_and_folder_operations import *
 
 def organize_and_convert_dicom_entry():#nnUNetv2_extract_fingerprint
      import argparse
      parser = argparse.ArgumentParser()
      parser.add_argument('-name', type=str,
-                         help="[REQUIRED] The name of dataset in nndose_dicom you want to convert. Example: openkbp. "
-                              "This will organize the folder and convert the ct, dose map and structure set in structure_name.json to nifti")
+                         help="[REQUIRED] The name of folder in nndose_dicom you want to convert. Example: openkbp. ")
+     parser.add_argument('-trts', type=str,default='Both',
+                         help="Enter 'Tr' for Training, 'Ts' for Testing, 'Both' for both train and test ")
+     
+     
+     
+     
      args, unrecognized_args = parser.parse_known_args()
+     raw_dicom_folder = join(nnUNet_dicom,args.name)
+     
+     if args.trts =='Both':
+          
+     else:
+          organize_dicom(join(raw_dicom_folder,"args.trts"))
+          format_dataset_from_dicom(raw_dicom_folder,args.trts)
+          
+          
      format_dataset_from_dicom(args.d, )
 
 def label_nifti_and_format_dataset_entry():#nnUNetv2_plan_experiment
@@ -31,6 +45,7 @@ def format_dataset_entry():#nnUNetv2_plan_and_preprocess
                               "planning and preprocessing for these datasets. Can of course also be just one dataset")
      args, unrecognized_args = parser.parse_known_args()
      # fingerprint extraction
+     organize_dicom()
      print("Fingerprint extraction...")
      format_dataset_from_dicom(args.d, args.fpe, args.npfp, args.verify_dataset_integrity, args.dose, args.clean, args.verbose)
 
@@ -41,7 +56,6 @@ def format_dataset_entry():#nnUNetv2_plan_and_preprocess
 
      # manage default np     
      preprocess(args.d, args.overwrite_plans_name, args.c, np, args.verbose)
-
 
 if __name__ == '__main__':
     format_dataset_entry()

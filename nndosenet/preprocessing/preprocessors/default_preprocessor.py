@@ -76,7 +76,7 @@ class DefaultPreprocessor(object):
         # longer fitting the images perfectly!
         data = self._normalize(data, seg, configuration_manager,
                                plans_manager.foreground_intensity_properties_per_channel)
-
+  
         # print('current shape', data.shape[1:], 'current_spacing', original_spacing,
         #       '\ntarget shape', new_shape, 'target_spacing', target_spacing)
         old_shape = data.shape[1:]
@@ -159,8 +159,9 @@ class DefaultPreprocessor(object):
         rw = plans_manager.image_reader_writer_class()
 
         # load image(s)
+        
         data, data_properites = rw.read_images(image_files)
-
+        
         # if possible, load seg
         if seg_file is not None:
             seg, _ = rw.read_seg(seg_file)
@@ -219,8 +220,9 @@ class DefaultPreprocessor(object):
                 raise RuntimeError('Unable to locate class \'%s\' for normalization' % scheme)
             normalizer = normalizer_class(use_mask_for_norm=configuration_manager.use_mask_for_norm[c],
                                           intensityproperties=foreground_intensity_properties_per_channel[str(c)])
-            data[c] = normalizer.run(data[c], seg[3])# just passs the seg didn't doing anything, put 3 in bcz dose mask suppose to be in channel 3
+            data[c] = normalizer.run(data[c], seg[0])
         return data
+            
 
     def run(self, dataset_name_or_id: Union[int, str], configuration_name: str, plans_identifier: str,
             num_processes: int):

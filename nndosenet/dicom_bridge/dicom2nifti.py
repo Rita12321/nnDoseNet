@@ -158,9 +158,8 @@ class DicomConverter():#patient wise
                         break 
                       
         if len(structure_list)>len(structure_list_found):
-            print("WARNING: Can't find structure of these", structure_list)
-            for structure in structure_list:
-                print(structure)
+            not_found=set(structure_list)-set(structure_list_found)
+            print("WARNING: Can't find structure of these", not_found)
             print("These are the list roi_list")
             print(roi_list)
     

@@ -21,14 +21,14 @@ def sitk_read_dcm(in_path):
 
            
 class DicomConverter():#patient wise
-    def __init__(self,dataset_name,patient_folder,tr_ts="Tr"):      
-        self.dataset_name=dataset_name 
+    def __init__(self,folder,patient_folder):      
+        
         self.patient_folder=patient_folder
-        self.tr_ts=tr_ts
         
-        self.raw_dicom_folder = join(nnUNet_dicom,self.dataset_name,tr_ts,patient_folder)
         
-        self.structure_name  = load_json(join(nnUNet_dicom,self.dataset_name, 'structure.json'))["structure_name"]
+        self.raw_dicom_folder = join(folder,patient_folder)
+        
+        self.structure_name  = load_json(join(os.path.dirname(folder),'structure.json'))["structure_name"]
 
         
         self.ct_folder=join(self.raw_dicom_folder,"Dicom","CT")
@@ -37,8 +37,12 @@ class DicomConverter():#patient wise
         self.nii_folder=join(self.raw_dicom_folder,"Nifti")
         
     def run(self):
+        print("Converting Nifti for case ",self.patient_folder)
+        print("Getting CT ")
         self.get_ct()
+        print("Getting Dose map ")
         self.get_dose()
+        print("Getting structure")
         self.confirm_structure_and_2nii()    
   
     def get_ct(self,save=True):
@@ -47,7 +51,7 @@ class DicomConverter():#patient wise
             return sitk.ReadImage(ct_path)
         
         # from dicom
-        if len (os.listdir(self.ct_folder)>0):
+        if len (os.listdir(self.ct_folder))>0:
             ct=sitk_read_dcm(self.ct_folder)
             if save:
                 sitk.WriteImage(ct,ct_path)
@@ -76,13 +80,13 @@ class DicomConverter():#patient wise
         if len(os.listdir(self.dose_folder))==1:
             for i,dose_path in enumerate(os.listdir(self.dose_folder)):
                 dose=pydicom.dcmread(join(self.dose_folder,dose_path))
-                return self.convert_dose2nii(dose,out_path=dose_path)
+                return self.convert_dose2nii(dose,out_path=join(self.nii_folder,"dose.nii.gz"))
             
         if(len(os.listdir(self.dose_folder))>1):
             for i,dose_path in enumerate(os.listdir(self.dose_folder)):
                 dose=pydicom.dcmread(join(self.dose_folder,dose_path))
                 print("WARNING! Multi Dose Plan Detected: only converting dose: ",dose_path," in",self.raw_dicom_folder, )
-                return self.convert_dose2nii(dose,out_path=dose_path)
+                return self.convert_dose2nii(dose,out_path=join(self.nii_folder,"dose.nii.gz"))
         
         raise RuntimeError("can't even find the dicom for dose, please organize everything as instruction")
 
@@ -92,8 +96,13 @@ class DicomConverter():#patient wise
             
         ct=self.get_ct()
         
-        dose=dose_data.pixel_array.astype(float) #Todo:try except using PixelData frombuffer
+        #Todo:try except using PixelData frombuffer
+        
+        
+        
+        dose=dose_data.pixel_array.astype(float)
         dose=dose*float(dose_data.DoseGridScaling)
+        
         dose=sitk.GetImageFromArray(dose)
         dose.SetOrigin(dose_data.ImagePositionPatient)
         dose.SetSpacing([dose_data.PixelSpacing[0],dose_data.PixelSpacing[1],ct.GetSpacing()[2]])
@@ -125,8 +134,8 @@ class DicomConverter():#patient wise
             structure_label:{"OAR": {"50":["Femur_Head_L","Femur_Head_R"]}
         '''        
         ct=self.get_ct()
-        structure_list= self.structure.keys() 
-        
+        structure_list= list(self.structure_name.keys())
+        structure_list_found=[]
         
         for struct_file in os.listdir(self.struct_folder):
             # Load existing RT Struct. Requires the series path and existing RT Struct path
@@ -134,17 +143,26 @@ class DicomConverter():#patient wise
             dicom_series_path=self.ct_folder,
             rt_struct_path=join(self.struct_folder,struct_file))
             roi_list=rtstruct.get_roi_names()
-
+            
             for structure in structure_list:
+                if structure in structure_list_found:
+                    continue
                 for name in self.structure_name[structure]:
+                    #print(name)
                     if name in roi_list:
+                        #print(name)
                         mask= sitk.GetImageFromArray( np.transpose(rtstruct.get_roi_mask_by_name(name)*int(1), axes=[2,0,1]).astype(np.int32))
                         mask.CopyInformation(ct)
                         sitk.WriteImage(mask,join(self.nii_folder,structure+".nii.gz"))
-                        structure_list.remove(structure)
-                        break    
-            if len(structure_list)>0:
-                print("WARNING: Can't find structure of these", structure_list)
+                        structure_list_found.append(structure)
+                        break 
+                      
+        if len(structure_list)>len(structure_list_found):
+            print("WARNING: Can't find structure of these", structure_list)
+            for structure in structure_list:
+                print(structure)
+            print("These are the list roi_list")
+            print(roi_list)
     
 
 class NiftiLabeler():

@@ -1,10 +1,9 @@
-from dicom_bridge.dicom2nifti import DicomConverter,NiftiLabeler
-import pydicom
+from nndosenet.dicom_bridge.dicom2nifti import DicomConverter,NiftiLabeler
 import numpy as np
 import SimpleITK as sitk
 import nibabel as nib
 import os
-import threading
+import multiprocessing
 import glob
 
 import shutil
@@ -24,7 +23,7 @@ def create_folder(path):
         os.makedirs(path)
         
 #TODO: change to find basefolder method
-def create_folderlist(path,folder_list=[],overwrite="False"):
+def create_folderlist(path,folder_list=[],overwrite=False):
     for sub_folder in folder_list:
         if not os.path.isdir(join(path,sub_folder)):
             os.makedirs(join(path,sub_folder))
@@ -101,19 +100,19 @@ def organize_dicom(DATA_FOLDER):
         -0003 
         ...
     """
-
+    print(sorted(os.listdir(DATA_FOLDER)))
     for patient_folder in sorted(os.listdir(DATA_FOLDER)):
-        
+        if not os.path.isdir(join(DATA_FOLDER,patient_folder)):
+            continue
         patient_path=join(DATA_FOLDER,patient_folder)
-        create_folderlist(patient_path,folder_list=["Nifti"],overwrite=True)
         create_folderlist(patient_path,folder_list=["Nifti","Dicom"])
         type_list=["CT","RD","RS"]
         create_folderlist(join(patient_path,"Dicom"),folder_list=type_list)
         for type in type_list:
             dcms=glob.glob(join(patient_path,type+"*.dcm"))
             if len(dcms)<=0:
-                print('WARNING: cannot find any file start with" '+type+'".dcm'\
-                        'trying to find files not ending with .dcm')
+                # print('WARNING: cannot find any file start with" '+type+'".dcm'\
+                #         'trying to find files not ending with .dcm')
                 dcms=glob.glob(join(patient_path,type+"*"))
                 if len(dcms)<=0:
                     print('WARNING: cannot find any file start with" '+type+'" '\
@@ -127,24 +126,50 @@ def organize_dicom(DATA_FOLDER):
         
         
         ##extra
-        type="extra"
-        create_folderlist(join(patient_path,"Dicom",type))  
-        dcms=glob.glob(join(patient_path,"*"))      
-        if len(dcms)>4:
-            print("There are ", len(dcms)-4, "extra files, that is not starting with CT,RD or RS. They are moved to folder extra")
-            for dcm in dcms:
-                if os.path.isdir(dcm):
-                    continue
-                shutil.move(dcm,join(patient_path,"Dicom",type))    
+        # type="extra"
+        # create_folder(join(patient_path,"Dicom",type))  
+        # dcms=glob.glob(join(patient_path,"*"))      
+        # if len(dcms)>4:
+        #     print("There are ", len(dcms)-4, "extra files, that is not starting with CT,RD or RS. They are moved to folder extra")
+        #     for dcm in dcms:
+        #         if os.path.isdir(dcm):
+        #             continue
+        #         shutil.move(dcm,join(patient_path,"Dicom",type))   #TODO: not working 
         print(' finish organizing the the data in dir: '+DATA_FOLDER)    
 
-def format_dataset_from_dicom(folder,tr_ts="Tr"):
+def format_dataset_from_dicom(folder,num_processes=3):
     dataset_name=folder.split("/")[-1]
-    organize_dicom(folder)
-    patients=os.listdir(folder)
-    for patinet in patients:
-        DicomConverter(dataset_name=dataset_name,patient_folder=patinet,tr_ts=tr_ts)    
-        
+
+    patients=sorted(os.listdir(folder))
+    
+    for patient in patients:
+        if not os.path.isdir(join(folder,patient)):
+            continue
+        DicomConverter(folder,patient_folder=patient).run()    
+    
+    
+    
+    # r = []
+    # with multiprocessing.get_context("spawn").Pool(num_processes) as p:
+    #     for dataset_name, patient_folder, tr_ts in zip(dataset_name, patinet, tr_ts):
+    #         r.append(p.starmap_async(DicomConverter(dataset_name=dataset_name,patient_folder=patient_folder,tr_ts=tr_ts).run(),
+    #                                     ()))
+    #     remaining = list(range(len(output_filenames_truncated)))
+    #     # p is pretty nifti. If we kill workers they just respawn but don't do any work.
+    #     # So we need to store the original pool of workers.
+    #     workers = [j for j in p._pool]
+    #     with tqdm(desc=None, total=len(output_filenames_truncated), disable=self.verbose) as pbar:
+    #         while len(remaining) > 0:
+    #             all_alive = all([j.is_alive() for j in workers])
+    #             if not all_alive:
+    #                 raise RuntimeError('Some background worker is 6 feet under. Yuck.')
+    #             done = [i for i in remaining if r[i].ready()]
+    #             for _ in done:
+    #                 pbar.update()
+    #             remaining = [i for i in remaining if i not in done]
+    #             sleep(0.1)     
+                
+                    
 def format_dataset_from_nifti(folder,dataset_id,tr_ts="Tr"):
     id_list=[]
     dataset_name=folder.split("/")[-1]
@@ -157,4 +182,31 @@ def format_dataset_from_nifti(folder,dataset_id,tr_ts="Tr"):
 
 def write_dataset_json():
     pass
-       
+
+
+def multi_processs(num_processes):
+     #TODO: add multiprocessing
+        
+        ### default_preprocessor line 271
+        # multiprocessing magic.
+        
+        r = []
+        with multiprocessing.get_context("spawn").Pool(num_processes) as p:
+            for outfile, infiles, segfiles in zip(output_filenames_truncated, image_fnames, seg_fnames):
+                r.append(p.starmap_async(self.run_case_save,
+                                         ((outfile, infiles, segfiles, plans_manager, configuration_manager,
+                                           dataset_json),)))
+            remaining = list(range(len(output_filenames_truncated)))
+            # p is pretty nifti. If we kill workers they just respawn but don't do any work.
+            # So we need to store the original pool of workers.
+            workers = [j for j in p._pool]
+            with tqdm(desc=None, total=len(output_filenames_truncated), disable=self.verbose) as pbar:
+                while len(remaining) > 0:
+                    all_alive = all([j.is_alive() for j in workers])
+                    if not all_alive:
+                        raise RuntimeError('Some background worker is 6 feet under. Yuck.')
+                    done = [i for i in remaining if r[i].ready()]
+                    for _ in done:
+                        pbar.update()
+                    remaining = [i for i in remaining if i not in done]
+                    sleep(0.1)       

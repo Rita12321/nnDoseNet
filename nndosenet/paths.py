@@ -39,6 +39,6 @@ if nnUNet_results is None:
     print("nnUNet_results is not defined and nnU-Net cannot be used for training or "
           "inference. If this is not intended behavior, please read documentation/setting_up_paths.md for information "
           "on how to set this up.")
-# if nnUNet_dicom is None:
-#     print("nnUNet_dicom is not defined and if you want to use the dicom_converter or prelabel function, this folder would be neccessary")
+if nnUNet_dicom is None:
+    print("nnUNet_dicom is not defined and if you want to use the dicom_converter or prelabel function, this folder would be neccessary")
     

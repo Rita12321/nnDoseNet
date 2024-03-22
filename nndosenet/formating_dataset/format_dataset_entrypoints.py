@@ -3,13 +3,17 @@ from nndosenet.formating_dataset.format_dataset_api import format_dataset_from_d
 from nndosenet.paths import nnUNet_raw,nnUNet_dicom
 from batchgenerators.utilities.file_and_folder_operations import *
 
+                    
+                    
 def organize_and_convert_dicom_entry():#nnUNetv2_extract_fingerprint
      import argparse
      parser = argparse.ArgumentParser()
      parser.add_argument('-name', type=str,
                          help="[REQUIRED] The name of folder in nndose_dicom you want to convert. Example: openkbp. ")
-     parser.add_argument('-trts', type=str,default='Both',
+     parser.add_argument('-trts', type=str,default='Tr',
                          help="Enter 'Tr' for Training, 'Ts' for Testing, 'Both' for both train and test ")
+     parser.add_argument('-nps', type=int ,default=3,
+                         help="")
      
      
      
@@ -17,14 +21,14 @@ def organize_and_convert_dicom_entry():#nnUNetv2_extract_fingerprint
      args, unrecognized_args = parser.parse_known_args()
      raw_dicom_folder = join(nnUNet_dicom,args.name)
      
-     if args.trts =='Both':
+     # if args.trts =='Both':
           
-     else:
-          organize_dicom(join(raw_dicom_folder,"args.trts"))
-          format_dataset_from_dicom(raw_dicom_folder,args.trts)
+     # else:
+     organize_dicom(join(raw_dicom_folder,args.trts))
+     format_dataset_from_dicom(join(raw_dicom_folder,args.trts))
           
           
-     format_dataset_from_dicom(args.d, )
+     
 
 def label_nifti_and_format_dataset_entry():#nnUNetv2_plan_experiment
      import argparse
@@ -58,4 +62,4 @@ def format_dataset_entry():#nnUNetv2_plan_and_preprocess
      preprocess(args.d, args.overwrite_plans_name, args.c, np, args.verbose)
 
 if __name__ == '__main__':
-    format_dataset_entry()
+    organize_and_convert_dicom_entry()

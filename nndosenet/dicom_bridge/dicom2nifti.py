@@ -164,26 +164,34 @@ class DicomConverter():#patient wise
             print(roi_list)
     
 
-class NiftiLabeler():
+class NiftiLabeler(DicomConverter):
     
-    def __init__(self,patient_folder,patient_id,dataset_name,dataset_id,tr_ts="Tr"):      
-        self.dataset_name="Dataset"+dataset_id+dataset_name 
+    def __init__(self,folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts="Tr"):  
+           
+        self.dataset_name=dataset_name 
         self.patient_folder=patient_folder
-        self.patient_id=patient_id
+        self.patient_id=str(patient_id).zfill(4)
+        print(self.patient_id)
         self.tr_ts=tr_ts
-        
-        self.raw_dicom_folder = join(nnUNet_dicom,self.dataset_name,tr_ts,patient_folder)
-        self.raw_dataset_folder = join(nnUNet_raw,self.dataset_name)
 
-        self.structure_label = load_json(join(nnUNet_dicom,self.dataset_name, 'structure.json'))["structure_label"]  
+        
+        self.raw_dicom_folder = join(folder,patient_folder)
+        self.raw_dataset_folder = join(nnUNet_raw,self.dataset_name)
+        if not os.path.isdir(self.raw_dataset_folder):
+            os.makedirs(self.raw_dataset_folder)
+            print("Create folder in nnUNet_raw: ",self.raw_dataset_folder)
+
+        self.structure_label = load_json(join(os.path.dirname(folder),'structure.json'))["structure_label"]  
         
         self.nii_folder=join(self.raw_dicom_folder,"Nifti")
+    def run(self):
+        self.confirm_and_label()   
     def check_label_sanity():
         #TODO: check label sanity
         pass
     def confirm_and_label(self):
         ct=self.get_ct()
-        shape=ct.shape
+        shape=sitk.GetArrayFromImage(ct).shape
         type_list=["PTV","OAR","Body"]
         for type in type_list:
             #mask=np.zeros(shape)
@@ -195,7 +203,10 @@ class NiftiLabeler():
                 #combining_mask
                 mask=np.zeros(shape)
                 for structure in self.structure_label[type][str(value)]:
-                    mask=mask+sitk.GetArrayFromImage(sitk.ReadImage(join(self.nii_folder,structure+".nii.gz")))
+                    if os.path.isfile(join(self.nii_folder,structure+".nii.gz")):
+                        mask=mask+sitk.GetArrayFromImage(sitk.ReadImage(join(self.nii_folder,structure+".nii.gz")))
+                    # else:
+                    #     print("Warning: Cannot find",structure,"in",self.patient_folder,"!!Please double check")
                 #labeling(valuing) combined mask
                 mask=mask>0
                 mask=mask*int(value)
@@ -211,22 +222,30 @@ class NiftiLabeler():
                         img=np.add(img,mask)
                 else:
                     print("WARNING: Can't find any listing structure's nifti file in ",self.nii_folder, "for value", value,\
+                        "in",type,"the structure of ",self.structure_label[type][str(value)],\
                         "please check the dataset.json or structure_name.json to make sure the name match up ")
                                        
             if type=="PTV":
                 img= sitk.GetImageFromArray(img.astype(np.int32))
                 img.CopyInformation(ct)
-                sitk.WriteImage(mask,join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0001.nii.gz"))
+                sitk.WriteImage(img,join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0001.nii.gz"))
             elif(type =="OAR"):
                 img= sitk.GetImageFromArray(img.astype(np.int32))
                 img.CopyInformation(ct)
-                sitk.WriteImage(mask,join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0002.nii.gz"))
+                sitk.WriteImage(img,join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0002.nii.gz"))
             else:
                 if np.sum(img)<=0:
                     img= sitk.GetImageFromArray(img=np.array(shape).fill(1).astype(np.int32))
-                    img.CopyInformation(ct)
-                    sitk.WriteImage(mask,join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0003.nii.gz")) 
+                else:
+                    img= sitk.GetImageFromArray(img.astype(np.int32))
+                img.CopyInformation(ct)
+                sitk.WriteImage(img,join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0003.nii.gz")) 
+        
+        #Copy dose and ct
+        shutil.copy2(join(self.nii_folder,"ct.nii.gz"),join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0000.nii.gz")) 
+        shutil.copy2(join(self.nii_folder,"dose.nii.gz"),join(self.raw_dataset_folder,"labels"+self.tr_ts,self.patient_id+".nii.gz")) 
 #            shutil.copy2(join(source_path,"ct.nii.gz"),join("Dataset504","images"+str(dist_str),"0"+patient_num+"_0000.nii.gz"))    
+
 class NiftiConverter():
     #TODO: move code from testcode nii2dcm here
     '''Convert Nifti file back to Dicom for predicted dose plan '''  

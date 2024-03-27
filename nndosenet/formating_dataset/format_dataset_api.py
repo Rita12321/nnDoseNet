@@ -8,6 +8,7 @@ import glob
 
 import shutil
 import math as m
+import pandas as pd
 from rt_utils import RTStructBuilder
 from nndosenet.paths import nnUNet_preprocessed, nnUNet_raw,nnUNet_dicom
 from batchgenerators.utilities.file_and_folder_operations import *
@@ -31,7 +32,7 @@ def create_folderlist(path,folder_list=[],overwrite=False):
             shutil.rmtree(join(path,sub_folder))
             os.makedirs(join(path,sub_folder))
 def snaity_check():
-    #TODO: check if structure set
+    #TODO: check if structure set is all good
     pass
            
 def organize_dicom(DATA_FOLDER):
@@ -134,7 +135,7 @@ def organize_dicom(DATA_FOLDER):
         #     for dcm in dcms:
         #         if os.path.isdir(dcm):
         #             continue
-        #         shutil.move(dcm,join(patient_path,"Dicom",type))   #TODO: not working 
+        #         shutil.move(dcm,join(patient_path,"Dicom",type))  
         print(' finish organizing the the data in dir: '+DATA_FOLDER)    
 
 def format_dataset_from_dicom(folder,num_processes=3):
@@ -170,19 +171,50 @@ def format_dataset_from_dicom(folder,num_processes=3):
     #             sleep(0.1)     
                 
                     
-def format_dataset_from_nifti(folder,dataset_id,tr_ts="Tr"):
+def format_dataset_from_nifti(folder,dataset_id,dataset_name=None,tr_ts="Tr"):
     id_list=[]
-    dataset_name=folder.split("/")[-1]
+    if dataset_name==None:
+        dataset_name=folder.split("/")[-1]
+        
+    dataset_name="Dataset"+dataset_id+"_"+dataset_name
     patients=sorted(os.listdir(folder))
+    
+    if not os.path.isdir(join(nnUNet_raw,dataset_name)):
+        os.makedirs(join(nnUNet_raw,dataset_name))
+        print("Create folder in nnUNet_raw: ",join(nnUNet_raw,dataset_name))
+        
+    if not os.path.isdir(join(nnUNet_raw,dataset_name,"images"+tr_ts)):
+        os.makedirs(join(nnUNet_raw,dataset_name,"images"+tr_ts))
+    if not os.path.isdir(join(nnUNet_raw,dataset_name,"labels"+tr_ts)):
+        os.makedirs(join(nnUNet_raw,dataset_name,"labels"+tr_ts))
+  
+    print("Labeling the contours...")
     for id,patinet in enumerate(patients):
-        id_list.append(id)
-        NiftiLabeler(patient_folder=patinet,patient_id=id,dataset_name=dataset_name,dataset_id=dataset_id,tr_ts=tr_ts) 
-    #TODO:
-    #save_csv({id_list,patients},join())
+        id_list.append(id+1)
+        NiftiLabeler(folder,patient_folder=patinet,patient_id=id+1,dataset_name=dataset_name,dataset_id=dataset_id,tr_ts=tr_ts).run() 
+    df = pd.DataFrame({'id': id_list,
+                   'patient': patients})  
+    df.to_csv(join(nnUNet_raw,dataset_name,'patient'+tr_ts+'.csv'), index=False)
+    if tr_ts=="Tr":
+        write_dataset_json(patient_num=len(patients),dataset_name=dataset_name)
+        shutil.copy2(join(os.path.dirname(folder),'structure.json'),join(nnUNet_raw,dataset_name,"structure.json"))
+    print("Finish ! All needed file is in ",join(nnUNet_raw,dataset_name),"now.")
+#TODO: 
+#...copy ct and dose in NIftilabeler for now...or forever... idk
+# def copy_ct(folder):
+#     pass
+# def copy_dose():
+#     pass
+def write_dataset_json(patient_num,dataset_name):
+    dict={"labels": {"background": "0", "dose": ""}, 
+          "channel_names": {"0": "CT", "1": "PTV", "2": "OAR", "3": "BODY"}, 
+          "numTraining": patient_num, 
+          "file_ending": ".nii.gz",
+          "mask_channel":[1,2,3]}
+    json_object = json.dumps(dict, indent=4)
 
-def write_dataset_json():
-    pass
-
+    with open(join(nnUNet_raw,dataset_name,"dataset.json"), "w") as outfile:
+        outfile.write(json_object)
 
 def multi_processs(num_processes):
      #TODO: add multiprocessing

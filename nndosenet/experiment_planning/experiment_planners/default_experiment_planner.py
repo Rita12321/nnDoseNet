@@ -242,12 +242,12 @@ class ExperimentPlanner(object):
         if 'channel_names' not in self.dataset_json.keys():
             print('WARNING: "Please enter "channel_names" in nnDoseNets dataset.json. Thank U')
         channel_names = self.dataset_json['channel_names']
-        # normalization_schemes = [get_normalization_scheme(m) for m in channel_names.values()]
-        normalization_schemes=[]
+        normalization_schemes = [get_normalization_scheme(m) for m in channel_names.values()]
+        #normalization_schemes=[]
         PTV_OAR_BODY=[-1,-1,-1]
         for c in channel_names.keys() :
             n=channel_names[c]
-            normalization_schemes.append(n)
+            #normalization_schemes.append(n)
             if n=="PTV":
                 PTV_OAR_BODY[0]=c
             elif n=="OAR":

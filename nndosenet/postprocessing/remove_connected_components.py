@@ -13,7 +13,7 @@ from nndosenet.evaluation.accumulate_cv_results import accumulate_cv_results
 from nndosenet.evaluation.evaluate_predictions import region_or_label_to_mask, compute_metrics_on_folder, \
     load_summary_json, label_or_region_to_key
 from nndosenet.imageio.base_reader_writer import BaseReaderWriter
-from nndosenet.paths import nnUNet_raw
+from nndosenet.paths import nnDose_raw
 from nndosenet.utilities.file_path_utilities import folds_tuple_to_string
 from nndosenet.utilities.json_export import recursive_fix_for_json_export
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
@@ -358,7 +358,7 @@ def entry_point_apply_postprocessing():
 
 if __name__ == '__main__':
     trained_model_folder = '/home/fabian/results/nnUNet_remake/Dataset004_Hippocampus/nnUNetTrainer__nnUNetPlans__3d_fullres'
-    labelstr = join(nnUNet_raw, 'Dataset004_Hippocampus', 'labelsTr')
+    labelstr = join(nnDose_raw, 'Dataset004_Hippocampus', 'labelsTr')
     plans_manager = PlansManager(join(trained_model_folder, 'plans.json'))
     dataset_json = load_json(join(trained_model_folder, 'dataset.json'))
     folds = (0, 1, 2, 3, 4)

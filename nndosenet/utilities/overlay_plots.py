@@ -21,7 +21,7 @@ from batchgenerators.utilities.file_and_folder_operations import *
 from nndosenet.configuration import default_num_processes
 from nndosenet.imageio.base_reader_writer import BaseReaderWriter
 from nndosenet.imageio.reader_writer_registry import determine_reader_writer_from_dataset_json
-from nndosenet.paths import nnUNet_raw, nnUNet_preprocessed
+from nndosenet.paths import nnDose_raw, nnDose_preprocessed
 from nndosenet.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 from nndosenet.utilities.utils import get_identifiers_from_splitted_dataset_folder
 
@@ -189,7 +189,7 @@ def multiprocessing_plot_overlay_preprocessed(list_of_case_files, list_of_output
 def generate_overlays_from_raw(dataset_name_or_id: Union[int, str], output_folder: str,
                                num_processes: int = 8, channel_idx: int = 0, overlay_intensity: float = 0.6):
     dataset_name = maybe_convert_to_dataset_name(dataset_name_or_id)
-    folder = join(nnUNet_raw, dataset_name)
+    folder = join(nnDose_raw, dataset_name)
     dataset_json = load_json(join(folder, 'dataset.json'))
     identifiers = get_identifiers_from_splitted_dataset_folder(join(folder, 'imagesTr'), dataset_json['file_ending'])
 
@@ -212,7 +212,7 @@ def generate_overlays_from_preprocessed(dataset_name_or_id: Union[int, str], out
                                         plans_identifier: str = 'nnUNetPlans',
                                         overlay_intensity: float = 0.6):
     dataset_name = maybe_convert_to_dataset_name(dataset_name_or_id)
-    folder = join(nnUNet_preprocessed, dataset_name)
+    folder = join(nnDose_preprocessed, dataset_name)
     if not isdir(folder): raise RuntimeError("run preprocessing for that task first")
 
     plans = load_json(join(folder, plans_identifier + '.json'))

@@ -4,12 +4,12 @@ import requests
 from batchgenerators.utilities.file_and_folder_operations import *
 from time import time
 from nndosenet.model_sharing.model_import import install_model_from_zip_file
-from nndosenet.paths import nnUNet_results
+from nndosenet.paths import nnDose_results
 from tqdm import tqdm
 
 
 def download_and_install_from_url(url):
-    assert nnUNet_results is not None, "Cannot install model because network_training_output_dir is not " \
+    assert nnDose_results is not None, "Cannot install model because network_training_output_dir is not " \
                                                     "set (RESULTS_FOLDER missing as environment variable, see " \
                                                     "Installation instructions)"
     print('Downloading pretrained model from url:', url)

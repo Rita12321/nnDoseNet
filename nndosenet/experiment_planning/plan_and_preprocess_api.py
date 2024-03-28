@@ -7,7 +7,7 @@ from batchgenerators.utilities.file_and_folder_operations import join, maybe_mkd
 from nndosenet.experiment_planning.dataset_fingerprint.fingerprint_extractor import DatasetFingerprintExtractor
 from nndosenet.experiment_planning.experiment_planners.default_experiment_planner import ExperimentPlanner
 from nndosenet.experiment_planning.verify_dataset_integrity import verify_dataset_integrity
-from nndosenet.paths import nnUNet_raw, nnUNet_preprocessed
+from nndosenet.paths import nnDose_raw, nnDose_preprocessed
 from nndosenet.utilities.dataset_name_id_conversion import convert_id_to_dataset_name, maybe_convert_to_dataset_name
 from nndosenet.utilities.find_class_by_name import recursive_find_python_class
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
@@ -27,7 +27,7 @@ def extract_fingerprint_dataset(dataset_id: int,
     print(dataset_name)
 
     if check_dataset_integrity:
-        verify_dataset_integrity(join(nnUNet_raw, dataset_name), num_processes,dose)
+        verify_dataset_integrity(join(nnDose_raw, dataset_name), num_processes,dose)
 
     fpe = fingerprint_extractor_class(dataset_id, num_processes, verbose=verbose)
     return fpe.run(overwrite_existing=clean)
@@ -105,7 +105,7 @@ def preprocess_dataset(dataset_id: int,
 
     dataset_name = convert_id_to_dataset_name(dataset_id)
     print(f'Preprocessing dataset {dataset_name}')
-    plans_file = join(nnUNet_preprocessed, dataset_name, plans_identifier + '.json')
+    plans_file = join(nnDose_preprocessed, dataset_name, plans_identifier + '.json')
     plans_manager = PlansManager(plans_file)
     for n, c in zip(num_processes, configurations):
         print(f'Configuration: {c}...')
@@ -117,9 +117,9 @@ def preprocess_dataset(dataset_id: int,
         configuration_manager = plans_manager.get_configuration(c)
         preprocessor = configuration_manager.preprocessor_class(verbose=verbose)
         preprocessor.run(dataset_id, c, plans_identifier, num_processes=n)
-    maybe_mkdir_p(join(nnUNet_preprocessed, dataset_name, 'gt_segmentations'))
-    [shutil.copy(i, join(join(nnUNet_preprocessed, dataset_name, 'gt_segmentations'))) for i in
-     subfiles(join(nnUNet_raw, dataset_name, 'labelsTr'))]
+    maybe_mkdir_p(join(nnDose_preprocessed, dataset_name, 'gt_segmentations'))
+    [shutil.copy(i, join(join(nnDose_preprocessed, dataset_name, 'gt_segmentations'))) for i in
+     subfiles(join(nnDose_raw, dataset_name, 'labelsTr'))]
 #NOTE: changed num_process default
 
 def preprocess(dataset_ids: List[int],

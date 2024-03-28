@@ -19,7 +19,7 @@ from typing import Union, Tuple
 import nndosenet
 import numpy as np
 from batchgenerators.utilities.file_and_folder_operations import *
-from nndosenet.paths import nnUNet_preprocessed, nnUNet_raw
+from nndosenet.paths import nnDose_preprocessed, nnDose_raw
 from nndosenet.preprocessing.cropping.cropping import crop_to_nonzero
 from nndosenet.preprocessing.resampling.default_resampling import compute_new_shape
 from nndosenet.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
@@ -233,9 +233,9 @@ class DefaultPreprocessor(object):
         """
         dataset_name = maybe_convert_to_dataset_name(dataset_name_or_id)
 
-        assert isdir(join(nnUNet_raw, dataset_name)), "The requested dataset could not be found in nnUNet_raw"
+        assert isdir(join(nnDose_raw, dataset_name)), "The requested dataset could not be found in nnUNet_raw"
 
-        plans_file = join(nnUNet_preprocessed, dataset_name, plans_identifier + '.json')
+        plans_file = join(nnDose_preprocessed, dataset_name, plans_identifier + '.json')
         assert isfile(plans_file), "Expected plans file (%s) not found. Run corresponding nnUNet_plan_experiment " \
                                    "first." % plans_file
         plans = load_json(plans_file)
@@ -247,12 +247,12 @@ class DefaultPreprocessor(object):
         if self.verbose:
             print(configuration_manager)
 
-        dataset_json_file = join(nnUNet_preprocessed, dataset_name, 'dataset.json')
+        dataset_json_file = join(nnDose_preprocessed, dataset_name, 'dataset.json')
         dataset_json = load_json(dataset_json_file)
 
-        identifiers = get_identifiers_from_splitted_dataset_folder(join(nnUNet_raw, dataset_name, 'imagesTr'),
+        identifiers = get_identifiers_from_splitted_dataset_folder(join(nnDose_raw, dataset_name, 'imagesTr'),
                                                                dataset_json['file_ending'])
-        output_directory = join(nnUNet_preprocessed, dataset_name, configuration_manager.data_identifier)
+        output_directory = join(nnDose_preprocessed, dataset_name, configuration_manager.data_identifier)
 
         if isdir(output_directory):
             shutil.rmtree(output_directory)
@@ -263,10 +263,10 @@ class DefaultPreprocessor(object):
 
         file_ending = dataset_json['file_ending']
         # list of lists with image filenames
-        image_fnames = create_lists_from_splitted_dataset_folder(join(nnUNet_raw, dataset_name, 'imagesTr'), file_ending,
+        image_fnames = create_lists_from_splitted_dataset_folder(join(nnDose_raw, dataset_name, 'imagesTr'), file_ending,
                                                                  identifiers)
         # list of segmentation filenames
-        seg_fnames = [join(nnUNet_raw, dataset_name, 'labelsTr', i + file_ending) for i in identifiers]
+        seg_fnames = [join(nnDose_raw, dataset_name, 'labelsTr', i + file_ending) for i in identifiers]
 
         # multiprocessing magic.
         r = []

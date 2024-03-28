@@ -2,7 +2,7 @@ import shutil
 
 from batchgenerators.utilities.file_and_folder_operations import isdir, join
 
-from nndosenet.paths import nnUNet_raw, nnUNet_results, nnUNet_preprocessed
+from nndosenet.paths import nnDose_raw, nnDose_results, nnDose_preprocessed
 
 if __name__ == '__main__':
     # deletes everything!
@@ -12,7 +12,7 @@ if __name__ == '__main__':
         'Dataset998_IntegrationTest_Hippocampus_ignore',
         'Dataset999_IntegrationTest_Hippocampus',
     ]
-    for fld in [nnUNet_raw, nnUNet_preprocessed, nnUNet_results]:
+    for fld in [nnDose_raw, nnDose_preprocessed, nnDose_results]:
         for d in dataset_names:
             if isdir(join(fld, d)):
                 shutil.rmtree(join(fld, d))

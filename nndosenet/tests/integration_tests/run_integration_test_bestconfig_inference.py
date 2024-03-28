@@ -7,7 +7,7 @@ from nndosenet.ensembling.ensemble import ensemble_folders
 from nndosenet.evaluation.find_best_configuration import find_best_configuration, \
     dumb_trainer_config_plans_to_trained_models_dict
 from nndosenet.inference.predict_from_raw_data import nnUNetPredictor
-from nndosenet.paths import nnUNet_raw, nnUNet_results
+from nndosenet.paths import nnDose_raw, nnDose_results
 from nndosenet.postprocessing.remove_connected_components import apply_postprocessing_to_folder
 from nndosenet.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 from nndosenet.utilities.file_path_utilities import get_output_folder
@@ -26,8 +26,8 @@ if __name__ == '__main__':
     d = args.d
 
     dataset_name = maybe_convert_to_dataset_name(d)
-    source_dir = join(nnUNet_raw, dataset_name, 'imagesTs')
-    target_dir_base = join(nnUNet_results, dataset_name)
+    source_dir = join(nnDose_raw, dataset_name, 'imagesTs')
+    target_dir_base = join(nnDose_results, dataset_name)
 
     models = dumb_trainer_config_plans_to_trained_models_dict(['nnUNetTrainer_5epochs'],
                                                               ['2d',

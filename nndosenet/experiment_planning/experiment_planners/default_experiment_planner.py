@@ -11,7 +11,7 @@ from dynamic_network_architectures.building_blocks.helper import convert_dim_to_
 from nndosenet.configuration import ANISO_THRESHOLD
 from nndosenet.experiment_planning.experiment_planners.network_topology import get_pool_and_conv_props
 from nndosenet.imageio.reader_writer_registry import determine_reader_writer_from_dataset_json
-from nndosenet.paths import nnUNet_raw, nnUNet_preprocessed
+from nndosenet.paths import nnDose_raw, nnDose_preprocessed
 from nndosenet.preprocessing.normalization.map_channel_name_to_normalization import get_normalization_scheme
 from nndosenet.preprocessing.resampling.default_resampling import resample_data_or_seg_to_shape, compute_new_shape
 from nndosenet.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
@@ -32,8 +32,8 @@ class ExperimentPlanner(object):
         self.dose=dose
         self.dataset_name = maybe_convert_to_dataset_name(dataset_name_or_id)
         self.suppress_transpose = suppress_transpose
-        self.raw_dataset_folder = join(nnUNet_raw, self.dataset_name)
-        preprocessed_folder = join(nnUNet_preprocessed, self.dataset_name)
+        self.raw_dataset_folder = join(nnDose_raw, self.dataset_name)
+        preprocessed_folder = join(nnDose_preprocessed, self.dataset_name)
         self.dataset_json = load_json(join(self.raw_dataset_folder, 'dataset.json'))
         self.mask_channel=None
 
@@ -531,7 +531,7 @@ class ExperimentPlanner(object):
         # instead of writing all that into the plans we just copy the original file. More files, but less crowded
         # per file.
         shutil.copy(join(self.raw_dataset_folder, 'dataset.json'),
-                    join(nnUNet_preprocessed, self.dataset_name, 'dataset.json'))
+                    join(nnDose_preprocessed, self.dataset_name, 'dataset.json'))
 
         # json is stupid and I hate it... "Object of type int64 is not JSON serializable" -> my ass
         plans = {
@@ -574,7 +574,7 @@ class ExperimentPlanner(object):
     def save_plans(self, plans):
         recursive_fix_for_json_export(plans)
 
-        plans_file = join(nnUNet_preprocessed, self.dataset_name, self.plans_identifier + '.json')
+        plans_file = join(nnDose_preprocessed, self.dataset_name, self.plans_identifier + '.json')
 
         # we don't want to overwrite potentially existing custom configurations every time this is executed. So let's
         # read the plans file if it already exists and keep any non-default configurations
@@ -586,9 +586,9 @@ class ExperimentPlanner(object):
                     del (old_configurations[c])
             plans['configurations'].update(old_configurations)
 
-        maybe_mkdir_p(join(nnUNet_preprocessed, self.dataset_name))
+        maybe_mkdir_p(join(nnDose_preprocessed, self.dataset_name))
         save_json(plans, plans_file, sort_keys=False)
-        print('Plans were saved to %s' % join(nnUNet_preprocessed, self.dataset_name, self.plans_identifier + '.json'))
+        print('Plans were saved to %s' % join(nnDose_preprocessed, self.dataset_name, self.plans_identifier + '.json'))
 
     def generate_data_identifier(self, confgiuration_name: str) -> str:
         """

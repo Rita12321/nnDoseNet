@@ -1,13 +1,13 @@
 [project]
 name = "nndosenet"
-version = "2.2.1"
+version = "1.0.0"
 requires-python = ">=3.9"
-description = "nnU-Net is a framework for out-of-the box image segmentation."
+description = "nnDoseNet is a framework for dose prediction in radiotherapy planning."
 readme = "readme.md"
 license = { file = "LICENSE" }
 authors = [
-    { name = "Fabian Isensee", email = "f.isensee@dkfz-heidelberg.de"},
-    { name = "Helmholtz Imaging Applied Computer Vision Lab" }
+    { name = "Ho-Hsin (Rita) Chang", email = "changh@uab.edu"},
+    { name = "University of Alabama at Birmingham Radiation Oncolgy Dr. Carlos E. Cardenas' Lab" }
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -22,12 +22,12 @@ classifiers = [
 ]
 keywords = [
     'deep learning',
-    'image segmentation',
-    'semantic segmentation',
+    'radiation oncology',
+    'radiotherapy',
+    'treatment planning',
+    'dose prediction',
     'medical image analysis',
-    'medical image segmentation',
-    'nnU-Net',
-    'nnunet'
+    'nnDoseNet',
 ]
 dependencies = [
     "torch>=2.0.0",
@@ -42,9 +42,11 @@ dependencies = [
     "scikit-image>=0.19.3",
     "SimpleITK>=2.2.1",
     "pandas",
+    "pydicom",
     "graphviz",
-    'tifffile',
-    'requests',
+    "tifffile",
+    "requests",
+    "rt-utils",
     "nibabel",
     "matplotlib",
     "seaborn",
@@ -57,6 +59,9 @@ homepage = "https://github.com/Rita12321/nnUNetv2"
 repository = "https://github.com/Rita12321/nnUNetv2"
 
 [project.scripts]
+nnDoseNet_format_dataset = "nndosenet.formating_dataset.format_dataset_entrypoints:format_dataset_entry"
+nnDoseNet_label_nifti_and_final_formatting = "nndosenet.formating_dataset.format_dataset_entrypoints:label_nifti_and_final_formatting_entry"
+nnDoseNet_organize_and_convert_dicom_entry = "nndosenet.formating_dataset.format_dataset_entrypoints:organize_and_convert_dicom_entry"
 nnDoseNet_plan_and_preprocess = "nndosenet.experiment_planning.plan_and_preprocess_entrypoints:plan_and_preprocess_entry"
 nnDoseNet_extract_fingerprint = "nndosenet.experiment_planning.plan_and_preprocess_entrypoints:extract_fingerprint_entry"
 nnDoseNet_plan_experiment = "nndosenet.experiment_planning.plan_and_preprocess_entrypoints:plan_experiment_entry"

@@ -5,7 +5,7 @@ from batchgenerators.utilities.file_and_folder_operations import load_json, join
 
 from nndosenet.configuration import default_num_processes
 from nndosenet.evaluation.evaluate_predictions import compute_metrics_on_folder
-from nndosenet.paths import nnUNet_raw
+from nndosenet.paths import nnDose_raw
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 
 
@@ -44,7 +44,7 @@ def accumulate_cv_results(trained_model_folder,
 
     if did_we_copy_something or not isfile(join(merged_output_folder, 'summary.json')):
         label_manager = plans_manager.get_label_manager(dataset_json)
-        compute_metrics_on_folder(join(nnUNet_raw, plans_manager.dataset_name, 'labelsTr'),
+        compute_metrics_on_folder(join(nnDose_raw, plans_manager.dataset_name, 'labelsTr'),
                                   merged_output_folder,
                                   join(merged_output_folder, 'summary.json'),
                                   rw,

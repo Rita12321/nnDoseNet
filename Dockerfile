@@ -7,7 +7,7 @@ ARG MAINTAINER
 ARG DESCRIPTION
 LABEL maintainer=${MAINTAINER} \
 	created=${BUILDDATE} \
-	description=${DESCRIPTION}}
+	description=${DESCRIPTION}
 
 RUN apt-get update && \
 	DEBIAN_FRONTEND=noninteractive apt-get install -y graphviz git htop imagemagick inxi libsm6 libsixel-bin nano libxext6 python3 unzip vim zip && \
@@ -101,6 +101,7 @@ RUN pip install --upgrade pip \
 	pywavelets==1.4.1 \
 	pyyaml==6.0 \
 	requests==2.31.0 \
+	rt-utils==1.2.7\
 	scikit-image==0.21.0 \
 	scikit-learn==1.3.0 \
 	scipy==1.11.1 \
@@ -122,7 +123,7 @@ RUN pip install --upgrade pip \
 	zipp==3.15.0
 
 WORKDIR /
-COPY ./ /etc/nnUNetv2
+COPY ./ /etc/nnDoseNet
 WORKDIR "/etc/nnUNetv2"
 RUN pip install -e .
 RUN echo "cat /etc/nnUNetv2" >> /etc/bash.bashrc

@@ -4,7 +4,7 @@ from typing import Union
 from batchgenerators.utilities.file_and_folder_operations import join, isdir, isfile, load_json, subfiles, save_json
 
 from nndosenet.imageio.reader_writer_registry import determine_reader_writer_from_dataset_json
-from nndosenet.paths import nnUNet_preprocessed, nnUNet_raw
+from nndosenet.paths import nnDose_preprocessed, nnDose_raw
 from nndosenet.utilities.file_path_utilities import maybe_convert_to_dataset_name
 
 
@@ -19,7 +19,7 @@ def move_plans_between_datasets(
     if target_plans_identifier is None:
         target_plans_identifier = source_plans_identifier
 
-    source_folder = join(nnUNet_preprocessed, source_dataset_name)
+    source_folder = join(nnDose_preprocessed, source_dataset_name)
     assert isdir(source_folder), f"Cannot move plans because preprocessed directory of source dataset is missing. " \
                                  f"Run nnUNetv2_plan_and_preprocess for source dataset first!"
 
@@ -41,7 +41,7 @@ def move_plans_between_datasets(
             source_plans['configurations'][c]["data_identifier"] = new_identifier
 
     # we need to change the reader writer class!
-    target_raw_data_dir = join(nnUNet_raw, target_dataset_name)
+    target_raw_data_dir = join(nnDose_raw, target_dataset_name)
     target_dataset_json = load_json(join(target_raw_data_dir, 'dataset.json'))
     file_ending = target_dataset_json['file_ending']
     # pick any file from the imagesTr folder
@@ -51,7 +51,7 @@ def move_plans_between_datasets(
 
     source_plans["image_reader_writer"] = rw.__name__
 
-    save_json(source_plans, join(nnUNet_preprocessed, target_dataset_name, target_plans_identifier + '.json'),
+    save_json(source_plans, join(nnDose_preprocessed, target_dataset_name, target_plans_identifier + '.json'),
               sort_keys=False)
 
 

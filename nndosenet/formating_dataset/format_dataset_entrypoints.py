@@ -1,6 +1,6 @@
 from nndosenet.configuration import default_num_processes
-from nndosenet.formating_dataset.format_dataset_api import format_dataset_from_dicom, format_dataset_from_nifti,organize_dicom
-from nndosenet.paths import nnUNet_raw,nnUNet_dicom
+from nndosenet.formating_dataset.format_dataset_api import format_dataset_from_dicom, format_dataset_from_nifti,organize_dicom,organize_nifti
+from nndosenet.paths import nnDose_raw,nnDose_dicom
 from batchgenerators.utilities.file_and_folder_operations import *
 
                     
@@ -16,7 +16,7 @@ def organize_and_convert_dicom_entry():#nnUNetv2_extract_fingerprint
                          help="")
      
      args, unrecognized_args = parser.parse_known_args()
-     raw_dicom_folder = join(nnUNet_dicom,args.name)
+     raw_dicom_folder = join(nnDose_dicom,args.name)
      
      organize_dicom(join(raw_dicom_folder,args.trts))
      format_dataset_from_dicom(join(raw_dicom_folder,args.trts))
@@ -35,8 +35,9 @@ def label_nifti_and_final_formatting_entry():#nnUNetv2_plan_experiment
                          help="")
      
      args, unrecognized_args = parser.parse_known_args()
-     raw_dicom_folder = join(nnUNet_dicom,args.name)
-     #TODO: organize_nifti()
+     raw_dicom_folder = join(nnDose_dicom,args.name)
+
+     organize_nifti(join(raw_dicom_folder,args.trts))
      format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,args.name,args.trts )
 
 def format_dataset_entry():#nnUNetv2_plan_and_preprocess
@@ -52,12 +53,13 @@ def format_dataset_entry():#nnUNetv2_plan_and_preprocess
                          help="")
      
      args, unrecognized_args = parser.parse_known_args()
-     raw_dicom_folder = join(nnUNet_dicom,args.name)
+     raw_dicom_folder = join(nnDose_dicom,args.name)
      
      organize_dicom(join(raw_dicom_folder,args.trts))
      format_dataset_from_dicom(join(raw_dicom_folder,args.trts))
+     organize_nifti(join(raw_dicom_folder,args.trts))
      format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,args.name,args.trts )
 
 if __name__ == '__main__':
     #organize_and_convert_dicom_entry()
-    format_dataset_entry()
+    label_nifti_and_final_formatting_entry()

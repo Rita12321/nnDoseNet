@@ -8,7 +8,7 @@ from batchgenerators.utilities.file_and_folder_operations import load_json, join
 
 from nndosenet.imageio.base_reader_writer import BaseReaderWriter
 from nndosenet.imageio.reader_writer_registry import determine_reader_writer_from_dataset_json
-from nndosenet.paths import nnUNet_raw, nnUNet_preprocessed
+from nndosenet.paths import nnDose_raw, nnDose_preprocessed
 from nndosenet.preprocessing.cropping.cropping import crop_to_nonzero
 from nndosenet.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 from nndosenet.utilities.utils import get_identifiers_from_splitted_dataset_folder, \
@@ -29,7 +29,7 @@ class DatasetFingerprintExtractor(object):
         self.verbose = verbose
 
         self.dataset_name = dataset_name
-        self.input_folder = join(nnUNet_raw, dataset_name)
+        self.input_folder = join(nnDose_raw, dataset_name)
         self.num_processes = num_processes
         self.dataset_json = load_json(join(self.input_folder, 'dataset.json'))
 
@@ -107,7 +107,7 @@ class DatasetFingerprintExtractor(object):
     def run(self, overwrite_existing: bool = False) -> dict:
         # we do not save the properties file in self.input_folder because that folder might be read-only. We can only
         # reliably write in nnUNet_preprocessed and nnUNet_results, so nnUNet_preprocessed it is
-        preprocessed_output_folder = join(nnUNet_preprocessed, self.dataset_name)
+        preprocessed_output_folder = join(nnDose_preprocessed, self.dataset_name)
         maybe_mkdir_p(preprocessed_output_folder)
         properties_file = join(preprocessed_output_folder, 'dataset_fingerprint.json')
 

@@ -9,7 +9,7 @@ import glob
 import shutil
 import math as m
 from rt_utils import RTStructBuilder
-from nndosenet.paths import nnUNet_raw,nnUNet_dicom
+from nndosenet.paths import nnDose_raw,nnDose_dicom
 from batchgenerators.utilities.file_and_folder_operations import *
 
 def sitk_read_dcm(in_path):
@@ -176,7 +176,7 @@ class NiftiLabeler(DicomConverter):
 
         
         self.raw_dicom_folder = join(folder,patient_folder)
-        self.raw_dataset_folder = join(nnUNet_raw,self.dataset_name)
+        self.raw_dataset_folder = join(nnDose_raw,self.dataset_name)
         if not os.path.isdir(self.raw_dataset_folder):
             os.makedirs(self.raw_dataset_folder)
             print("Create folder in nnUNet_raw: ",self.raw_dataset_folder)

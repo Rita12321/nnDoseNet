@@ -7,7 +7,7 @@ import torch.cuda
 import torch.distributed as dist
 import torch.multiprocessing as mp
 from batchgenerators.utilities.file_and_folder_operations import join, isfile, load_json
-from nndosenet.paths import nnUNet_preprocessed
+from nndosenet.paths import nnDose_preprocessed
 from nndosenet.run.load_pretrained_weights import load_pretrained_weights
 from nndosenet.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
 from nndosenet.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
@@ -60,7 +60,7 @@ def get_trainer_from_args(dataset_name_or_id: Union[int, str],
                              f'input: {dataset_name_or_id}')
 
     # initialize nnunet trainer
-    preprocessed_dataset_folder_base = join(nnUNet_preprocessed, maybe_convert_to_dataset_name(dataset_name_or_id))
+    preprocessed_dataset_folder_base = join(nnDose_preprocessed, maybe_convert_to_dataset_name(dataset_name_or_id))
     plans_file = join(preprocessed_dataset_folder_base, plans_identifier + '.json')
     plans = load_json(plans_file)
     dataset_json = load_json(join(preprocessed_dataset_folder_base, 'dataset.json'))

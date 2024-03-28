@@ -23,7 +23,7 @@ from batchgenerators.utilities.file_and_folder_operations import *
 
 from nndosenet.imageio.base_reader_writer import BaseReaderWriter
 from nndosenet.imageio.reader_writer_registry import determine_reader_writer_from_dataset_json
-from nndosenet.paths import nnUNet_raw
+from nndosenet.paths import nnDose_raw
 from nndosenet.utilities.label_handling.label_handling import LabelManager
 from nndosenet.utilities.utils import get_identifiers_from_splitted_dataset_folder
 
@@ -218,6 +218,6 @@ def verify_dataset_integrity(folder: str, num_processes: int = 8,dose: bool=Fals
 
 if __name__ == "__main__":
     # investigate geometry issues
-    example_folder = join(nnUNet_raw)
+    example_folder = join(nnDose_raw)
     num_processes = 6
     verify_dataset_integrity(example_folder, num_processes)

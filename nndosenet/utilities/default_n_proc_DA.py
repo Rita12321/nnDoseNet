@@ -7,7 +7,7 @@ def get_allowed_n_proc_DA():
     This function is used to set the number of processes used on different Systems. It is specific to our cluster
     infrastructure at DKFZ. You can modify it to suit your needs. Everything is allowed.
 
-    IMPORTANT: if the environment variable nnUNet_n_proc_DA is set it will overwrite anything in this script
+    IMPORTANT: if the environment variable nnDose_n_proc_DA is set it will overwrite anything in this script
     (see first line).
 
     Interpret the output as the number of processes used for data augmentation PER GPU.
@@ -17,9 +17,11 @@ def get_allowed_n_proc_DA():
     GPU without overloading the CPU (technically 11 because we have a main process as well), so that's what we use.
     """
 
-    if 'nnUNet_n_proc_DA' in os.environ.keys():
-        use_this = int(os.environ['nnUNet_n_proc_DA'])
+    if ' nnDose_n_proc_DA' in os.environ.keys():
+        use_this = int(os.environ[' nnDose_n_proc_DA'])
     else:
+        if os.cpu_count()/2>1:
+            use_this=os.cpu_count()//2
         hostname = subprocess.getoutput(['hostname'])
         if hostname in ['Fabian', ]:
             use_this = 12

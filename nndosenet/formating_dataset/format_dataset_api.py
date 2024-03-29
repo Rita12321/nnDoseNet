@@ -171,9 +171,9 @@ def organize_nifti(DATA_FOLDER):
             continue
         patient_path=join(DATA_FOLDER,patient_folder)
         create_folderlist(patient_path,folder_list=["Nifti"])
-        dcms=glob.glob(join(patient_path,"*.nii.gz"))
-        for dcm in dcms:
-            shutil.move(dcm,join(patient_path,"Dicom",type))        
+        niftis=glob.glob(join(patient_path,"*.nii.gz"))
+        for nifti in niftis:
+            shutil.move(nifti,join(patient_path,"Nifti",))        
     
         
         

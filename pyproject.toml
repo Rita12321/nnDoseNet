@@ -31,8 +31,8 @@ keywords = [
 ]
 dependencies = [
     "torch>=2.0.0",
-    "acvl-utils>=0.2",
-    "dynamic-network-architectures>=0.2",
+    "acvl-utils>=0.2,<0.3", 
+    "dynamic-network-architectures>=0.2,<0.4",
     "tqdm",
     "dicom2nifti",
     "scipy",
@@ -45,6 +45,7 @@ dependencies = [
     "pydicom",
     "graphviz",
     "tifffile",
+    "torchviz",
     "requests",
     "rt-utils",
     "nibabel",

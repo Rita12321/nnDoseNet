@@ -8,7 +8,7 @@ from nndosenet.evaluation.find_best_configuration import find_best_configuration
     dumb_trainer_config_plans_to_trained_models_dict
 from nndosenet.inference.predict_from_raw_data import nnUNetPredictor
 from nndosenet.paths import nnDose_raw, nnDose_results
-from nndosenet.postprocessing.remove_connected_components import apply_postprocessing_to_folder
+from nndosenet.postprocessing.postprocess import apply_postprocessing_to_folder
 from nndosenet.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 from nndosenet.utilities.file_path_utilities import get_output_folder
 

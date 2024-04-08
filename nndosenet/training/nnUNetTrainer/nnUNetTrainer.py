@@ -24,7 +24,7 @@ from batchgenerators.utilities.file_and_folder_operations import join, load_json
 from torch._dynamo import OptimizedModule
 
 from nndosenet.configuration import ANISO_THRESHOLD, default_num_processes
-from nndosenet.evaluation.evaluate_predictions import compute_metrics_on_folder
+from nndosenet.evaluation.evaluate_predictions import compute_dose_metrics_on_folder
 from nndosenet.inference.export_prediction import export_prediction_from_logits, resample_and_save
 from nndosenet.inference.predict_from_raw_data import nnUNetPredictor
 from nndosenet.inference.sliding_window_prediction import compute_gaussian
@@ -1361,7 +1361,7 @@ class nnUNetTrainer(object):
             dist.barrier()
 ##NOTE: changed pass dose label
         if self.local_rank == 0:
-            metrics = compute_metrics_on_folder(join(self.preprocessed_dataset_folder_base, 'gt_segmentations'),
+            metrics = compute_dose_metrics_on_folder(join(self.preprocessed_dataset_folder_base, 'gt_segmentations'),
                                                 validation_output_folder,
                                                 join(validation_output_folder, 'summary.json'),
                                                 self.plans_manager.image_reader_writer_class(),

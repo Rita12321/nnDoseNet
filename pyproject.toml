@@ -56,8 +56,8 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://github.com/Rita12321/nnUNetv2"
-repository = "https://github.com/Rita12321/nnUNetv2"
+homepage = "https://github.com/Rita12321/nnDoseNet"
+repository = "https://github.com/Rita12321/nnDoseNet"
 
 [project.scripts]
 nnDoseNet_format_dataset = "nndosenet.formating_dataset.format_dataset_entrypoints:format_dataset_entry"

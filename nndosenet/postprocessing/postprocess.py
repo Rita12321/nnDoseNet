@@ -10,7 +10,7 @@ from batchgenerators.utilities.file_and_folder_operations import load_json, subf
     isdir, save_pickle, load_pickle, save_json
 from nndosenet.configuration import default_num_processes
 from nndosenet.evaluation.accumulate_cv_results import accumulate_cv_results
-from nndosenet.evaluation.evaluate_predictions import region_or_label_to_mask, compute_metrics_on_folder, \
+from nndosenet.evaluation.evaluate_predictions import region_or_label_to_mask, compute_dose_metrics_on_folder, \
     load_summary_json, label_or_region_to_key
 from nndosenet.imageio.base_reader_writer import BaseReaderWriter
 from nndosenet.paths import nnDose_raw
@@ -18,7 +18,7 @@ from nndosenet.utilities.file_path_utilities import folds_tuple_to_string
 from nndosenet.utilities.json_export import recursive_fix_for_json_export
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 
-
+#TODO: add shift dose 
 def remove_all_but_largest_component_from_segmentation(segmentation: np.ndarray,
                                                        labels_or_regions: Union[int, Tuple[int, ...],
                                                                                 List[Union[int, Tuple[int, ...]]]],
@@ -102,7 +102,7 @@ def determine_postprocessing(folder_predictions: str,
 
     # before we start we should evaluate the imaegs in the source folder
     if not isfile(join(folder_predictions, 'summary.json')):
-        compute_metrics_on_folder(folder_ref,
+        compute_dose_metrics_on_folder(folder_ref,
                                   folder_predictions,
                                   join(folder_predictions, 'summary.json'),
                                   rw,
@@ -135,7 +135,7 @@ def determine_postprocessing(folder_predictions: str,
                 [[kwargs]] * len(predicted_files)
             )
         )
-        compute_metrics_on_folder(folder_ref,
+        compute_dose_metrics_on_folder(folder_ref,
                                   output_here,
                                   join(output_here, 'summary.json'),
                                   rw,
@@ -207,7 +207,7 @@ def determine_postprocessing(folder_predictions: str,
                         [[kwargs]] * len(predicted_files)
                     )
                 )
-                compute_metrics_on_folder(folder_ref,
+                compute_dose_metrics_on_folder(folder_ref,
                                           output_here,
                                           join(output_here, 'summary.json'),
                                           rw,
@@ -375,7 +375,7 @@ if __name__ == '__main__':
     apply_postprocessing_to_folder(merged_output_folder, merged_output_folder + '_pp', fns, kwargs,
                                    plans_manager.plans, dataset_json,
                                    8)
-    compute_metrics_on_folder(labelstr,
+    compute_dose_metrics_on_folder(labelstr,
                               merged_output_folder + '_pp',
                               join(merged_output_folder + '_pp', 'summary.json'),
                               plans_manager.image_reader_writer_class(),

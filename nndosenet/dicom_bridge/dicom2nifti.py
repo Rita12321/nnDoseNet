@@ -179,7 +179,7 @@ class NiftiLabeler(DicomConverter):
         self.raw_dataset_folder = join(nnDose_raw,self.dataset_name)
         if not os.path.isdir(self.raw_dataset_folder):
             os.makedirs(self.raw_dataset_folder)
-            print("Create folder in nnUNet_raw: ",self.raw_dataset_folder)
+            print("Create folder in nnDose_raw: ",self.raw_dataset_folder)
 
         self.structure_label = load_json(join(os.path.dirname(folder),'structure.json'))["structure_label"]  
         

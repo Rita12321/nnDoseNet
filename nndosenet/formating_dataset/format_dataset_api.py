@@ -272,23 +272,20 @@ def multi_processs(num_processes):
         ### default_preprocessor line 271
         # multiprocessing magic.
         
-        r = []
-        with multiprocessing.get_context("spawn").Pool(num_processes) as p:
-            for outfile, infiles, segfiles in zip(output_filenames_truncated, image_fnames, seg_fnames):
-                r.append(p.starmap_async(self.run_case_save,
-                                         ((outfile, infiles, segfiles, plans_manager, configuration_manager,
-                                           dataset_json),)))
-            remaining = list(range(len(output_filenames_truncated)))
-            # p is pretty nifti. If we kill workers they just respawn but don't do any work.
-            # So we need to store the original pool of workers.
-            workers = [j for j in p._pool]
-            with tqdm(desc=None, total=len(output_filenames_truncated), disable=self.verbose) as pbar:
-                while len(remaining) > 0:
-                    all_alive = all([j.is_alive() for j in workers])
-                    if not all_alive:
-                        raise RuntimeError('Some background worker is 6 feet under. Yuck.')
-                    done = [i for i in remaining if r[i].ready()]
-                    for _ in done:
-                        pbar.update()
-                    remaining = [i for i in remaining if i not in done]
-                    sleep(0.1)       
+    with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
+        # for i in list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred), [ignore_label] * len(files_pred))):
+        #     compute_metrics(*i)
+        
+        # compute_dose_metrics or compute_metrics(for segmentation)
+        if dose_label:
+            results = pool.starmap(
+                compute_dose_metrics,
+                list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
+                        [ignore_label] * len(files_pred)))
+            )
+        else:
+            results = pool.starmap(
+                compute_metrics,
+                list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
+                        [ignore_label] * len(files_pred)))
+            )

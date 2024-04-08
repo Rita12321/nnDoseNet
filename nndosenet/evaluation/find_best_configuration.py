@@ -8,9 +8,9 @@ from batchgenerators.utilities.file_and_folder_operations import load_json, join
 from nndosenet.configuration import default_num_processes
 from nndosenet.ensembling.ensemble import ensemble_crossvalidations
 from nndosenet.evaluation.accumulate_cv_results import accumulate_cv_results
-from nndosenet.evaluation.evaluate_predictions import compute_metrics_on_folder, load_summary_json
+from nndosenet.evaluation.evaluate_predictions import compute_dose_metrics_on_folder, load_summary_json
 from nndosenet.paths import nnDose_preprocessed, nnDose_raw, nnDose_results
-from nndosenet.postprocessing.remove_connected_components import determine_postprocessing
+from nndosenet.postprocessing.postprocess import determine_postprocessing
 from nndosenet.utilities.file_path_utilities import maybe_convert_to_dataset_name, get_output_folder, \
     convert_identifier_to_trainer_plans_config, get_ensemble_name, folds_tuple_to_string
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
@@ -125,7 +125,7 @@ def find_best_configuration(dataset_name_or_id,
                 label_manager = plans_manager.get_label_manager(dataset_json)
                 rw = plans_manager.image_reader_writer_class()
 
-                compute_metrics_on_folder(join(nnDose_raw, dataset_name, 'labelsTr'),
+                compute_dose_metrics_on_folder(join(nnDose_raw, dataset_name, 'labelsTr'),
                                           output_folder_ensemble,
                                           join(output_folder_ensemble, 'summary.json'),
                                           rw,

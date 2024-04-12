@@ -54,6 +54,9 @@ def determine_postprocessing(folder_predictions: str,
                              dataset_json_file_or_dict: Union[str, dict],
                              num_processes: int = default_num_processes,
                              keep_postprocessed_files: bool = True):
+    
+    #TODO: set folder prediction to nndosepredict
+    #TODO: set folder ref ... to nndose_raw? or copy to prediction
     """
     Determines nnUNet postprocessing. Its output is a postprocessing.pkl file in folder_predictions which can be
     used with apply_postprocessing_to_folder.
@@ -64,6 +67,8 @@ def determine_postprocessing(folder_predictions: str,
 
     If plans_file_or_dict or dataset_json_file_or_dict are None, we will look for them in input_folder
     """
+    
+    #TODO: change it to prediction 
     output_folder = join(folder_predictions, 'postprocessed')
 
     if plans_file_or_dict is None:
@@ -119,9 +124,7 @@ def determine_postprocessing(folder_predictions: str,
         output_here = join(output_folder, 'temp', 'keep_largest_fg')
         maybe_mkdir_p(output_here)
         pp_fn = nii2dcm_and_gamma
-        kwargs = {
-            'labels_or_regions': label_manager.foreground_labels,
-        }
+        kwargs = {}
 
         pool.starmap(
             load_postprocess_save,
@@ -177,60 +180,7 @@ def determine_postprocessing(folder_predictions: str,
             print(f'Removing all but the largest foreground region did not improve results!')
             source = folder_predictions
 
-        # in the old nnU-Net we could just apply all-but-largest component removal to all classes at the same time and
-        # then evaluate for each class whether this improved results. This is no longer possible because we now support
-        # region-based predictions and regions can overlap, causing interactions
-        # in principle the order with which the postprocessing is applied to the regions matter as well and should be
-        # investigated, but due to some things that I am too lazy to explain right now it's going to be alright (I think)
-        # to stick to the order in which they are declared in dataset.json (if you want to think about it then think about
-        # region_class_order)
-        # 2023_02_06: I hate myself for the comment above. Thanks past me
-        if len(labels_or_regions) > 1:
-            for label_or_region in labels_or_regions:
-                pp_fn = nii2dcm_and_gamma
-                kwargs = {
-                    'labels_or_regions': label_or_region,
-                }
-
-                output_here = join(output_folder, 'temp', 'keep_largest_perClassOrRegion')
-                maybe_mkdir_p(output_here)
-
-                pool.starmap(
-                    load_postprocess_save,
-                    zip(
-                        [join(source, i) for i in predicted_files],
-                        [join(output_here, i) for i in predicted_files],
-                        [rw] * len(predicted_files),
-                        [[pp_fn]] * len(predicted_files),
-                        [[kwargs]] * len(predicted_files)
-                    )
-                )
-                compute_dose_metrics_on_folder(folder_ref,
-                                          output_here,
-                                          join(output_here, 'summary.json'),
-                                          rw,
-                                          dataset_json['file_ending'],
-                                          labels_or_regions,
-                                          label_manager.ignore_label,
-                                          num_processes)
-                baseline_results = load_summary_json(join(source, 'summary.json'))
-                pp_results = load_summary_json(join(output_here, 'summary.json'))
-                
-                do_this = pp_results['mean'][label_or_region]['Dice'] > baseline_results['mean'][label_or_region]['Dice']
-                if do_this:
-                    print(f'Results were improved by removing all but the largest component for {label_or_region}. '
-                          f'Dice before: {round(baseline_results["mean"][label_or_region]["Dice"], 5)} '
-                          f'after: {round(pp_results["mean"][label_or_region]["Dice"], 5)}')
-                    if isdir(join(output_folder, 'temp', 'keep_largest_perClassOrRegion_currentBest')):
-                        shutil.rmtree(join(output_folder, 'temp', 'keep_largest_perClassOrRegion_currentBest'))
-                    shutil.move(output_here, join(output_folder, 'temp', 'keep_largest_perClassOrRegion_currentBest'), )
-                    source = join(output_folder, 'temp', 'keep_largest_perClassOrRegion_currentBest')
-                    pp_fns.append(pp_fn)
-                    pp_fn_kwargs.append(kwargs)
-                else:
-                    print(f'Removing all but the largest component for {label_or_region} did not improve results! '
-                          f'Dice before: {round(baseline_results["mean"][label_or_region]["Dice"], 5)} '
-                          f'after: {round(pp_results["mean"][label_or_region]["Dice"], 5)}')
+        
     [shutil.copy(join(source, i), join(output_folder, i)) for i in subfiles(source, join=False)]
     save_pickle((pp_fns, pp_fn_kwargs), join(folder_predictions, 'postprocessing.pkl'))
 
@@ -355,29 +305,30 @@ def entry_point_apply_postprocessing():
 
 
 if __name__ == '__main__':
-    trained_model_folder = '/home/fabian/results/nnUNet_remake/Dataset004_Hippocampus/nnUNetTrainer__nnUNetPlans__3d_fullres'
-    labelstr = join(nnDose_raw, 'Dataset004_Hippocampus', 'labelsTr')
-    plans_manager = PlansManager(join(trained_model_folder, 'plans.json'))
-    dataset_json = load_json(join(trained_model_folder, 'dataset.json'))
-    folds = (0, 1, 2, 3, 4)
-    label_manager = plans_manager.get_label_manager(dataset_json)
+    pass
+    # trained_model_folder = '/home/fabian/results/nnUNet_remake/Dataset004_Hippocampus/nnUNetTrainer__nnUNetPlans__3d_fullres'
+    # labelstr = join(nnDose_raw, 'Dataset004_Hippocampus', 'labelsTr')
+    # plans_manager = PlansManager(join(trained_model_folder, 'plans.json'))
+    # dataset_json = load_json(join(trained_model_folder, 'dataset.json'))
+    # folds = (0, 1, 2, 3, 4)
+    # label_manager = plans_manager.get_label_manager(dataset_json)
 
-    merged_output_folder = join(trained_model_folder, f'crossval_results_folds_{folds_tuple_to_string(folds)}')
-    accumulate_cv_results(trained_model_folder, merged_output_folder, folds, 8, False)
+    # merged_output_folder = join(trained_model_folder, f'crossval_results_folds_{folds_tuple_to_string(folds)}')
+    # accumulate_cv_results(trained_model_folder, merged_output_folder, folds, 8, False)
 
-    fns, kwargs = determine_postprocessing(merged_output_folder, labelstr, plans_manager.plans,
-                                           dataset_json, 8, keep_postprocessed_files=True)
-    save_pickle((fns, kwargs), join(trained_model_folder, 'postprocessing.pkl'))
-    fns, kwargs = load_pickle(join(trained_model_folder, 'postprocessing.pkl'))
+    # fns, kwargs = determine_postprocessing(merged_output_folder, labelstr, plans_manager.plans,
+    #                                        dataset_json, 8, keep_postprocessed_files=True)
+    # save_pickle((fns, kwargs), join(trained_model_folder, 'postprocessing.pkl'))
+    # fns, kwargs = load_pickle(join(trained_model_folder, 'postprocessing.pkl'))
 
-    apply_postprocessing_to_folder(merged_output_folder, merged_output_folder + '_pp', fns, kwargs,
-                                   plans_manager.plans, dataset_json,
-                                   8)
-    compute_dose_metrics_on_folder(labelstr,
-                              merged_output_folder + '_pp',
-                              join(merged_output_folder + '_pp', 'summary.json'),
-                              plans_manager.image_reader_writer_class(),
-                              dataset_json['file_ending'],
-                              label_manager.foreground_regions if label_manager.has_regions else label_manager.foreground_labels,
-                              label_manager.ignore_label,
-                              8)
+    # apply_postprocessing_to_folder(merged_output_folder, merged_output_folder + '_pp', fns, kwargs,
+    #                                plans_manager.plans, dataset_json,
+    #                                8)
+    # compute_dose_metrics_on_folder(labelstr,
+    #                           merged_output_folder + '_pp',
+    #                           join(merged_output_folder + '_pp', 'summary.json'),
+    #                           plans_manager.image_reader_writer_class(),
+    #                           dataset_json['file_ending'],
+    #                           label_manager.foreground_regions if label_manager.has_regions else label_manager.foreground_labels,
+    #                           label_manager.ignore_label,
+    #                           8)

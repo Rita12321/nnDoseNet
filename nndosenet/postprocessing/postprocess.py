@@ -13,25 +13,23 @@ from nndosenet.evaluation.accumulate_cv_results import accumulate_cv_results
 from nndosenet.evaluation.evaluate_predictions import region_or_label_to_mask, compute_dose_metrics_on_folder, \
     load_summary_json, label_or_region_to_key
 from nndosenet.imageio.base_reader_writer import BaseReaderWriter
-from nndosenet.paths import nnDose_raw
+from nndosenet.paths import nnDose_raw,nnDose_prediction,nnDose_results,nnDose_dicom
 from nndosenet.utilities.file_path_utilities import folds_tuple_to_string
 from nndosenet.utilities.json_export import recursive_fix_for_json_export
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
-
+from nndosenet.dicom_bridge.nifti2dicom import dose_to_dicom
+from postprocessing.gamma_analysis import gamma_analysis
 #TODO: add shift dose 
-def remove_all_but_largest_component_from_segmentation(segmentation: np.ndarray,
-                                                       labels_or_regions: Union[int, Tuple[int, ...],
-                                                                                List[Union[int, Tuple[int, ...]]]],
-                                                       background_label: int = 0) -> np.ndarray:
-    mask = np.zeros_like(segmentation, dtype=bool)
-    if not isinstance(labels_or_regions, list):
-        labels_or_regions = [labels_or_regions]
-    for l_or_r in labels_or_regions:
-        mask |= region_or_label_to_mask(segmentation, l_or_r)
-    mask_keep = remove_all_but_largest_component(mask)
-    ret = np.copy(segmentation)  # do not modify the input!
-    ret[mask & ~mask_keep] = background_label
-    return ret
+def nii2dcm_and_gamma(ref_path,pred_path) -> np.ndarray:
+    #TODO: check the referenced function of this bcz change to no return of ret
+    
+    #TODO: find the save path based on nnDoseNet_predict path? 
+    dicom_save_path=
+    gamma_save_path=
+    
+    ref_dcm,pred_dcm=dose_to_dicom(predict_dose=pred_path ,ref_dicom=ref_path, save_path= dicom_save_path)
+    gamma_analysis(reference=ref_dcm,predict_path=pred_dcm,save_path=gamma_save_path)
+    
 
 
 def apply_postprocessing(segmentation: np.ndarray, pp_fns: List[Callable], pp_fn_kwargs: List[dict]):
@@ -120,7 +118,7 @@ def determine_postprocessing(folder_predictions: str,
         # now let's see whether removing all but the largest foreground region improves the scores
         output_here = join(output_folder, 'temp', 'keep_largest_fg')
         maybe_mkdir_p(output_here)
-        pp_fn = remove_all_but_largest_component_from_segmentation
+        pp_fn = nii2dcm_and_gamma
         kwargs = {
             'labels_or_regions': label_manager.foreground_labels,
         }
@@ -189,7 +187,7 @@ def determine_postprocessing(folder_predictions: str,
         # 2023_02_06: I hate myself for the comment above. Thanks past me
         if len(labels_or_regions) > 1:
             for label_or_region in labels_or_regions:
-                pp_fn = remove_all_but_largest_component_from_segmentation
+                pp_fn = nii2dcm_and_gamma
                 kwargs = {
                     'labels_or_regions': label_or_region,
                 }

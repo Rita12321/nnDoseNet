@@ -246,7 +246,5 @@ class NiftiLabeler(DicomConverter):
         shutil.copy2(join(self.nii_folder,"dose.nii.gz"),join(self.raw_dataset_folder,"labels"+self.tr_ts,self.patient_id+".nii.gz")) 
 #            shutil.copy2(join(source_path,"ct.nii.gz"),join("Dataset504","images"+str(dist_str),"0"+patient_num+"_0000.nii.gz"))    
 
-class NiftiConverter():
-    #TODO: move code from testcode nii2dcm here
-    '''Convert Nifti file back to Dicom for predicted dose plan '''  
+
                 

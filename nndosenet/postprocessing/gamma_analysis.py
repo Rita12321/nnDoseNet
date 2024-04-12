@@ -2,7 +2,7 @@ import pydicom
 import pymedphys
 import SimpleITK as sitk
 import numpy as np
-
+import typing
 def find_dose_spacing(reference):
     spaceing=[reference.PixelSpacing[0],reference.PixelSpacing[1],1]
     if reference.SliceThickness is None:
@@ -17,10 +17,22 @@ def find_dose_spacing(reference):
 
     return spaceing
 
-def gamma_analysis(refernce_path,predict_path,save_path=None,percent=3,mm=2,cutoff=20,max_gamma=2,ram=2**32):
-    reference = pydicom.read_file(refernce_path, force=True)
-    evaluation = pydicom.read_file(predict_path, force=True)
+def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
+                   evaluation: typing.Union[pydicom.dataset.FileDataset, str],
+                   save_path=None,
+                   percent=3,mm=2,cutoff=20,max_gamma=2,ram=2**32):
     
+    if isinstance(reference, str):
+        reference = pydicom.read_file(reference, force=True)
+    if isinstance(evaluation, str):
+        evaluation = pydicom.read_file(evaluation, force=True)        
+    
+    if not isinstance(reference, pydicom.dataset.FileDataset):
+        raise ValueError('Cannot get ground truth/reference dose dicom file, wrong file type.')
+    
+    if not isinstance(evaluation, pydicom.dataset.FileDataset):
+        raise ValueError('Cannot get predict/evaluation dose dicom file, wrong file type.') 
+       
     axes_reference, dose_reference = pymedphys.dicom.zyx_and_dose_from_dataset(reference)
     axes_evaluation, dose_evaluation = pymedphys.dicom.zyx_and_dose_from_dataset(evaluation)
 
@@ -43,11 +55,11 @@ def gamma_analysis(refernce_path,predict_path,save_path=None,percent=3,mm=2,cuto
         return gamma
     gamma_np=np.nan_to_num(gamma,-1)
     # image=sitk.GetImageFromArray(gamma_np)  
-    print(gamma_np.shape)
-    image=sitk.GetImageFromArray(gamma_np)  
+
+    image=sitk.GetImageFromArray(gamma_np)
     
     spacing=find_dose_spacing(reference=reference) 
-    print(spacing)
+
     image.SetSpacing(spacing)
     image.SetOrigin(reference.ImagePositionPatient)
     sitk.WriteImage(image,save_path)
@@ -56,4 +68,4 @@ def gamma_analysis(refernce_path,predict_path,save_path=None,percent=3,mm=2,cuto
 if __name__ == '__main__':
     reference_path  = "/home/changh/Documents/2023_DosePredcition/Data/ProsateData_harms/prostate_data/Ts/PROS_TEST_001_PROS_TEST_001_20240213_122216679/Dicom/RD/RD.2.25.215607266051682408066889968235317919247"
     predict_path = "/home/changh/Documents/2023_DosePredcition/nndosev1/nnUNet_prediction/pre_dcm_504/0001.dcm"
-    gamma=gamma_analysis(refernce_path=reference_path,predict_path=predict_path,save_path="/home/changh/Documents/2023_DosePredcition/temp")
+    gamma=gamma_analysis(reference=reference_path,evaluation=predict_path,save_path="/home/changh/Documents/2023_DosePredcition/temp/img_gamma.nii.gz")

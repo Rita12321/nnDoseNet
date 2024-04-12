@@ -1302,11 +1302,13 @@ class nnUNetTrainer(object):
 
                 try:
                     prediction = predictor.predict_sliding_window_return_logits(data)
+                    prediction=prediction*data[3,...] #FIXME: added body mask
                 except RuntimeError:
                     predictor.perform_everything_on_gpu = False
                     prediction = predictor.predict_sliding_window_return_logits(data)
+                    prediction=prediction*data[3,...] #FIXME: added
                     predictor.perform_everything_on_gpu = True
-
+                 
                 prediction = prediction.cpu()
 
                 # this needs to go into background processes
@@ -1374,7 +1376,7 @@ class nnUNetTrainer(object):
             self.print_to_log_file("Validation complete", also_print_to_console=True)
             #self.print_to_log_file("Mean Validation Dice: ", (metrics['foreground_mean']["Dice"]), also_print_to_console=True)
 
-        self.set_deep_supervision_enabled(True) #FIXME: dsp weired 
+        self.set_deep_supervision_enabled(True) 
         compute_gaussian.cache_clear()
 
     def run_training(self):

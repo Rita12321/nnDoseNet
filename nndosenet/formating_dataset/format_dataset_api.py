@@ -193,12 +193,17 @@ def format_dataset_from_dicom(folder,num_processes=3):
 
     patients=sorted(os.listdir(folder))
     
-    for patient in patients:
-        if not os.path.isdir(join(folder,patient)):
-            continue
-        DicomConverter(folder,patient_folder=patient).run()    
+    # for patient in patients:
+    #     if not os.path.isdir(join(folder,patient)):
+    #         continue
+    #     DicomConverter(folder,patient_folder=patient).run()    
     
-    
+    with multiprocessing.get_context("spawn").Pool(num_processes) as p:
+        _ = p.starmap(NiftiLabeler(),zip([folder] * len(patients),
+                                         patients,
+                                         [True]* len(patients)
+                                         )
+                      )
     
     # r = []
     # with multiprocessing.get_context("spawn").Pool(num_processes) as p:
@@ -221,7 +226,7 @@ def format_dataset_from_dicom(folder,num_processes=3):
     #             sleep(0.1)     
                 
                     
-def format_dataset_from_nifti(folder,dataset_id,dataset_name=None,tr_ts="Tr"):
+def format_dataset_from_nifti(folder,dataset_id,dataset_name=None,tr_ts="Tr",num_processes=8):
     id_list=[]
     if dataset_name==None:
         dataset_name=folder.split("/")[-1]
@@ -239,9 +244,20 @@ def format_dataset_from_nifti(folder,dataset_id,dataset_name=None,tr_ts="Tr"):
         os.makedirs(join(nnDose_raw,dataset_name,"labels"+tr_ts))
   
     print("Labeling the contours...")
-    for id,patinet in enumerate(patients):
-        id_list.append(id+1)
-        NiftiLabeler(folder,patient_folder=patinet,patient_id=id+1,dataset_name=dataset_name,dataset_id=dataset_id,tr_ts=tr_ts).run() 
+    id_list=[*range(1,len(patients)+1,1)]
+    # for id,patinet in enumerate(patients):
+    #     id_list.append(id+1)
+    #     NiftiLabeler(folder,patient_folder=patinet,patient_id=id+1,dataset_name=dataset_name,dataset_id=dataset_id,tr_ts=tr_ts)
+    with multiprocessing.get_context("spawn").Pool(num_processes) as p:
+        _ = p.starmap(NiftiLabeler(),zip([folder] * len(patients),
+                                         patients,
+                                         id_list,
+                                         [dataset_name] * len(patients),
+                                         [dataset_id] * len(patients),
+                                         [tr_ts] * len(tr_ts),
+                                         [True]* len(patients))
+                      )
+    
     df = pd.DataFrame({'id': id_list,
                    'patient': patients})  
     df.to_csv(join(nnDose_raw,dataset_name,'patient'+tr_ts+'.csv'), index=False)
@@ -266,26 +282,8 @@ def write_dataset_json(patient_num,dataset_name):
     with open(join(nnDose_raw,dataset_name,"dataset.json"), "w") as outfile:
         outfile.write(json_object)
 
-def multi_processs(num_processes):
-     #TODO: add multiprocessing
-        
-        ### default_preprocessor line 271
-        # multiprocessing magic.
-        
-    with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
-        # for i in list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred), [ignore_label] * len(files_pred))):
-        #     compute_metrics(*i)
-        
-        # compute_dose_metrics or compute_metrics(for segmentation)
-        if dose_label:
-            results = pool.starmap(
-                compute_dose_metrics,
-                list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
-                        [ignore_label] * len(files_pred)))
-            )
-        else:
-            results = pool.starmap(
-                compute_metrics,
-                list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
-                        [ignore_label] * len(files_pred)))
-            )
+# def multi_processs(function,list_parameter_zip,num_processes):
+#     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
+#         _ = p.starmap(function,list_parameter_zip)
+                      
+    

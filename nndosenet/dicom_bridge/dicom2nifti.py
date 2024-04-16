@@ -21,7 +21,7 @@ def sitk_read_dcm(in_path):
 
            
 class DicomConverter():#patient wise
-    def __init__(self,folder,patient_folder):      
+    def __init__(self,folder,patient_folder,runn=False):      
         
         self.patient_folder=patient_folder
         
@@ -35,6 +35,8 @@ class DicomConverter():#patient wise
         self.dose_folder=join(self.raw_dicom_folder,"Dicom","RD")
         self.struct_folder=join(self.raw_dicom_folder,"Dicom","RS")
         self.nii_folder=join(self.raw_dicom_folder,"Nifti")
+        if runn:  
+            self.run()
         
     def run(self):
         print("Converting Nifti for case ",self.patient_folder)
@@ -158,7 +160,7 @@ class DicomConverter():#patient wise
                         break 
                       
         if len(structure_list)>len(structure_list_found):
-            not_found=set(structure_list)-set(structure_list_found)
+            not_found=set(structure_list)-set(structure_list_found)#NiftiLabeler
             print("WARNING: Can't find structure of these", not_found)
             print("These are the list roi_list")
             print(roi_list)
@@ -166,7 +168,7 @@ class DicomConverter():#patient wise
 
 class NiftiLabeler(DicomConverter):
     
-    def __init__(self,folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts="Tr"):  
+    def __init__(self,folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts="Tr",runn=False):  
            
         self.dataset_name=dataset_name 
         self.patient_folder=patient_folder
@@ -184,6 +186,8 @@ class NiftiLabeler(DicomConverter):
         self.structure_label = load_json(join(os.path.dirname(folder),'structure.json'))["structure_label"]  
         
         self.nii_folder=join(self.raw_dicom_folder,"Nifti")
+        if runn:
+            self.run()
     def run(self):
         self.confirm_and_label()   
     def check_label_sanity():

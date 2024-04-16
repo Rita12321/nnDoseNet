@@ -10,15 +10,15 @@ from nndosenet.ensembling.ensemble import ensemble_crossvalidations
 from nndosenet.evaluation.accumulate_cv_results import accumulate_cv_results
 from nndosenet.evaluation.evaluate_predictions import compute_dose_metrics_on_folder, load_summary_json
 from nndosenet.paths import nnDose_preprocessed, nnDose_raw, nnDose_results
-from nndosenet.postprocessing.postprocess import determine_postprocessing
+from nndosenet.postprocessing.postprocess_old import determine_postprocessing
 from nndosenet.utilities.file_path_utilities import maybe_convert_to_dataset_name, get_output_folder, \
     convert_identifier_to_trainer_plans_config, get_ensemble_name, folds_tuple_to_string
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 
 default_trained_models = tuple([
-    {'plans': 'nnUNetPlans', 'configuration': '2d', 'trainer': 'nnUNetTrainer'},
-    {'plans': 'nnUNetPlans', 'configuration': '3d_fullres', 'trainer': 'nnUNetTrainer'},
-    {'plans': 'nnUNetPlans', 'configuration': '3d_lowres', 'trainer': 'nnUNetTrainer'},
+    {'plans': 'nnUNetPlans', 'configuration': '2d',                 'trainer': 'nnUNetTrainer'},
+    {'plans': 'nnUNetPlans', 'configuration': '3d_fullres',         'trainer': 'nnUNetTrainer'},
+    {'plans': 'nnUNetPlans', 'configuration': '3d_lowres',          'trainer': 'nnUNetTrainer'},
     {'plans': 'nnUNetPlans', 'configuration': '3d_cascade_fullres', 'trainer': 'nnUNetTrainer'},
 ])
 
@@ -155,10 +155,10 @@ def find_best_configuration(dataset_name_or_id,
     print()
 
     print('***Determining postprocessing for best model/ensemble***')
-    determine_postprocessing(all_results[best_key]['source'], join(nnDose_raw, dataset_name, 'labelsTr'),
-                             plans_file_or_dict=join(all_results[best_key]['source'], 'plans.json'),
-                             dataset_json_file_or_dict=join(all_results[best_key]['source'], 'dataset.json'),
-                             num_processes=num_processes, keep_postprocessed_files=True)
+    # determine_postprocessing(all_results[best_key]['source'], join(nnDose_raw, dataset_name, 'labelsTr'),
+    #                          plans_file_or_dict=join(all_results[best_key]['source'], 'plans.json'),
+    #                          dataset_json_file_or_dict=join(all_results[best_key]['source'], 'dataset.json'),
+    #                          num_processes=num_processes, keep_postprocessed_files=True)
 
     # in addition to just reading the console output (how it was previously) we should return the information
     # needed to run the full inference via API
@@ -172,7 +172,7 @@ def find_best_configuration(dataset_name_or_id,
             'result_on_crossval_pre_pp': all_results[best_key]["result"],
             #FIXME:
             #'result_on_crossval_post_pp': load_json(join(all_results[best_key]['source'], 'postprocessed', 'summary.json'))['foreground_mean']['Dice'],
-            'postprocessing_file': join(all_results[best_key]['source'], 'postprocessing.pkl'),
+            #'postprocessing_file': join(all_results[best_key]['source'], 'postprocessing.pkl'),
             'some_plans_file': join(all_results[best_key]['source'], 'plans.json'),
             # just needed for label handling, can
             # come from any of the ensemble members (if any)

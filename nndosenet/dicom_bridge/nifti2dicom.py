@@ -43,7 +43,7 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
 
     """
     reference_dicom = pydicom.dcmread(reference_dicom_path)
-    predict_dicom = reference_dicom
+    predict_dicom = reference_dicom.copy()
 
     dose_sitk=sitk.ReadImage(predict_nifti_path)
     spacing_z=dose_sitk.GetSpacing()[2]
@@ -71,26 +71,27 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
     # ori_dose=ori_dose.astype(float)
     ori_dose=sitk.GetImageFromArray(reference_dicom.pixel_array)
     ori_dose.SetOrigin(reference_dicom.ImagePositionPatient)
-    ori_dose.SetSpacing([reference_dicom.PixelSpacing[0],reference_dicom.PixelSpacing[1],spacing_z])
+    ori_dose.SetSpacing([reference_dicom.PixelSpacing[0],reference_dicom.PixelSpacing[1],reference_dicom.PixelSpacing[0]])
     
     pre_dose=sitk.GetImageFromArray(dose_map_scaled)
     pre_dose.SetOrigin(dose_sitk.GetOrigin())
     pre_dose.SetSpacing(dose_sitk.GetSpacing())
-    dose_map_scaled=sitk.GetArrayFromImage(resample2gt(ori_dose,pre_dose))
-    
-    dose_map = dose_map_scaled.astype(out_type)
+
+    dose_map=sitk.GetArrayFromImage(resample2gt(ori_dose,pre_dose))
+    #print(type(dose_map.dtype))
+    dose_map = dose_map.astype(out_type)
     
     predict_dicom.PixelData = dose_map.tobytes()
     
 
     # Change Series number       
-    predict_dicom[0x0020, 0x0011].value=reference_dicom[0x0020, 0x0011].value+"0"
+    predict_dicom[0x0020, 0x0011].value=str(reference_dicom[0x0020, 0x0011].value)+"0"
     
     # Change ReferencedSOPInstanceUID (RD)
-    predict_dicom[0x0008, 0x0018].value=reference_dicom[0x0008, 0x0018].value+"0000"
+    predict_dicom[0x0008, 0x0018].value=str(reference_dicom[0x0008, 0x0018].value)+"0000"
                
     # Change ReferencedSOPInstanceUID (RP)
-    predict_dicom[0x300C, 0x0002][0][0x0008, 0x1155].value=reference_dicom[0x300C, 0x0002][0][0x0008, 0x1155].value+"0000"
+    predict_dicom[0x300C, 0x0002][0][0x0008, 0x1155].value=str(reference_dicom[0x300C, 0x0002][0][0x0008, 0x1155].value)+"0000"
 
     
     predict_dicom.save_as(save_path)

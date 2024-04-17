@@ -44,12 +44,13 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
         'max_gamma': max_gamma,
         'random_subset': None,  # Can be used to get quick pass rates
         'local_gamma': True,  # Change to false for global gamma
-        'ram_available': ram  
+        'ram_available': ram,
+        'quiet':True  
     }
 
     gamma = pymedphys.gamma(
         axes_reference, dose_reference, 
-        axes_evaluation, dose_evaluation, 
+        axes_evaluation, dose_evaluation,
         **gamma_options)
     if save_path==None:
         return gamma

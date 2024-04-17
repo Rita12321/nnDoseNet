@@ -3,13 +3,13 @@ import numpy as np
 import SimpleITK as sitk
 import nibabel as nib
 import os
-import threading
+
 import glob
 
 import shutil
 import math as m
 from rt_utils import RTStructBuilder
-from nndosenet.paths import nnDose_raw,nnDose_dicom
+from nndosenet.paths import nnDose_raw,nnDose_dicom,nnDose_prediction
 from batchgenerators.utilities.file_and_folder_operations import *
 
 def sitk_read_dcm(in_path):
@@ -21,7 +21,7 @@ def sitk_read_dcm(in_path):
 
            
 class DicomConverter():#patient wise
-    def __init__(self,folder,patient_folder,runn=False):      
+    def __init__(self,folder,patient_folder):      
         
         self.patient_folder=patient_folder
         
@@ -35,16 +35,15 @@ class DicomConverter():#patient wise
         self.dose_folder=join(self.raw_dicom_folder,"Dicom","RD")
         self.struct_folder=join(self.raw_dicom_folder,"Dicom","RS")
         self.nii_folder=join(self.raw_dicom_folder,"Nifti")
-        if runn:  
-            self.run()
+
         
     def run(self):
-        print("Converting Nifti for case ",self.patient_folder)
-        print("Getting CT ")
+        #print("Converting Nifti for case ",self.patient_folder)
+        # print("Getting CT ")
         self.get_ct()
-        print("Getting Dose map ")
+        # print("Getting Dose map ")
         self.get_dose()
-        print("Getting structure")
+        # print("Getting structure")
         self.confirm_structure_and_2nii()    
   
     def get_ct(self,save=True):
@@ -159,36 +158,47 @@ class DicomConverter():#patient wise
                         structure_list_found.append(structure)
                         break 
                       
-        if len(structure_list)>len(structure_list_found):
-            not_found=set(structure_list)-set(structure_list_found)#NiftiLabeler
-            print("WARNING: Can't find structure of these", not_found)
-            print("These are the list roi_list")
-            print(roi_list)
+        # if len(structure_list)>len(structure_list_found):
+        #     not_found=set(structure_list)-set(structure_list_found)#NiftiLabeler
+        #     print("WARNING: Can't find structure of these", not_found)
+        #     print("These are the list roi_list")
+        #     print(roi_list)
     
 
 class NiftiLabeler(DicomConverter):
     
-    def __init__(self,folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts="Tr",runn=False):  
+    def __init__(self,folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts="Tr"):  
            
         self.dataset_name=dataset_name 
         self.patient_folder=patient_folder
         self.patient_id=str(patient_id).zfill(4)
-        print(self.patient_id)
+        #print(self.patient_id)
         self.tr_ts=tr_ts
 
         
         self.raw_dicom_folder = join(folder,patient_folder)
-        self.raw_dataset_folder = join(nnDose_raw,self.dataset_name)
+        
+        if tr_ts=="Tr":
+            self.raw_dataset_folder = join(nnDose_raw,self.dataset_name)
+        else:
+            dataset_name_only=""
+            for str_split in self.dataset_name.split("_"):
+                if "Dataset" in str_split:
+                    continue
+                dataset_name_only=dataset_name_only+"_"+str_split
+            dataset_name_only=dataset_name_only[1:]
+            self.raw_dataset_folder = join(nnDose_prediction,dataset_name_only,self.dataset_name,"GroundTruth")
+        
         if not os.path.isdir(self.raw_dataset_folder):
             os.makedirs(self.raw_dataset_folder)
-            print("Create folder in nnDose_raw: ",self.raw_dataset_folder)
-
+            print("Create folder in : ",self.raw_dataset_folder)
+       # print(self.raw_dataset_folder)
         self.structure_label = load_json(join(os.path.dirname(folder),'structure.json'))["structure_label"]  
         
         self.nii_folder=join(self.raw_dicom_folder,"Nifti")
-        if runn:
-            self.run()
+
     def run(self):
+        #print("runing",self.patient_folder)
         self.confirm_and_label()   
     def check_label_sanity():
         #TODO: check label sanity
@@ -196,7 +206,7 @@ class NiftiLabeler(DicomConverter):
     def confirm_and_label(self):
         ct=self.get_ct()
         shape=sitk.GetArrayFromImage(ct).shape
-        type_list=["PTV","OAR","Body"]
+        type_list=["Target","OAR","Body"]
         for type in type_list:
             #mask=np.zeros(shape)
             # if type=="Body":
@@ -219,17 +229,17 @@ class NiftiLabeler(DicomConverter):
                     if type=="OAR":
                         empty= img<=0
                         img=np.add(img,mask*empty)
-                    elif type=="PTV":
+                    elif type=="Target":
                         empty= mask<=0
                         img=np.add(img*empty,mask)
                     else:#"Body shouldn't have multi structure? but the body_mask_value should be binary so it doesn't matter"
                         img=np.add(img,mask)
-                else:
-                    print("WARNING: Can't find any listing structure's nifti file in ",self.nii_folder, "for value", value,\
-                        "in",type,"the structure of ",self.structure_label[type][str(value)],\
-                        "please check the dataset.json or structure_name.json to make sure the name match up ")
+                # else:
+                #     print("WARNING: Can't find any listing structure's nifti file in ",self.nii_folder, "for value", value,\
+                #         "in",type,"the structure of ",self.structure_label[type][str(value)],\
+                #         "please check the dataset.json or structure_name.json to make sure the name match up ")
                                        
-            if type=="PTV":
+            if type=="Target":
                 img= sitk.GetImageFromArray(img.astype(np.int32))
                 img.CopyInformation(ct)
                 sitk.WriteImage(img,join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0001.nii.gz"))

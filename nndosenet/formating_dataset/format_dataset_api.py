@@ -1,16 +1,17 @@
 from nndosenet.dicom_bridge.dicom2nifti import DicomConverter,NiftiLabeler
 import numpy as np
 import SimpleITK as sitk
-import nibabel as nib
+# import nibabel as nib
 import os
 import multiprocessing
 import glob
-
+from tqdm import tqdm
+from time import sleep
 import shutil
-import math as m
+# import math as m
 import pandas as pd
-from rt_utils import RTStructBuilder
-from nndosenet.paths import nnDose_preprocessed, nnDose_raw,nnDose_dicom
+# from rt_utils import RTStructBuilder
+from nndosenet.paths import nnDose_preprocessed, nnDose_raw,nnDose_dicom,nnDose_prediction
 from batchgenerators.utilities.file_and_folder_operations import *
 
 def sitk_read_dcm(in_path):
@@ -36,7 +37,6 @@ def snaity_check():
     pass
            
 def organize_dicom(DATA_FOLDER):
-
 
     """
     DATA_FOLDER=nnUNet_dicom/Dataset/Tr
@@ -102,7 +102,7 @@ def organize_dicom(DATA_FOLDER):
         -0003 
         ...
     """
-    print(sorted(os.listdir(DATA_FOLDER)))
+    #print(sorted(os.listdir(DATA_FOLDER)))
     for patient_folder in sorted(os.listdir(DATA_FOLDER)):
         if not os.path.isdir(join(DATA_FOLDER,patient_folder)):
             continue
@@ -137,10 +137,8 @@ def organize_dicom(DATA_FOLDER):
         #         if os.path.isdir(dcm):
         #             continue
         #         shutil.move(dcm,join(patient_path,"Dicom",type))  
-        print(' finish organizing the the data in dir: '+DATA_FOLDER)    
+        #print(' finish organizing the the data in dir: '+DATA_FOLDER)    
 def organize_nifti(DATA_FOLDER):
-
-
     """
     DATA_FOLDER=nnUNet_dicom/Dataset/Tr
     After apply organize_nifti DATA_FOLDER should be like this
@@ -165,7 +163,7 @@ def organize_nifti(DATA_FOLDER):
         -0003 
         ...
     """
-    print(sorted(os.listdir(DATA_FOLDER)))
+    #print(sorted(os.listdir(DATA_FOLDER)))
     for patient_folder in sorted(os.listdir(DATA_FOLDER)):
         if not os.path.isdir(join(DATA_FOLDER,patient_folder)):
             continue
@@ -174,9 +172,7 @@ def organize_nifti(DATA_FOLDER):
         niftis=glob.glob(join(patient_path,"*.nii.gz"))
         for nifti in niftis:
             shutil.move(nifti,join(patient_path,"Nifti",))        
-    
-        
-        
+
         ##extra
         # type="extra"
         # create_folder(join(patient_path,"Dicom",type))  
@@ -187,7 +183,9 @@ def organize_nifti(DATA_FOLDER):
         #         if os.path.isdir(dcm):
         #             continue
         #         shutil.move(dcm,join(patient_path,"Dicom",type))  
-        print(' finish organizing the the data in dir: '+DATA_FOLDER)  
+    print(' finish organizing the the data in dir: '+DATA_FOLDER)  
+def dicom_convert(folder,patient):
+    DicomConverter(folder,patient_folder=patient).run()
 def format_dataset_from_dicom(folder,num_processes=3):
     dataset_name=folder.split("/")[-1]
 
@@ -197,83 +195,89 @@ def format_dataset_from_dicom(folder,num_processes=3):
     #     if not os.path.isdir(join(folder,patient)):
     #         continue
     #     DicomConverter(folder,patient_folder=patient).run()    
-    
+    r=[]
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
-        _ = p.starmap(NiftiLabeler(),zip([folder] * len(patients),
-                                         patients,
-                                         [True]* len(patients)
-                                         )
-                      )
-    
-    # r = []
-    # with multiprocessing.get_context("spawn").Pool(num_processes) as p:
-    #     for dataset_name, patient_folder, tr_ts in zip(dataset_name, patinet, tr_ts):
-    #         r.append(p.starmap_async(DicomConverter(dataset_name=dataset_name,patient_folder=patient_folder,tr_ts=tr_ts).run(),
-    #                                     ()))
-    #     remaining = list(range(len(output_filenames_truncated)))
-    #     # p is pretty nifti. If we kill workers they just respawn but don't do any work.
-    #     # So we need to store the original pool of workers.
-    #     workers = [j for j in p._pool]
-    #     with tqdm(desc=None, total=len(output_filenames_truncated), disable=self.verbose) as pbar:
-    #         while len(remaining) > 0:
-    #             all_alive = all([j.is_alive() for j in workers])
-    #             if not all_alive:
-    #                 raise RuntimeError('Some background worker is 6 feet under. Yuck.')
-    #             done = [i for i in remaining if r[i].ready()]
-    #             for _ in done:
-    #                 pbar.update()
-    #             remaining = [i for i in remaining if i not in done]
-    #             sleep(0.1)     
-                
-                    
-def format_dataset_from_nifti(folder,dataset_id,dataset_name=None,tr_ts="Tr",num_processes=8):
+        for patient in patients:
+            r.append(p.starmap_async(dicom_convert,
+                                     ((folder,patient),)))
+        remaining = list(range(len(patients)))
+            # p is pretty nifti. If we kill workers they just respawn but don't do any work.
+            # So we need to store the original pool of workers.
+        workers = [j for j in p._pool]
+        with tqdm(desc="converting Dicom2Nifti", total=len(patients) )as pbar:
+            while len(remaining) > 0:
+                all_alive = all([j.is_alive() for j in workers])
+                if not all_alive:
+                    raise RuntimeError('Some background worker is 6 feet under. Yuck.')
+                done = [i for i in remaining if r[i].ready()]
+                for _ in done:
+                    pbar.update()
+                remaining = [i for i in remaining if i not in done]
+                sleep(0.1)
+
+def nifti_label(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts):
+    NiftiLabeler(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts).run()
+                       
+def format_dataset_from_nifti(folder,dataset_id,dataset_name_only=None,tr_ts="Tr",num_processes=8):
     id_list=[]
-    if dataset_name==None:
-        dataset_name=folder.split("/")[-1]
+    if dataset_name_only==None:
+        dataset_name_only=folder.split("/")[-1]
         
-    dataset_name="Dataset"+dataset_id+"_"+dataset_name
+    dataset_name="Dataset"+dataset_id+"_"+dataset_name_only
     patients=sorted(os.listdir(folder))
-    
-    if not os.path.isdir(join(nnDose_raw,dataset_name)):
-        os.makedirs(join(nnDose_raw,dataset_name))
-        print("Create folder in nnUNet_raw: ",join(nnDose_raw,dataset_name))
-        
-    if not os.path.isdir(join(nnDose_raw,dataset_name,"images"+tr_ts)):
-        os.makedirs(join(nnDose_raw,dataset_name,"images"+tr_ts))
-    if not os.path.isdir(join(nnDose_raw,dataset_name,"labels"+tr_ts)):
-        os.makedirs(join(nnDose_raw,dataset_name,"labels"+tr_ts))
-  
-    print("Labeling the contours...")
+    if tr_ts=="Tr":
+        save_folder=join(nnDose_raw,dataset_name)
+    else: 
+        save_folder=join(nnDose_prediction,dataset_name_only,dataset_name,"GroundTruth")
+    if not os.path.isdir(join(save_folder)):
+        os.makedirs(join(save_folder))
+        print("Create folder in : ",join(save_folder))
+
+    if not os.path.isdir(join(save_folder,"images"+tr_ts)):
+        os.makedirs(join(save_folder,"images"+tr_ts))
+    if not os.path.isdir(join(save_folder,"labels"+tr_ts)):
+        os.makedirs(join(save_folder,"labels"+tr_ts))
+
+    print("Labeling the contours")
     id_list=[*range(1,len(patients)+1,1)]
     # for id,patinet in enumerate(patients):
     #     id_list.append(id+1)
     #     NiftiLabeler(folder,patient_folder=patinet,patient_id=id+1,dataset_name=dataset_name,dataset_id=dataset_id,tr_ts=tr_ts)
+
+    r=[]
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
-        _ = p.starmap(NiftiLabeler(),zip([folder] * len(patients),
-                                         patients,
-                                         id_list,
-                                         [dataset_name] * len(patients),
-                                         [dataset_id] * len(patients),
-                                         [tr_ts] * len(tr_ts),
-                                         [True]* len(patients))
-                      )
+        for patient,id in zip(patients,id_list):
+            r.append(p.starmap_async(nifti_label,
+                                     ((folder,patient,id,dataset_name,dataset_id,tr_ts),)))
+        remaining = list(range(len(patients)))
+            # p is pretty nifti. If we kill workers they just respawn but don't do any work.
+            # So we need to store the original pool of workers.
+        workers = [j for j in p._pool]
+        with tqdm(desc="labeling contours", total=len(patients) )as pbar:
+            while len(remaining) > 0:
+                all_alive = all([j.is_alive() for j in workers])
+                if not all_alive:
+                    raise RuntimeError('Some background worker is 6 feet under. Yuck.')
+                done = [i for i in remaining if r[i].ready()]
+                for _ in done:
+                    pbar.update()
+                remaining = [i for i in remaining if i not in done]
+                sleep(0.1)
     
     df = pd.DataFrame({'id': id_list,
                    'patient': patients})  
-    df.to_csv(join(nnDose_raw,dataset_name,'patient'+tr_ts+'.csv'), index=False)
+    df.to_csv(join(save_folder,'patient'+tr_ts+'.csv'), index=False)
+    
     if tr_ts=="Tr":
         write_dataset_json(patient_num=len(patients),dataset_name=dataset_name)
-        shutil.copy2(join(os.path.dirname(folder),'structure.json'),join(nnDose_raw,dataset_name,"structure.json"))
-    print("Finish ! All needed file is in ",join(nnDose_raw,dataset_name),"now.")
-#TODO: 
-#...copy ct and dose in NIftilabeler for now...or forever... idk
-# def copy_ct(folder):
-#     pass
-# def copy_dose():
-#     pass
+    shutil.copy2(join(os.path.dirname(folder),'structure.json'),join(save_folder,"structure.json"))
+  
+            
+    print("Finish ! All needed file is in ",join(save_folder),"now.")
+
 def write_dataset_json(patient_num,dataset_name):
     dict={"labels": {"background": "0", "dose": ""}, 
-          "channel_names": {"0": "CT", "1": "PTV", "2": "OAR", "3": "BODY"}, 
+          "channel_names": {"0": "CT", "1": "Target", "2": "OAR", "3": "BODY"}, 
           "numTraining": patient_num, 
           "file_ending": ".nii.gz",
           "mask_channel":[1,2,3]}
@@ -281,7 +285,8 @@ def write_dataset_json(patient_num,dataset_name):
 
     with open(join(nnDose_raw,dataset_name,"dataset.json"), "w") as outfile:
         outfile.write(json_object)
-
+def write_csv_summary():
+    pass
 # def multi_processs(function,list_parameter_zip,num_processes):
 #     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
 #         _ = p.starmap(function,list_parameter_zip)

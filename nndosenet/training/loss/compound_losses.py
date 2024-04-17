@@ -14,7 +14,7 @@ class Err_and_DVH_Loss(nn.Module):
         :param error-loss_kwargs:
         :param dvh-loss_list:
         :param weight_list:
-        :param order of channel of PTV and OAR, should be [1,2]: 
+        :param order of channel of PTV/Target and OAR, should be [1,2]: 
         :param order of channel of dose_mask, should be 3:
         """
         super(Err_and_DVH_Loss, self).__init__()

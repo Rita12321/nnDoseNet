@@ -55,7 +55,7 @@ class criteria_DVH_Loss(nn.Module):
             y=y.flatten()
             L=0
             
-            #PTV
+            #PTV/Target
             label=mask_index[channel_ptv_oar[0]]
             if len(label)>0:
                 L+=len(label)*3

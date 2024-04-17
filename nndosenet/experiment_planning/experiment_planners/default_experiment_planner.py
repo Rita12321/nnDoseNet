@@ -248,19 +248,19 @@ class ExperimentPlanner(object):
         for c in channel_names.keys() :
             n=channel_names[c]
             #normalization_schemes.append(n)
-            if n=="PTV":
+            if n=="Target":
                 PTV_OAR_BODY[0]=c
             elif n=="OAR":
                 PTV_OAR_BODY[1]=c
             elif n=="BODY":
                 PTV_OAR_BODY[2]=c
         if -1 in PTV_OAR_BODY:
-            print('WARNING: "PTV","OAR","BODY" should be mention in channel_names and please specific which channel it is in'\
-                '"PTV" is the planing target volume'\
-                '"OAR" is the oragn at risk'\
-                '"BODY" is the contour of the patient'\
+            print('WARNING: "Target","OAR","BODY" should be mention in channel_names and please specific which channel it is in'\
+                '"Traget" is the PTV or CTV or GTV or anything you that you target for traetment'\
+                '"OAR" is the oragn at risk or anything you want to minimize the deliverd dosage'\
+                '"BODY" is the contour of the patient, or the range that the treatment would be deliverd '\
                 'Preferred format:'\
-                '"channel_names": {"0": "CT", "1": "PTV", "2": "OAR", "3": "BODY"}')
+                '"channel_names": {"0": "CT", "1": "Target", "2": "OAR", "3": "BODY"}')
                 
         if self.dataset_fingerprint['median_relative_size_after_cropping'] < (3 / 4.):
             use_nonzero_mask_for_norm = [i.leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true for i in

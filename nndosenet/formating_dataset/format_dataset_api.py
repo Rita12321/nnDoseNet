@@ -32,10 +32,12 @@ def create_folderlist(path,folder_list=[],overwrite=False):
         elif overwrite:
             shutil.rmtree(join(path,sub_folder))
             os.makedirs(join(path,sub_folder))
-def snaity_check():
-    #TODO: check if structure set is all good
+def sanity_check_match_roi():
+    #TODO: load match roi summary if none check if structure set is all good
+    
     pass
-           
+def sanity_check_dcm_find():
+    pass          
 def organize_dicom(DATA_FOLDER):
 
     """
@@ -185,9 +187,11 @@ def organize_nifti(DATA_FOLDER):
         #         shutil.move(dcm,join(patient_path,"Dicom",type))  
     print(' finish organizing the the data in dir: '+DATA_FOLDER)  
 def dicom_convert(folder,patient):
-    DicomConverter(folder,patient_folder=patient).run()
-def format_dataset_from_dicom(folder,num_processes=3):
-    dataset_name=folder.split("/")[-1]
+    temp=DicomConverter(folder,patient_folder=patient).run()
+    return {patient:temp}
+    
+def format_dataset_from_dicom(folder,tr_ts,num_processes=3):
+    folder=join(folder,tr_ts)
 
     patients=sorted(os.listdir(folder))
     
@@ -196,10 +200,14 @@ def format_dataset_from_dicom(folder,num_processes=3):
     #         continue
     #     DicomConverter(folder,patient_folder=patient).run()    
     r=[]
+    results_dict ={}# open exist one
+
+
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
         for patient in patients:
             r.append(p.starmap_async(dicom_convert,
                                      ((folder,patient),)))
+            
         remaining = list(range(len(patients)))
             # p is pretty nifti. If we kill workers they just respawn but don't do any work.
             # So we need to store the original pool of workers.
@@ -210,11 +218,25 @@ def format_dataset_from_dicom(folder,num_processes=3):
                 if not all_alive:
                     raise RuntimeError('Some background worker is 6 feet under. Yuck.')
                 done = [i for i in remaining if r[i].ready()]
-                for _ in done:
+                for i in done:
                     pbar.update()
+                    results_dict.update(r[i].get()[0])
                 remaining = [i for i in remaining if i not in done]
                 sleep(0.1)
+    
+    # for i in r:
+    #     results_dict.update(i.get()[0]) #todo test it in while done , update there
 
+    #print(results_dict)
+    save_sum_name = os.path.join(os.path.dirname(folder),tr_ts+'_roi_summary.csv')#todo:  to base +trts
+    results_dict = dict(sorted(results_dict.items()))
+    dataFrame = pd.DataFrame(results_dict).T#.sort_index()
+   
+    # dataFrame=dataFrame.rename(columns={dataFrame.columns[0]:"patients"})
+    # dataFrame.sort_values(by=['patients'])
+    dataFrame.to_csv(save_sum_name)
+    save_json(results_dict,save_sum_name.replace('.csv', '.json'))
+    
 def nifti_label(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts):
     NiftiLabeler(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts).run()
                        

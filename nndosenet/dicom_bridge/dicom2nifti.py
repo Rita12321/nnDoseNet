@@ -44,7 +44,7 @@ class DicomConverter():#patient wise
         # print("Getting Dose map ")
         self.get_dose()
         # print("Getting structure")
-        self.confirm_structure_and_2nii()    
+        return self.confirm_structure_and_2nii()    
   
     def get_ct(self,save=True):
         ct_path=join(self.nii_folder,"ct.nii.gz")
@@ -122,7 +122,7 @@ class DicomConverter():#patient wise
                                 interpolator, default_value) 
                     
     def confirm_structure_and_2nii(self):
-        ''' search and "only" extracing "first" found candidate_roi_name in each defined OAR by order 
+        ''' search and "only" extracting "first" found candidate_roi_name in each defined OAR by order 
             e.g. structure_name:{"Femur_Head": ["Femur_Head_L","Femur_Head_R"]}. 
             We are "only" going to use "Femur_Head_L" if it exist, if not we would search for "Femur_Head_L . 
             If we can't find both, the mask would be left empty in this stage.
@@ -136,34 +136,44 @@ class DicomConverter():#patient wise
         '''        
         ct=self.get_ct()
         structure_list= list(self.structure_name.keys())
-        structure_list_found=[]
+        structure_found_dict={}
+        for structure in structure_list:
+            structure_found_dict.update({structure:""})
+        structure_found_dict.update({'not_matched':[]})
+
+        #structure_list_found=[]
         
         for struct_file in os.listdir(self.struct_folder):
             # Load existing RT Struct. Requires the series path and existing RT Struct path
             rtstruct = RTStructBuilder.create_from(
-            dicom_series_path=self.ct_folder,
-            rt_struct_path=join(self.struct_folder,struct_file))
+                                        dicom_series_path=self.ct_folder,
+                                        rt_struct_path=join(self.struct_folder,struct_file))
             roi_list=rtstruct.get_roi_names()
+            structure_found_dict['not_matched']=structure_found_dict['not_matched']+list(roi_list)
             
             for structure in structure_list:
-                if structure in structure_list_found:
-                    continue
                 for name in self.structure_name[structure]:
                     #print(name)
                     if name in roi_list:
                         #print(name)
+                        structure_found_dict[structure]=name
+                        structure_found_dict['not_matched'].remove(name)
                         mask= sitk.GetImageFromArray( np.transpose(rtstruct.get_roi_mask_by_name(name)*int(1), axes=[2,0,1]).astype(np.int32))
                         mask.CopyInformation(ct)
                         sitk.WriteImage(mask,join(self.nii_folder,structure+".nii.gz"))
-                        structure_list_found.append(structure)
+                        #structure_list_found.append(structure)
                         break 
+        
                       
-        # if len(structure_list)>len(structure_list_found):
-        #     not_found=set(structure_list)-set(structure_list_found)#NiftiLabeler
-        #     print("WARNING: Can't find structure of these", not_found)
-        #     print("These are the list roi_list")
-        #     print(roi_list)
-    
+        # # if len(structure_list)>len(structure_list_found):
+        # #     not_found=set(structure_list)-set(structure_list_found)
+        #     for structure in list(not_found):
+        #         structure_found_dict[structure]=""
+            # print("WARNING: Can't find structure of these", not_found)
+            # print("These are the list roi_list")
+            # print(roi_list)
+            
+        return structure_found_dict
 
 class NiftiLabeler(DicomConverter):
     
@@ -202,6 +212,7 @@ class NiftiLabeler(DicomConverter):
         self.confirm_and_label()   
     def check_label_sanity():
         #TODO: check label sanity
+        
         pass
     def confirm_and_label(self):
         ct=self.get_ct()

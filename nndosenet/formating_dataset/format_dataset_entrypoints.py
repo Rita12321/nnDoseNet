@@ -14,12 +14,16 @@ def organize_and_convert_dicom_entry():#nnUNetv2_extract_fingerprint
                          help="Enter 'Tr' for Training, 'Ts' for Testing, 'Both' for both train and test ")
      parser.add_argument('-nps', type=int ,default=3,
                          help="")
-     
+     parser.add_argument('--organized_dicom', default=False, action="store_true", required=False,
+                         help="if the dicom file is already organized or put tnto correspond folder,\
+                              you will get warning about not finding dcm in folder while dcms are already moved.\
+                              it's very noisy :(")
+   
      args, unrecognized_args = parser.parse_known_args()
      raw_dicom_folder = join(nnDose_dicom,args.name)
-     
-     organize_dicom(join(raw_dicom_folder,args.trts))
-     format_dataset_from_dicom(join(raw_dicom_folder,args.trts))
+     if not args.organized_dicom:
+          organize_dicom(join(raw_dicom_folder,args.trts))
+     format_dataset_from_dicom(raw_dicom_folder,args.trts,args.nps)
           
 
 def label_nifti_and_final_formatting_entry():#nnUNetv2_plan_experiment
@@ -41,7 +45,7 @@ def label_nifti_and_final_formatting_entry():#nnUNetv2_plan_experiment
      raw_dicom_folder = join(nnDose_dicom,args.name)
 
      organize_nifti(join(raw_dicom_folder,args.trts))
-     format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,args.name,args.trts )
+     format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,args.name,args.trts,num_processes=args.nps)
 
 def format_dataset_entry():#nnUNetv2_plan_and_preprocess
      import argparse
@@ -54,15 +58,18 @@ def format_dataset_entry():#nnUNetv2_plan_and_preprocess
                          help="Enter 'Tr' for Training, 'Ts' for Testing, 'Both' for both train and test ")
      parser.add_argument('-nps', type=int ,default=3,
                          help="")
-     
+     parser.add_argument('--organized_dicom', default=False, action="store_true", required=False,
+                    help="if the dicom file is already organized or put tnto correspond folder,\
+                         you will get warning about not finding dcm in folder while dcms are already moved.\
+                         it's very noisy :(")
      args, unrecognized_args = parser.parse_known_args()
      raw_dicom_folder = join(nnDose_dicom,args.name)
      
-     organize_dicom(join(raw_dicom_folder,args.trts))
-     format_dataset_from_dicom(join(raw_dicom_folder,args.trts))
+     if not args.organized_dicom:
+          organize_dicom(join(raw_dicom_folder,args.trts))
+     format_dataset_from_dicom(raw_dicom_folder,args.trts,args.nps)
      organize_nifti(join(raw_dicom_folder,args.trts))
-     format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,args.name,args.trts )
+     format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,args.name,args.trts,args.nps )
 
 if __name__ == '__main__':
-    #organize_and_convert_dicom_entry()
-    label_nifti_and_final_formatting_entry()
+    format_dataset_entry()

@@ -10,7 +10,7 @@ from nndosenet.ensembling.ensemble import ensemble_crossvalidations
 from nndosenet.evaluation.accumulate_cv_results import accumulate_cv_results
 from nndosenet.evaluation.evaluate_predictions import compute_dose_metrics_on_folder, load_summary_json
 from nndosenet.paths import nnDose_preprocessed, nnDose_raw, nnDose_results
-from nndosenet.postprocessing.postprocess_old import determine_postprocessing
+#from nndosenet.postprocessing.postprocess_nnunet import determine_postprocessing
 from nndosenet.utilities.file_path_utilities import maybe_convert_to_dataset_name, get_output_folder, \
     convert_identifier_to_trainer_plans_config, get_ensemble_name, folds_tuple_to_string
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
@@ -154,7 +154,7 @@ def find_best_configuration(dataset_name_or_id,
     print(f'\n*Best*: {best_key}: {all_results[best_key]["result"]}')
     print()
 
-    print('***Determining postprocessing for best model/ensemble***')
+    # print('***Determining postprocessing for best model/ensemble***')
     # determine_postprocessing(all_results[best_key]['source'], join(nnDose_raw, dataset_name, 'labelsTr'),
     #                          plans_file_or_dict=join(all_results[best_key]['source'], 'plans.json'),
     #                          dataset_json_file_or_dict=join(all_results[best_key]['source'], 'dataset.json'),
@@ -251,10 +251,11 @@ def print_inference_instructions(inference_info_dict: dict, instructions_file: s
         _print_and_maybe_write_to_file('\nThe run ensembling with:\n')
         _print_and_maybe_write_to_file(f"nnUNetv2_ensemble -i {output_folder_str} -o {output_ensemble} -np {default_num_processes}")
 
-    _print_and_maybe_write_to_file("\n***Once inference is completed, run postprocessing like this:***\n")
-    _print_and_maybe_write_to_file(f"nnUNetv2_apply_postprocessing -i OUTPUT_FOLDER -o OUTPUT_FOLDER_PP "
-          f"-pp_pkl_file {inference_info_dict['best_model_or_ensemble']['postprocessing_file']} -np {default_num_processes} "
-          f"-plans_json {inference_info_dict['best_model_or_ensemble']['some_plans_file']}")
+    #FIXME: chnage to our post pocess
+    # _print_and_maybe_write_to_file("\n***Once inference is completed, run postprocessing like this:***\n")
+    # _print_and_maybe_write_to_file(f"nnUNetv2_apply_postprocessing -i OUTPUT_FOLDER -o OUTPUT_FOLDER_PP "
+    #       f"-pp_pkl_file {inference_info_dict['best_model_or_ensemble']['postprocessing_file']} -np {default_num_processes} "
+    #       f"-plans_json {inference_info_dict['best_model_or_ensemble']['some_plans_file']}")
 
 
 def dumb_trainer_config_plans_to_trained_models_dict(trainers: List[str], configs: List[str], plans: List[str]):
@@ -324,7 +325,7 @@ def accumulate_crossval_results_entry_point():
     else:
         merged_output_folder = args.o
 
-    accumulate_cv_results(trained_model_folder, merged_output_folder, args.f)
+    accumulate_cv_results(trained_model_folder, merged_output_folder, args.f)# compute metrice on folder
 
 
 if __name__ == '__main__':

@@ -46,6 +46,7 @@ def accumulate_cv_results(trained_model_folder,
         label_manager = plans_manager.get_label_manager(dataset_json)
         compute_dose_metrics_on_folder(join(nnDose_raw, plans_manager.dataset_name, 'labelsTr'),
                                   merged_output_folder,
+                                  join(nnDose_raw, plans_manager.dataset_name, 'imagesTr'),
                                   join(merged_output_folder, 'summary.json'),
                                   rw,
                                   dataset_json['file_ending'],

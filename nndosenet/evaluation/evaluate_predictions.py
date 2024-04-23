@@ -16,7 +16,7 @@ from nndosenet.imageio.simpleitk_reader_writer import SimpleITKIO
 # the Evaluator class of the previous nnU-Net was great and all but man was it overengineered. Keep it simple
 from nndosenet.utilities.json_export import recursive_fix_for_json_export
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
-
+from nndosenet.evaluation.simple_DVH import DoseEvaluator
 
 def label_or_region_to_key(label_or_region: Union[int, Tuple[int]]):
     return str(label_or_region)
@@ -53,7 +53,7 @@ def save_summary_json(results: dict, output_file: str):
     except:
         print("no metric_per_case")
     # sort_keys=True will make foreground_mean the first entry and thus easy to spot
-    save_json(results_converted, output_file, sort_keys=True)
+    save_json(results_converted, output_file, sort_keys=False)
 
 
 def load_summary_json(filename: str):
@@ -74,28 +74,39 @@ def load_summary_json(filename: str):
     return results
 def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: str, oar_file: str,
                          image_reader_writer: BaseReaderWriter,
-                        labels_or_regions: Union[List[int], List[Union[int, Tuple[int, ...]]]],
-                        ignore_label: int = None,save_folder:str=None,) -> dict:
+                        structure_label: Union[List[int], List[Union[int, Tuple[int, ...]]]],
+                        ignore_label: int = None,save_folder:str=None) -> dict:
     # load images
     seg_ptv, dose_ptv_dict = image_reader_writer.read_seg(ptv_file)
     seg_oar, dose_oar_dict = image_reader_writer.read_seg(oar_file)
     dose_ref, _ = image_reader_writer.read_seg(reference_file)
     dose_pred, _ = image_reader_writer.read_seg(prediction_file)
+    
+    seg_oar = seg_oar.squeeze().flatten()
+    seg_ptv = seg_ptv.squeeze().flatten()
+    dose_ref = dose_ref.squeeze().flatten()
+    dose_pred = dose_pred.squeeze().flatten()
+    voxel_size = np.prod(dose_ptv_dict['sitk_stuff']['spacing'])
+
     # spacing = seg_ref_dict['spacing']
 
     #TODO: keep ignore label?
     #ignore_mask = seg_ref == ignore_label if ignore_label is not None else None
-    print("computing dose metrics")
+    #print(structure_label)
+    #print("computing dose metrics")
 
 
     results = {}
     results['reference_file'] = reference_file
     results['prediction_file'] = prediction_file
-    results['dose']='True'
-    results['metrics'] = {}
-    print(dose_ref.squeeze().shape,dose_pred.squeeze().shape)
-    results['metrics']['MSE']=MSE(dose_ref.squeeze().flatten(),dose_pred.squeeze().flatten())
+    results['dose'] = 'True'
+    results['metrics']={}
+    results['metrics']['MSE'] = MSE(dose_ref,dose_pred)
     
+    results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv, 
+                                                structure_label['Target'],voxel_size,seperate_label=False)._calculate_dvh_metrics()
+    results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar, 
+                                              structure_label['OAR'],voxel_size,seperate_label=False)._calculate_dvh_metrics()
 ## TODO: more validation metrics for dose
     return results
 
@@ -167,12 +178,12 @@ def compute_metrics(reference_file: str, prediction_file: str, image_reader_writ
     return results
 
 
-#FIXME: few still didn't import dose label ? #I don't know what was I writing about-02/13/2024
-def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str, folder_input:str,
-                                   output_file: str,
+
+def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str, 
+                                   folder_input:str, output_file: str,
                               image_reader_writer: BaseReaderWriter,
                               file_ending: str,
-                              regions_or_labels: Union[List[int], List[Union[int, Tuple[int, ...]]]],
+                              structure_df: Union[List[int], List[Union[int, Tuple[int, ...]]]],
                               ignore_label: int = None,
                               dose_label:bool=False,
                               num_processes: int = default_num_processes,
@@ -196,33 +207,59 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str, folder_inp
         #     compute_metrics(*i)
         
         # compute_dose_metrics or compute_metrics(for segmentation)
+
         if dose_label:
+            print("computing dose metrics")
             results = pool.starmap(
                 compute_dose_metrics,
-                list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
-                        [ignore_label] * len(files_pred)))
+                list(zip(files_ref, files_pred, files_ptv, files_oar, [image_reader_writer] * len(files_pred),
+                         [structure_df] * len(files_pred),
+                        [ignore_label] * len(files_pred),))
             )
         else:
             results = pool.starmap(
                 compute_metrics,
-                list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
+                list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [structure_df] * len(files_pred),
                         [ignore_label] * len(files_pred)))
             )
+
     if dose_label:
         #mean metric per class
         print("mertics list",results[0]['metrics'].keys())
-    
-        metric_list = results[0]['metrics'].keys()
-        print(metric_list)
-        means = {}
-        
-        for m in metric_list:
-            means[m] = np.nanmean([i['metrics'][m] for i in results])
-
-
-
+        means={}
+        # metric_list = results[0]['metrics'].keys()
+        # def recursive_copy_dict(input,upper_key):
+        #     if type(input[upper_key]) is dict:
+        #         for key in input[upper_key].keys():
+        #             recursive_copy_dict(input[upper_key],key)
+        #     return input[upper_key]
+        # print(recursive_copy_dict(results[0],'metrics'))
+        # # metric_list = results[0]['metrics'].keys()
+        # # #print(metric_list)
+        # # metric_means={}
+        # # for m in metric_list:
+        # #     for i in results:
+        # #         metric_means[m] = np.nanmean(i['metrics'][m] )
+        # #         metric_list = results[0]['metrics'].keys()
+                
+        # # metric_list = results[0]['DVH'].keys()
+        # # dvh_means={}
+        # # for m in metric_list:
+        # #     dvh_means[m]={}
+        # #     for mm in results[0]['DVH'][m].keys():
+        # #         dvh_means[m][mm]={}
+        # #         for mmm in results[0]['DVH'][m][mm].keys():
+        # #             dvh_means[m][mm][mmm]={}
+        # #             for i in results:
+        # #                 i
+        # #                 dvh_means[m][mm][mmm] = np.nanmean(i['DVH'][m][mm][mmm])
+                        
+        # means['metrics']=metric_means
+        # means['DVH']=dvh_means
         [recursive_fix_for_json_export(i) for i in results]
         recursive_fix_for_json_export(means)
+        
+        
         result = {'metric_per_case': results, 'mean': means}
 
 
@@ -233,13 +270,13 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str, folder_inp
 
     else:
         print("non-dose? you should check out nnUNet if you want to do segmentation!")
-        results = {}
+        
 
         #mean metric per class
     
-        metric_list = list(results[0]['metrics'][regions_or_labels[0]].keys())
+        metric_list = list(results[0]['metrics'][structure_df[0]].keys())
         means = {}
-        for r in regions_or_labels:
+        for r in structure_df:
             means[r] = {}
             for m in metric_list:
                 means[r][m] = np.nanmean([i['metrics'][r][m] for i in results])
@@ -258,109 +295,23 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str, folder_inp
         recursive_fix_for_json_export(means)
         recursive_fix_for_json_export(foreground_mean)
         result = {'metric_per_case': results, 'mean': means, 'foreground_mean': foreground_mean}
-        if output_file is not None:
-            save_summary_json(result, output_file)
+    if output_file is not None:
+        save_summary_json(result, output_file)
     return result
-    # print('DONE')
-# #FIXME: few still didn't import dose label ? #I don't know what was I writing about-02/13/2024
-# def compute_metrics_on_folder(folder_ref: str, folder_pred: str, output_file: str,
-#                               image_reader_writer: BaseReaderWriter,
-#                               file_ending: str,
-#                               regions_or_labels: Union[List[int], List[Union[int, Tuple[int, ...]]]],
-#                               ignore_label: int = None,
-#                               dose_label:bool=False,
-#                               num_processes: int = default_num_processes,
-#                               chill: bool = True) -> dict:
-#     """
-#     output_file must end with .json; can be None
-#     """
-#     if output_file is not None:
-#         assert output_file.endswith('.json'), 'output_file should end with .json'
-#     files_pred = subfiles(folder_pred, suffix=file_ending, join=False)
-#     files_ref = subfiles(folder_ref, suffix=file_ending, join=False)
-#     if not chill:
-#         present = [isfile(join(folder_pred, i)) for i in files_ref]
-#         assert all(present), "Not all files in folder_pred exist in folder_ref"
-#     files_ref = [join(folder_ref, i) for i in files_pred]
-#     files_pred = [join(folder_pred, i) for i in files_pred]
-#     with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
-#         # for i in list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred), [ignore_label] * len(files_pred))):
-#         #     compute_metrics(*i)
-        
-#         # compute_dose_metrics or compute_metrics(for segmentation)
-#         if dose_label:
-#             results = pool.starmap(
-#                 compute_dose_metrics,
-#                 list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
-#                         [ignore_label] * len(files_pred)))
-#             )
-#         else:
-#             results = pool.starmap(
-#                 compute_metrics,
-#                 list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred),
-#                         [ignore_label] * len(files_pred)))
-#             )
-#     if dose_label:
-#         #mean metric per class
-#         print("mertics list",results[0]['metrics'].keys())
-    
-#         metric_list = results[0]['metrics'].keys()
-#         print(metric_list)
-#         means = {}
-        
-#         for m in metric_list:
-#             means[m] = np.nanmean([i['metrics'][m] for i in results])
-
-
-
-#         [recursive_fix_for_json_export(i) for i in results]
-#         recursive_fix_for_json_export(means)
-#         result = {'metric_per_case': results, 'mean': means}
-
-
-#         if output_file is not None:
-#             save_summary_json(result, output_file)
-#         return result
-#         # print('DONE')
-
-#     else:
-#         print("non-dose? you should check out nnUNet if you want to do segmentation!")
-#         results = {}
-
-#         #mean metric per class
-    
-#         metric_list = list(results[0]['metrics'][regions_or_labels[0]].keys())
-#         means = {}
-#         for r in regions_or_labels:
-#             means[r] = {}
-#             for m in metric_list:
-#                 means[r][m] = np.nanmean([i['metrics'][r][m] for i in results])
-
-#         # foreground mean
-#         foreground_mean = {}
-#         for m in metric_list:
-#             values = []
-#             for k in means.keys():
-#                 if k == 0 or k == '0':
-#                     continue
-#                 values.append(means[k][m])
-#             foreground_mean[m] = np.mean(values)
-
-#         [recursive_fix_for_json_export(i) for i in results]
-#         recursive_fix_for_json_export(means)
-#         recursive_fix_for_json_export(foreground_mean)
-#         result = {'metric_per_case': results, 'mean': means, 'foreground_mean': foreground_mean}
-#         if output_file is not None:
-#             save_summary_json(result, output_file)
-#     return result
-#     # print('DONE')
+  
 
 def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_input:str,
-                                dataset_json_file: str, plans_file: str,
+                                dataset_json_file: str,# plans_file: str, 
+                                structure_file: str,
                                output_file: str = None,
                                num_processes: int = default_num_processes,
                                chill: bool = False):
     dataset_json = load_json(dataset_json_file)
+    try:
+        structure_json= load_json(structure_file)['structure_label']
+    except:
+        structure_json=None
+        print("Warning: Error while reading structure label !")
     # get file ending
     file_ending = dataset_json['file_ending']
 
@@ -372,26 +323,26 @@ def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_inp
     if output_file is None:
         output_file = join(folder_pred, 'summary.json')
 
-    lm = PlansManager(plans_file).get_label_manager(dataset_json)
-    compute_dose_metrics_on_folder(folder_ref, folder_pred, output_file, rw, file_ending,
-                              lm.foreground_regions if lm.has_regions else lm.foreground_labels, lm.ignore_label,
+    #lm = PlansManager(plans_file).get_label_manager(dataset_json)
+    compute_dose_metrics_on_folder(folder_ref, folder_pred, folder_input, output_file, rw, file_ending,
+                              structure_json,
                               num_processes, chill=chill)
 
 
-def compute_dose_metrics_on_folder_simple(folder_ref: str, folder_pred: str, folder_input:str,labels: Union[Tuple[int, ...], List[int]],
-                                     output_file: str = None,
-                                     num_processes: int = default_num_processes,
-                                     ignore_label: int = None,
-                                     chill: bool = False):
-    example_file = subfiles(folder_ref, join=True)[0]
-    file_ending = os.path.splitext(example_file)[-1]
-    rw = determine_reader_writer_from_file_ending(file_ending, example_file, allow_nonmatching_filename=True,
-                                                  verbose=False)()
-    # maybe auto set output file
-    if output_file is None:
-        output_file = join(folder_pred, 'summary.json')
-    compute_dose_metrics_on_folder(folder_ref, folder_pred, output_file, rw, file_ending,
-                              labels, ignore_label=ignore_label, num_processes=num_processes, chill=chill)
+# def compute_dose_metrics_on_folder_simple(folder_ref: str, folder_pred: str, folder_input:str,labels: Union[Tuple[int, ...], List[int]],
+#                                      output_file: str = None,
+#                                      num_processes: int = default_num_processes,
+#                                      ignore_label: int = None,
+#                                      chill: bool = False):
+#     example_file = subfiles(folder_ref, join=True)[0]
+#     file_ending = os.path.splitext(example_file)[-1]
+#     rw = determine_reader_writer_from_file_ending(file_ending, example_file, allow_nonmatching_filename=True,
+#                                                   verbose=False)()
+#     # maybe auto set output file
+#     if output_file is None:
+#         output_file = join(folder_pred, 'summary.json')
+#     compute_dose_metrics_on_folder(folder_ref, folder_pred, folder_input, output_file, rw, file_ending,
+#                               labels, ignore_label=ignore_label, num_processes=num_processes, chill=chill)
 
 
 def evaluate_folder_entry_point():
@@ -402,48 +353,52 @@ def evaluate_folder_entry_point():
     parser.add_argument('image_folder', type=str, help='folder with input data, that contain nifti contours')
     parser.add_argument('-djfile', type=str, required=True,
                         help='dataset.json file')
-    parser.add_argument('-pfile', type=str, required=True,
-                        help='plans.json file')
+    # parser.add_argument('-pfile', type=str, required=True,
+    #                     help='plans.json file')
+    parser.add_argument('-sfile', type=str, required=True,
+                        help='structure.json file')
     parser.add_argument('-o', type=str, required=False, default=None,
                         help='Output file. Optional. Default: pred_folder/summary.json')
     parser.add_argument('-np', type=int, required=False, default=default_num_processes,
                         help=f'number of processes used. Optional. Default: {default_num_processes}')
     parser.add_argument('--chill', action='store_true', help='dont crash if folder_pred doesnt have all files that are present in folder_gt')
     args = parser.parse_args()
-    compute_dose_metrics_on_folder2(args.gt_folder, args.pred_folder, args.image_folder, args.djfile, args.pfile, args.o, args.np, chill=args.chill)
-
+    compute_dose_metrics_on_folder2(args.gt_folder, args.pred_folder, args.image_folder, args.djfile, args.o, args.np, chill=args.chill)
+    # compute_dose_metrics_on_folder2(args.gt_folder, args.pred_folder, args.image_folder, args.djfile, args.pfile, args.o, args.np, chill=args.chill)
 #TODO: delet this
-def evaluate_simple_entry_point():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('gt_folder', type=str, help='folder with gt segmentations')
-    parser.add_argument('pred_folder', type=str, help='folder with predicted segmentations')
-    parser.add_argument('image_folder', type=str, help='folder with input data, that contain nifti contours')
-    parser.add_argument('-l', type=int, nargs='+', required=True,
-                        help='list of labels')
-    parser.add_argument('-il', type=int, required=False, default=None,
-                        help='ignore label')
-    parser.add_argument('-o', type=str, required=False, default=None,
-                        help='Output file. Optional. Default: pred_folder/summary.json')
-    parser.add_argument('-np', type=int, required=False, default=default_num_processes,
-                        help=f'number of processes used. Optional. Default: {default_num_processes}')
-    parser.add_argument('--chill', action='store_true', help='dont crash if folder_pred doesnt have all files that are present in folder_gt')
+# def evaluate_simple_entry_point():
+#     import argparse
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('gt_folder', type=str, help='folder with gt segmentations')
+#     parser.add_argument('pred_folder', type=str, help='folder with predicted segmentations')
+#     parser.add_argument('image_folder', type=str, help='folder with input data, that contain nifti contours')
+#     parser.add_argument('-l', type=int, nargs='+', required=True,
+#                         help='list of labels')
+#     parser.add_argument('-il', type=int, required=False, default=None,
+#                         help='ignore label')
+#     parser.add_argument('-o', type=str, required=False, default=None,
+#                         help='Output file. Optional. Default: pred_folder/summary.json')
+#     parser.add_argument('-np', type=int, required=False, default=default_num_processes,
+#                         help=f'number of processes used. Optional. Default: {default_num_processes}')
+#     parser.add_argument('--chill', action='store_true', help='dont crash if folder_pred doesnt have all files that are present in folder_gt')
 
-    args = parser.parse_args()
-    compute_dose_metrics_on_folder_simple(args.gt_folder, args.pred_folder, args.image_folder,args.l, args.o, args.np, args.il, chill=args.chill)
+#     args = parser.parse_args()
+#     compute_dose_metrics_on_folder_simple(args.gt_folder, args.pred_folder, args.image_folder,args.l, args.o, args.np, args.il, chill=args.chill)
 
 
 if __name__ == '__main__':
     folder_ref = '/home/changh/Documents/nnUNet_prediction/labelsTs'
     folder_pred = '/home/changh/Documents/nnUNet_prediction/Dataset004/'
+    folder_input='/home/changh/Documents/nnUNet_prediction/imagesTs'
     output_file = '/home/changh/Documents/nnUNet_prediction/Dataset004/summary.json'
+    structure_json= load_json('/home/changh/Documents/nnUNet_prediction/Dataset004/structure.json')['structure_label']
     image_reader_writer = SimpleITKIO()
     file_ending = '.nii.gz'
     regions = None
     ignore_label = None
     dose_label= True
     num_processes = 12
-    compute_dose_metrics_on_folder(folder_ref, folder_pred, output_file,
+    compute_dose_metrics_on_folder(folder_ref, folder_pred, folder_input, output_file,
                               image_reader_writer,
                               file_ending,
                               regions,

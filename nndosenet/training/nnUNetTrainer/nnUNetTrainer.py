@@ -28,7 +28,7 @@ from nndosenet.evaluation.evaluate_predictions import compute_dose_metrics_on_fo
 from nndosenet.inference.export_prediction import export_prediction_from_logits, resample_and_save
 from nndosenet.inference.predict_from_raw_data import nnUNetPredictor
 from nndosenet.inference.sliding_window_prediction import compute_gaussian
-from nndosenet.paths import nnDose_preprocessed, nnDose_results
+from nndosenet.paths import nnDose_preprocessed, nnDose_results, nnDose_raw
 from nndosenet.training.data_augmentation.compute_initial_patch_size import get_patch_size
 from nndosenet.training.data_augmentation.custom_transforms.cascade_transforms import MoveSegAsOneHotToData, \
     ApplyRandomBinaryOperatorTransform, RemoveRandomConnectedComponentFromOneHotEncodingTransform
@@ -115,6 +115,7 @@ class nnUNetTrainer(object):
         self.configuration_manager = self.plans_manager.get_configuration(configuration)
         self.configuration_name = configuration
         self.dataset_json = dataset_json
+        
         self.fold = fold
         self.unpack_dataset = unpack_dataset
 
@@ -122,6 +123,8 @@ class nnUNetTrainer(object):
         # inference and some of the folders may not be defined!
         self.preprocessed_dataset_folder_base = join(nnDose_preprocessed, self.plans_manager.dataset_name) \
             if nnDose_preprocessed is not None else None
+        self.raw_dataset_folder_base = join(nnDose_raw, self.plans_manager.dataset_name) \
+            if nnDose_raw is not None else None
         self.output_folder_base = join(nnDose_results, self.plans_manager.dataset_name,
                                        self.__class__.__name__ + '__' + self.plans_manager.plans_name + "__" + configuration) \
             if nnDose_results is not None else None
@@ -1363,13 +1366,19 @@ class nnUNetTrainer(object):
             dist.barrier()
 ##NOTE: changed pass dose label
         if self.local_rank == 0:
+            try:
+                structure_json=load_json(join(self.raw_dataset_folder_base, 'structure.json'))['structure_label']
+            except:
+                structure_json=None
             metrics = compute_dose_metrics_on_folder(join(self.preprocessed_dataset_folder_base, 'gt_segmentations'),
                                                 validation_output_folder,
+                                                join(self.raw_dataset_folder_base, 'imagesTr'),
                                                 join(validation_output_folder, 'summary.json'),
                                                 self.plans_manager.image_reader_writer_class(),
                                                 self.dataset_json["file_ending"],
-                                                self.label_manager.foreground_regions if self.label_manager.has_regions else
-                                                self.label_manager.foreground_labels,
+                                                structure_json,
+                                                # self.label_manager.foreground_regions if self.label_manager.has_regions else
+                                                # self.label_manager.foreground_labels,
                                                 self.label_manager.ignore_label,
                                                 self.label_manager.dose_label,
                                                 chill=True)

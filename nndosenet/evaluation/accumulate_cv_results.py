@@ -26,9 +26,13 @@ def accumulate_cv_results(trained_model_folder,
     dataset_json = load_json(join(trained_model_folder, 'dataset.json'))
     plans_manager = PlansManager(join(trained_model_folder, 'plans.json'))
     rw = plans_manager.image_reader_writer_class()
+    
     shutil.copy(join(trained_model_folder, 'dataset.json'), join(merged_output_folder, 'dataset.json'))
     shutil.copy(join(trained_model_folder, 'plans.json'), join(merged_output_folder, 'plans.json'))
-
+    try:
+        shutil.copy(join(trained_model_folder, 'structure.json'), join(merged_output_folder, 'structure.json'))
+    except:
+        pass
     did_we_copy_something = False
     for f in folds:
         expected_validation_folder = join(trained_model_folder, f'fold_{f}', 'validation')
@@ -43,6 +47,15 @@ def accumulate_cv_results(trained_model_folder,
                 did_we_copy_something = True
 
     if did_we_copy_something or not isfile(join(merged_output_folder, 'summary.json')):
+        try:
+            structure_json= load_json(join(trained_model_folder, 'structure.json'))['structure_label']
+        except:
+            try:
+                 structure_json= load_json( join(merged_output_folder, 'dataset.json'))['structure_label']
+            except:
+                structure_json=None
+                print("Warning: Error while reading structure label !")
+                
         label_manager = plans_manager.get_label_manager(dataset_json)
         compute_dose_metrics_on_folder(join(nnDose_raw, plans_manager.dataset_name, 'labelsTr'),
                                   merged_output_folder,
@@ -50,8 +63,9 @@ def accumulate_cv_results(trained_model_folder,
                                   join(merged_output_folder, 'summary.json'),
                                   rw,
                                   dataset_json['file_ending'],
-                                  label_manager.foreground_regions if label_manager.has_regions else
-                                  label_manager.foreground_labels,
+                                  structure_json,
+                                #   label_manager.foreground_regions if label_manager.has_regions else
+                                #   label_manager.foreground_labels,
                                   label_manager.ignore_label,
                                   label_manager.dose_label,
                                   num_processes)

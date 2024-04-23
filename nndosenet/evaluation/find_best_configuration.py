@@ -122,16 +122,22 @@ def find_best_configuration(dataset_name_or_id,
                 # evaluate ensembled predictions
                 plans_manager = PlansManager(join(output_folder_1, 'plans.json'))
                 dataset_json = load_json(join(output_folder_1, 'dataset.json'))
+                try: 
+                    structure_json = load_json(join(output_folder_1, 'structure.json'))
+                except:
+                    structure_json=None
                 label_manager = plans_manager.get_label_manager(dataset_json)
                 rw = plans_manager.image_reader_writer_class()
 
                 compute_dose_metrics_on_folder(join(nnDose_raw, dataset_name, 'labelsTr'),
                                           output_folder_ensemble,
+                                          join(nnDose_raw, dataset_name, 'imagesTr'),
                                           join(output_folder_ensemble, 'summary.json'),
                                           rw,
                                           dataset_json['file_ending'],
-                                          label_manager.foreground_regions if label_manager.has_regions else
-                                          label_manager.foreground_labels,
+                                          structure_json,
+                                        #   label_manager.foreground_regions if label_manager.has_regions else
+                                        #   label_manager.foreground_labels,
                                           label_manager.ignore_label,
                                           num_processes)
                 all_results[identifier] = \

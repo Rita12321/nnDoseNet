@@ -95,7 +95,10 @@ def ensemble_folders(list_of_input_folders: List[str],
 
     maybe_mkdir_p(output_folder)
     shutil.copy(join(list_of_input_folders[0], 'dataset.json'), output_folder)
-
+    try:
+        shutil.copy(join(list_of_input_folders[0], 'structure.json'), output_folder)
+    except:
+        pass
     with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
         num_preds = len(s)
         _ = pool.starmap(
@@ -205,3 +208,7 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
 
     shutil.copy(join(list_of_trained_model_folders[0], 'plans.json'), join(output_folder, 'plans.json'))
     shutil.copy(join(list_of_trained_model_folders[0], 'dataset.json'), join(output_folder, 'dataset.json'))
+    try:
+        shutil.copy(join(list_of_trained_model_folders[0], 'structure.json'), join(output_folder, 'structure.json'))
+    except:
+        pass

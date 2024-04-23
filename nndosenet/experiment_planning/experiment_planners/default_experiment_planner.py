@@ -532,7 +532,11 @@ class ExperimentPlanner(object):
         # per file.
         shutil.copy(join(self.raw_dataset_folder, 'dataset.json'),
                     join(nnDose_preprocessed, self.dataset_name, 'dataset.json'))
-
+        try:
+            shutil.copy(join(self.raw_dataset_folder, 'structure.json'),
+                        join(nnDose_preprocessed, self.dataset_name, 'structure.json'))
+        except:
+            pass
         # json is stupid and I hate it... "Object of type int64 is not JSON serializable" -> my ass
         plans = {
             'dataset_name': self.dataset_name,

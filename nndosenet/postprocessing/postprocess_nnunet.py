@@ -48,172 +48,173 @@ def load_postprocess_save(segmentation_file: str,
     image_reader_writer.write_seg(seg, output_fname, props)
 
 
-def determine_postprocessing(folder_predictions: str,
-                             folder_ref: str,
-                             plans_file_or_dict: Union[str, dict],
-                             dataset_json_file_or_dict: Union[str, dict],
-                             num_processes: int = default_num_processes,
-                             keep_postprocessed_files: bool = True):
+# def determine_postprocessing(folder_predictions: str,
+#                              folder_ref: str,
+#                              plans_file_or_dict: Union[str, dict],
+#                              dataset_json_file_or_dict: Union[str, dict],
+#                              num_processes: int = default_num_processes,
+#                              keep_postprocessed_files: bool = True):
     
-    #TODO: set folder prediction to nndosepredict
-    #TODO: set folder ref ... to nndose_raw? or copy to prediction
-    """
-    Determines nnUNet postprocessing. Its output is a postprocessing.pkl file in folder_predictions which can be
-    used with apply_postprocessing_to_folder.
+#     #TODO: set folder prediction to nndosepredict
+#     #TODO: set folder ref ... to nndose_raw? or copy to prediction
+#     """
+#     Determines nnUNet postprocessing. Its output is a postprocessing.pkl file in folder_predictions which can be
+#     used with apply_postprocessing_to_folder.
 
-    Postprocessed files are saved in folder_predictions/postprocessed. Set
-    keep_postprocessed_files=False to delete these files after this function is done (temp files will eb created
-    and deleted regardless).
+#     Postprocessed files are saved in folder_predictions/postprocessed. Set
+#     keep_postprocessed_files=False to delete these files after this function is done (temp files will eb created
+#     and deleted regardless).
 
-    If plans_file_or_dict or dataset_json_file_or_dict are None, we will look for them in input_folder
-    """
+#     If plans_file_or_dict or dataset_json_file_or_dict are None, we will look for them in input_folder
+#     """
     
-    #TODO: change it to prediction 
-    output_folder = join(folder_predictions, 'postprocessed')
+#     #TODO: change it to prediction 
+#     output_folder = join(folder_predictions, 'postprocessed')
 
-    if plans_file_or_dict is None:
-        expected_plans_file = join(folder_predictions, 'plans.json')
-        if not isfile(expected_plans_file):
-            raise RuntimeError(f"Expected plans file missing: {expected_plans_file}. The plans fils should have been "
-                               f"created while running nnUNetv2_predict. Sadge.")
-        plans_file_or_dict = load_json(expected_plans_file)
-    plans_manager = PlansManager(plans_file_or_dict)
+#     if plans_file_or_dict is None:
+#         expected_plans_file = join(folder_predictions, 'plans.json')
+#         if not isfile(expected_plans_file):
+#             raise RuntimeError(f"Expected plans file missing: {expected_plans_file}. The plans fils should have been "
+#                                f"created while running nnUNetv2_predict. Sadge.")
+#         plans_file_or_dict = load_json(expected_plans_file)
+#     plans_manager = PlansManager(plans_file_or_dict)
 
-    if dataset_json_file_or_dict is None:
-        expected_dataset_json_file = join(folder_predictions, 'dataset.json')
-        if not isfile(expected_dataset_json_file):
-            raise RuntimeError(
-                f"Expected plans file missing: {expected_dataset_json_file}. The plans fils should have been "
-                f"created while running nnUNetv2_predict. Sadge.")
-        dataset_json_file_or_dict = load_json(expected_dataset_json_file)
+#     if dataset_json_file_or_dict is None:
+#         expected_dataset_json_file = join(folder_predictions, 'dataset.json')
+#         if not isfile(expected_dataset_json_file):
+#             raise RuntimeError(
+#                 f"Expected plans file missing: {expected_dataset_json_file}. The plans fils should have been "
+#                 f"created while running nnUNetv2_predict. Sadge.")
+#         dataset_json_file_or_dict = load_json(expected_dataset_json_file)
 
-    if not isinstance(dataset_json_file_or_dict, dict):
-        dataset_json = load_json(dataset_json_file_or_dict)
-    else:
-        dataset_json = dataset_json_file_or_dict
+#     if not isinstance(dataset_json_file_or_dict, dict):
+#         dataset_json = load_json(dataset_json_file_or_dict)
+#     else:
+#         dataset_json = dataset_json_file_or_dict
 
-    rw = plans_manager.image_reader_writer_class()
-    label_manager = plans_manager.get_label_manager(dataset_json)
-    labels_or_regions = label_manager.foreground_regions if label_manager.has_regions else label_manager.foreground_labels
+#     rw = plans_manager.image_reader_writer_class()
+#     label_manager = plans_manager.get_label_manager(dataset_json)
+#     labels_or_regions = label_manager.foreground_regions if label_manager.has_regions else label_manager.foreground_labels
 
-    predicted_files = subfiles(folder_predictions, suffix=dataset_json['file_ending'], join=False)
-    ref_files = subfiles(folder_ref, suffix=dataset_json['file_ending'], join=False)
-    # we should print a warning if not all files from folder_ref are present in folder_predictions
-    if not all([i in predicted_files for i in ref_files]):
-        print(f'WARNING: Not all files in folder_ref were found in folder_predictions. Determining postprocessing '
-              f'should always be done on the entire dataset!')
+#     predicted_files = subfiles(folder_predictions, suffix=dataset_json['file_ending'], join=False)
+#     ref_files = subfiles(folder_ref, suffix=dataset_json['file_ending'], join=False)
+#     # we should print a warning if not all files from folder_ref are present in folder_predictions
+#     if not all([i in predicted_files for i in ref_files]):
+#         print(f'WARNING: Not all files in folder_ref were found in folder_predictions. Determining postprocessing '
+#               f'should always be done on the entire dataset!')
 
-    # before we start we should evaluate the imaegs in the source folder
-    if not isfile(join(folder_predictions, 'summary.json')):
-        compute_dose_metrics_on_folder(folder_ref,
-                                  folder_predictions,
-                                  join(folder_predictions, 'summary.json'),
-                                  rw,
-                                  dataset_json['file_ending'],
-                                  labels_or_regions,
-                                  label_manager.ignore_label,
-                                  num_processes)
+#     # before we start we should evaluate the imaegs in the source folder
+#     if not isfile(join(folder_predictions, 'summary.json')):
+#         compute_dose_metrics_on_folder(folder_ref,
+#                                   folder_predictions,
+#                                   folder_input, 
+#                                   join(folder_predictions, 'summary.json'),
+#                                   rw,
+#                                   dataset_json['file_ending'],
+#                                   labels_or_regions,
+#                                   label_manager.ignore_label,
+#                                   num_processes)
 
-    # we save the postprocessing functions in here
-    pp_fns = []
-    pp_fn_kwargs = []
+#     # we save the postprocessing functions in here
+#     pp_fns = []
+#     pp_fn_kwargs = []
 
-    # pool party!
-    with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
-        # now let's see whether removing all but the largest foreground region improves the scores
-        output_here = join(output_folder, 'temp', 'keep_largest_fg')
-        maybe_mkdir_p(output_here)
-        pp_fn = nii2dcm_and_gamma
-        kwargs = {}
+#     # pool party!
+#     with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
+#         # now let's see whether removing all but the largest foreground region improves the scores
+#         output_here = join(output_folder, 'temp', 'keep_largest_fg')
+#         maybe_mkdir_p(output_here)
+#         pp_fn = nii2dcm_and_gamma
+#         kwargs = {}
 
-        pool.starmap(
-            load_postprocess_save,
-            zip(
-                [join(folder_predictions, i) for i in predicted_files],
-                [join(output_here, i) for i in predicted_files],
-                [rw] * len(predicted_files),
-                [[pp_fn]] * len(predicted_files),
-                [[kwargs]] * len(predicted_files)
-            )
-        )
-        compute_dose_metrics_on_folder(folder_ref,
-                                  output_here,
-                                  join(output_here, 'summary.json'),
-                                  rw,
-                                  dataset_json['file_ending'],
-                                  labels_or_regions,
-                                  label_manager.ignore_label,
-                                  num_processes)
-        # now we need to figure out if doing this improved the dice scores. We will implement that defensively in so far
-        # that if a single class got worse as a result we won't do this. We can change this in the future but right now I
-        # prefer to do it this way
-        baseline_results = load_summary_json(join(folder_predictions, 'summary.json'))
-        pp_results = load_summary_json(join(output_here, 'summary.json'))
+#         pool.starmap(
+#             load_postprocess_save,
+#             zip(
+#                 [join(folder_predictions, i) for i in predicted_files],
+#                 [join(output_here, i) for i in predicted_files],
+#                 [rw] * len(predicted_files),
+#                 [[pp_fn]] * len(predicted_files),
+#                 [[kwargs]] * len(predicted_files)
+#             )
+#         )
+#         compute_dose_metrics_on_folder(folder_ref,
+#                                   output_here,
+#                                   join(output_here, 'summary.json'),
+#                                   rw,
+#                                   dataset_json['file_ending'],
+#                                   labels_or_regions,
+#                                   label_manager.ignore_label,
+#                                   num_processes)
+#         # now we need to figure out if doing this improved the dice scores. We will implement that defensively in so far
+#         # that if a single class got worse as a result we won't do this. We can change this in the future but right now I
+#         # prefer to do it this way
+#         baseline_results = load_summary_json(join(folder_predictions, 'summary.json'))
+#         pp_results = load_summary_json(join(output_here, 'summary.json'))
         
-        try:
-            do_this = pp_results['foreground_mean']['Dice'] > baseline_results['foreground_mean']['Dice']
-        except:
-            do_this=True
-            print("no foreground_mean")
-        if do_this:
+#         try:
+#             do_this = pp_results['foreground_mean']['Dice'] > baseline_results['foreground_mean']['Dice']
+#         except:
+#             do_this=True
+#             print("no foreground_mean")
+#         if do_this:
             
-            for class_id in pp_results['mean'].keys():
-                try:
-                    if pp_results['mean'][class_id]['Dice'] < baseline_results['mean'][class_id]['Dice']:
-                        do_this = False
-                        break
-                except:
-                    if pp_results['mean'][class_id] < baseline_results['mean'][class_id]:
-                        do_this = False
-                        break
-        if do_this:
-            try:
-                print(f'Results were improved by removing all but the largest foreground region. '
-                    f'Mean dice before: {round(baseline_results["foreground_mean"]["Dice"], 5)} '
-                    f'after: {round(pp_results["foreground_mean"]["Dice"], 5)}')
-            except:
-                print(f'Results were improved by removing all but the largest foreground region. ')
-            source = output_here
-            pp_fns.append(pp_fn)
-            pp_fn_kwargs.append(kwargs)
-        else:
-            print(f'Removing all but the largest foreground region did not improve results!')
-            source = folder_predictions
+#             for class_id in pp_results['mean'].keys():
+#                 try:
+#                     if pp_results['mean'][class_id]['Dice'] < baseline_results['mean'][class_id]['Dice']:
+#                         do_this = False
+#                         break
+#                 except:
+#                     if pp_results['mean'][class_id] < baseline_results['mean'][class_id]:
+#                         do_this = False
+#                         break
+#         if do_this:
+#             try:
+#                 print(f'Results were improved by removing all but the largest foreground region. '
+#                     f'Mean dice before: {round(baseline_results["foreground_mean"]["Dice"], 5)} '
+#                     f'after: {round(pp_results["foreground_mean"]["Dice"], 5)}')
+#             except:
+#                 print(f'Results were improved by removing all but the largest foreground region. ')
+#             source = output_here
+#             pp_fns.append(pp_fn)
+#             pp_fn_kwargs.append(kwargs)
+#         else:
+#             print(f'Removing all but the largest foreground region did not improve results!')
+#             source = folder_predictions
 
         
-    [shutil.copy(join(source, i), join(output_folder, i)) for i in subfiles(source, join=False)]
-    save_pickle((pp_fns, pp_fn_kwargs), join(folder_predictions, 'postprocessing.pkl'))
+#     [shutil.copy(join(source, i), join(output_folder, i)) for i in subfiles(source, join=False)]
+#     save_pickle((pp_fns, pp_fn_kwargs), join(folder_predictions, 'postprocessing.pkl'))
 
-    baseline_results = load_summary_json(join(folder_predictions, 'summary.json'))
-    final_results = load_summary_json(join(output_folder, 'summary.json'))
-    try:
-        tmp = {
-            'input_folder': {i: baseline_results[i] for i in ['foreground_mean', 'mean']},
-            'postprocessed': {i: final_results[i] for i in ['foreground_mean', 'mean']},
-            'postprocessing_fns': [i.__name__ for i in pp_fns],
-            'postprocessing_kwargs': pp_fn_kwargs,
-        }
-    except:
-        tmp = {
-            'input_folder': {i: baseline_results[i] for i in ['mean']},
-            'postprocessed': {i: final_results[i] for i in ['mean']},
-            'postprocessing_fns': [i.__name__ for i in pp_fns],
-            'postprocessing_kwargs': pp_fn_kwargs,
-        }
-    # json is a very annoying little bi###. Can't handle tuples as dict keys.
-    tmp['input_folder']['mean'] = {label_or_region_to_key(k): tmp['input_folder']['mean'][k] for k in
-                                   tmp['input_folder']['mean'].keys()}
-    tmp['postprocessed']['mean'] = {label_or_region_to_key(k): tmp['postprocessed']['mean'][k] for k in
-                                    tmp['postprocessed']['mean'].keys()}
-    # did I already say that I hate json? "TypeError: Object of type int64 is not JSON serializable" You retarded bro?
-    recursive_fix_for_json_export(tmp)
-    save_json(tmp, join(folder_predictions, 'postprocessing.json'))
+#     baseline_results = load_summary_json(join(folder_predictions, 'summary.json'))
+#     final_results = load_summary_json(join(output_folder, 'summary.json'))
+#     try:
+#         tmp = {
+#             'input_folder': {i: baseline_results[i] for i in ['foreground_mean', 'mean']},
+#             'postprocessed': {i: final_results[i] for i in ['foreground_mean', 'mean']},
+#             'postprocessing_fns': [i.__name__ for i in pp_fns],
+#             'postprocessing_kwargs': pp_fn_kwargs,
+#         }
+#     except:
+#         tmp = {
+#             'input_folder': {i: baseline_results[i] for i in ['mean']},
+#             'postprocessed': {i: final_results[i] for i in ['mean']},
+#             'postprocessing_fns': [i.__name__ for i in pp_fns],
+#             'postprocessing_kwargs': pp_fn_kwargs,
+#         }
+#     # json is a very annoying little bi###. Can't handle tuples as dict keys.
+#     tmp['input_folder']['mean'] = {label_or_region_to_key(k): tmp['input_folder']['mean'][k] for k in
+#                                    tmp['input_folder']['mean'].keys()}
+#     tmp['postprocessed']['mean'] = {label_or_region_to_key(k): tmp['postprocessed']['mean'][k] for k in
+#                                     tmp['postprocessed']['mean'].keys()}
+#     # did I already say that I hate json? "TypeError: Object of type int64 is not JSON serializable" You retarded bro?
+#     recursive_fix_for_json_export(tmp)
+#     save_json(tmp, join(folder_predictions, 'postprocessing.json'))
 
-    shutil.rmtree(join(output_folder, 'temp'))
+#     shutil.rmtree(join(output_folder, 'temp'))
 
-    if not keep_postprocessed_files:
-        shutil.rmtree(output_folder)
-    return pp_fns, pp_fn_kwargs
+#     if not keep_postprocessed_files:
+#         shutil.rmtree(output_folder)
+#     return pp_fns, pp_fn_kwargs
 
 
 def apply_postprocessing_to_folder(input_folder: str,

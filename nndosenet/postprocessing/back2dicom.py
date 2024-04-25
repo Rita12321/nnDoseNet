@@ -33,7 +33,7 @@ def nii2dcm_and_gamma(ref_path,pred_path,save_folder) -> np.ndarray:
     gamma_analysis(reference=ref_dcm,evaluation=pred_dcm,save_path=gamma_save_path)
 
 
-def apply_postprocessing_to_folder(prediction_folder: str,
+def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
                                    reference_folder:str,
                                    output_folder: str,
                                    patient_csv:str,
@@ -61,7 +61,7 @@ def apply_postprocessing_to_folder(prediction_folder: str,
 
 
 
-def entry_point_apply_postprocessing():
+def entry_point_nii2dcm_and_gamma_analysis():
     parser = argparse.ArgumentParser('Apples postprocessing specified in pp_pkl_file to input folder.')
     
     parser.add_argument('-id', type=str, required=False, help='Prediction id')
@@ -117,7 +117,7 @@ def entry_point_apply_postprocessing():
     if not os.path.isdir(output_folder):
         raise(RuntimeError("Output_folder: "+output_folder+" do not exist"))   
     
-    apply_postprocessing_to_folder(prediction_folder, reference_folder, output_folder, patient_csv, args.np)
+    apply_nii2dcm_and_gamma_to_folder(prediction_folder, reference_folder, output_folder, patient_csv, args.np)
 
 if __name__ == '__main__':
     ## reference folder default    
@@ -167,4 +167,4 @@ if __name__ == '__main__':
     
     if not os.path.isdir(output_folder):
         raise(RuntimeError("Output_folder: "+output_folder+" do not exist")) 
-    apply_postprocessing_to_folder(prediction_folder, reference_folder, output_folder, patient_csv, 8)
+    apply_nii2dcm_and_gamma_to_folder(prediction_folder, reference_folder, output_folder, patient_csv, 8)

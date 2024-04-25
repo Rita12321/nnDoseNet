@@ -765,7 +765,7 @@ class nnUNetTrainer(object):
         if do_dummy_2d_data_aug:#False
             tr_transforms.append(Convert2DTo3DTransform())
         if mask_channel is not None :
-            #print("mask_channel ", mask_channel,"###################################################")
+            
             if len(mask_channel)>0:
                 tr_transforms.append(SeperateDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask'))
                 
@@ -919,6 +919,9 @@ class nnUNetTrainer(object):
         # copy plans and dataset.json so that they can be used for restoring everything we need for inference
         save_json(self.plans_manager.plans, join(self.output_folder_base, 'plans.json'), sort_keys=False)
         save_json(self.dataset_json, join(self.output_folder_base, 'dataset.json'), sort_keys=False)
+        
+        shutil.copy(join(self.preprocessed_dataset_folder_base, 'structure.json'),
+                    join(self.output_folder_base, 'structure.json'))
 
         # we don't really need the fingerprint but its still handy to have it with the others
         shutil.copy(join(self.preprocessed_dataset_folder_base, 'dataset_fingerprint.json'),
@@ -968,11 +971,7 @@ class nnUNetTrainer(object):
         data = batch['data']#(b,c,x,y,z) check basedataloader shape
         target = batch['target']
         ddp_data = batch['data_mask']
-        
-        # np.savez("/home/changh/Documents/2023_DosePredcition/temp/check.npz",data=data,
-        #          target0=target[0],target1=target[1],target2=target[2],target3=target[3],target4=target[4],
-        #          ddp_data0=ddp_data[0],ddp_data1=ddp_data[1],ddp_data2=ddp_data[2],ddp_data3=ddp_data[3],ddp_data4=ddp_data[4],)
-      
+     
 
 
         
@@ -991,23 +990,12 @@ class nnUNetTrainer(object):
         else:
 
             ddp_data = ddp_data.to(self.device, non_blocking=True)
-        #print("b_optimizer")
+
         self.optimizer.zero_grad()
-        #print("a_optimizer")
-        # Autocast is a little bitch.
-        # If the device_type is 'cpu' then it's slow as heck and needs to be disabled.
-        # If the device_type is 'mps' then it will complain that mps is not implemented, even if enabled=False is set. Whyyyyyyy. (this is why we don't make use of enabled=False)
-        # So autocast will only be active if we have a cuda device.
-        #print("b_autocast")
-        
-        #NOTE: changed disable autocast
-        #with autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
         output = self.network(data)
-        #FIXME: is loss is MSE_value_dvh dose:
-        #print(len(target),target[1].shape,"    ",len(output),output[1].shape,"    ",data.shape,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
-        #print(ddp_data[0].shape,"#############################################################")
+
         l = self.loss(output, target,ddp_data)#)#,ddp_data
-        #print("hi~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
  
 
         if self.grad_scaler is not None:

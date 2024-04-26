@@ -59,6 +59,7 @@ def generate_inference_command(dataset_name_or_id: Union[int, str], configuratio
     for f in folds:
         fold_str += f' {f}'
 
+    #TODO: might need to change inference command yo nndosenet prediction folder command
     predict_command = ''
     trained_model_folder = get_output_folder(dataset_name_or_id, trainer_name, plans_identifier, configuration_name, fold=None)
     plans_manager = PlansManager(join(trained_model_folder, 'plans.json'))
@@ -176,7 +177,7 @@ def find_best_configuration(dataset_name_or_id,
         'all_results': {i: j['result'] for i, j in all_results.items()},
         'best_model_or_ensemble': {
             'result_on_crossval_pre_pp': all_results[best_key]["result"],
-            #FIXME:
+            #TODO: future : dose normalize postprocess
             #'result_on_crossval_post_pp': load_json(join(all_results[best_key]['source'], 'postprocessed', 'summary.json'))['foreground_mean']['Dice'],
             #'postprocessing_file': join(all_results[best_key]['source'], 'postprocessing.pkl'),
             'some_plans_file': join(all_results[best_key]['source'], 'plans.json'),
@@ -219,7 +220,7 @@ def find_best_configuration(dataset_name_or_id,
     print_inference_instructions(return_dict, instructions_file=join(nnDose_results, dataset_name, 'inference_instructions.txt'))
     return return_dict
 
-
+#TODO: might need to change inference command yo nndosenet prediction folder command
 def print_inference_instructions(inference_info_dict: dict, instructions_file: str = None):
     def _print_and_maybe_write_to_file(string):
         print(string)

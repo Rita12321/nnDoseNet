@@ -38,7 +38,7 @@ class DatasetFingerprintExtractor(object):
         # (for the entire dataset)
         self.num_foreground_voxels_for_intensitystats = 10e7
 
-    @staticmethod
+    @staticmethod #segegmentaion here refer to ground truth label which is dose map
     def collect_foreground_intensities(segmentation: np.ndarray, images: np.ndarray, seed: int = 1234,
                                        num_samples: int = 10000):
         """

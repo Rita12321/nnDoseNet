@@ -9,7 +9,7 @@ class nnUNetDataLoader3D(nnUNetDataLoaderBase):
         selected_keys = self.get_indices()
         # preallocate memory for data and seg
         data_all = np.zeros(self.data_shape, dtype=np.float32)
-        seg_all = np.zeros(self.seg_shape, dtype=np.float32)#FIXME: np.int16-->np.float32
+        seg_all = np.zeros(self.seg_shape, dtype=np.float32)#NOTE:changed np.int16-->np.float32
         case_properties = []
 
         for j, i in enumerate(selected_keys):
@@ -55,8 +55,3 @@ class nnUNetDataLoader3D(nnUNetDataLoaderBase):
         return {'data': data_all, 'seg': seg_all, 'properties': case_properties, 'keys': selected_keys}
 
 
-if __name__ == '__main__':
-    folder = '/media/fabian/data/nnUNet_preprocessed/Dataset002_Heart/3d_fullres'
-    ds = nnUNetDataset(folder, 0)  # this should not load the properties!
-    dl = nnUNetDataLoader3D(ds, 5, (16, 16, 16), (16, 16, 16), 0.33, None, None)
-    a = next(dl)

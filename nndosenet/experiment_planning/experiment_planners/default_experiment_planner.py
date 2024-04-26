@@ -507,7 +507,7 @@ class ExperimentPlanner(object):
                       f'\nCurrent median shape: {plan_3d_fullres["spacing"] / lowres_spacing * new_median_shape_transposed}')
             if plan_3d_lowres is not None:
                 plan_3d_lowres['batch_dice'] = False
-                plan_3d_fullres['batch_dice'] = True
+                plan_3d_fullres['batch_dice'] = False# NOTE: changed: True
             else:
                 plan_3d_fullres['batch_dice'] = False
         else:

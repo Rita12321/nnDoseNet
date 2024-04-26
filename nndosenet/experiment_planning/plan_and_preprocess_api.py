@@ -89,7 +89,7 @@ def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str 
 
 def preprocess_dataset(dataset_id: int,
                        plans_identifier: str = 'nnUNetPlans',
-                       configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres', '3d_lowres'),#, '3d_lowres'
+                       configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres', '3d_lowres'),
                        num_processes: Union[int, Tuple[int, ...], List[int]] = (8, 4, 8),
                        verbose: bool = False) -> None:
     if not isinstance(num_processes, list):
@@ -124,7 +124,7 @@ def preprocess_dataset(dataset_id: int,
 
 def preprocess(dataset_ids: List[int],
                plans_identifier: str = 'nnUNetPlans',
-               configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres', '3d_lowres'),#
+               configurations: Union[Tuple[str], List[str]] = ('2d', '3d_fullres', '3d_lowres'),
                num_processes: Union[int, Tuple[int, ...], List[int]] = (8, 8, 8),
                verbose: bool = False):
     # not using default

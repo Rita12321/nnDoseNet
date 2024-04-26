@@ -28,35 +28,24 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
         len(configuration_manager.spacing) == \
         len(properties_dict['shape_after_cropping_and_before_resampling']) else \
         [properties_dict['spacing'][0], *configuration_manager.spacing]
-        
-        
-   
     
-    predicted_logits = configuration_manager.resampling_fn_probabilities(predicted_logits,
+    
+    predicted_probabilities = configuration_manager.resampling_fn_probabilities(predicted_logits,
                                             properties_dict['shape_after_cropping_and_before_resampling'],
                                             current_spacing,
                                             properties_dict['spacing'])
-    # return value of resampling_fn_probabilities can be ndarray or Tensor but that doesnt matter because
-    # apply_inference_nonlin will covnert to torch
-
     
-    #NOTE: nonlin would conduct soft max
-    #predicted_probabilities = label_manager.apply_inference_nonlin(predicted_logits)# it would done soft max on dim0
-    predicted_probabilities=predicted_logits
-
     predicted_probabilities=torch.from_numpy(predicted_probabilities).cuda()
-    #np.savez_compressed("/home/changh/Documents/2023_DosePredcition/predicted_logits_afternonlin"+ '.npz', probabilities=predicted_probabilities.cpu().numpy())
     del predicted_logits
-    
-    #NOTE: changed : 
+
     if label_manager.dose_label==None: 
         label_manager._get_all_labels
         
     if label_manager.dose_label==True:
-        segmentation=predicted_probabilities
+        segmentation=predicted_probabilities #in dose mode segmentation here is dose
         segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
                                               dtype=np.float32)
-        #print("foreground labels",label_manager.foreground_labels)
+        
     else:
         segmentation = label_manager.convert_probabilities_to_segmentation(predicted_probabilities)#it would done argmax on probability
         segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
@@ -67,7 +56,7 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
     if isinstance(segmentation, torch.Tensor):
         segmentation = segmentation.cpu().numpy()
     if label_manager.dose_label==True:
-        segmentation=np.clip(segmentation,0.0,np.max(segmentation.flatten()))
+        segmentation=np.clip(segmentation,0.0,None)
     
     # put segmentation in bbox (revert cropping)
     slicer = bounding_box_to_slice(properties_dict['bbox_used_for_cropping'])
@@ -100,13 +89,6 @@ def export_prediction_from_logits(predicted_array_or_file: Union[np.ndarray, tor
                                   plans_manager: PlansManager,
                                   dataset_json_dict_or_file: Union[dict, str], output_file_truncated: str,
                                   save_probabilities: bool = False):
-    # if isinstance(predicted_array_or_file, str):
-    #     tmp = deepcopy(predicted_array_or_file)
-    #     if predicted_array_or_file.endswith('.npy'):
-    #         predicted_array_or_file = np.load(predicted_array_or_file)
-    #     elif predicted_array_or_file.endswith('.npz'):
-    #         predicted_array_or_file = np.load(predicted_array_or_file)['softmax']
-    #     os.remove(tmp)
 
     if isinstance(dataset_json_dict_or_file, str):
         dataset_json_dict_or_file = load_json(dataset_json_dict_or_file)

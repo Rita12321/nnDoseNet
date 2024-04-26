@@ -250,19 +250,6 @@ class nnUNetPredictor(object):
                                                 output_filenames_truncated, self.plans_manager, self.dataset_json,
                                                 self.configuration_manager, num_processes, self.device.type == 'cuda',
                                                 self.verbose_preprocessing)
-        # preprocessor = self.configuration_manager.preprocessor_class(verbose=self.verbose_preprocessing)
-        # # hijack batchgenerators, yo
-        # # we use the multiprocessing of the batchgenerators dataloader to handle all the background worker stuff. This
-        # # way we don't have to reinvent the wheel here.
-        # num_processes = max(1, min(num_processes, len(input_list_of_lists)))
-        # ppa = PreprocessAdapter(input_list_of_lists, seg_from_prev_stage_files, preprocessor,
-        #                         output_filenames_truncated, self.plans_manager, self.dataset_json,
-        #                         self.configuration_manager, num_processes)
-        # if num_processes == 0:
-        #     mta = SingleThreadedAugmenter(ppa, None)
-        # else:
-        #     mta = MultiThreadedAugmenter(ppa, None, num_processes, 1, None, pin_memory=pin_memory)
-        # return mta
 
     def get_data_iterator_from_raw_npy_data(self,
                                             image_or_list_of_images: Union[np.ndarray, List[np.ndarray]],
@@ -440,7 +427,7 @@ class nnUNetPredictor(object):
             else:
                 return ret
 
-    def predict_logits_from_preprocessed_data(self, data: torch.Tensor) -> torch.Tensor:
+    def predict_logits_from_preprocessed_data(self, data: torch.Tensor, dose_mask_channel=3) -> torch.Tensor:
         """
         IMPORTANT! IF YOU ARE RUNNING THE CASCADE, THE SEGMENTATION FROM THE PREVIOUS STAGE MUST ALREADY BE STACKED ON
         TOP OF THE IMAGE AS ONE-HOT REPRESENTATION! SEE PreprocessAdapter ON HOW THIS SHOULD BE DONE!
@@ -498,8 +485,8 @@ class nnUNetPredictor(object):
             print('Prediction done, transferring to CPU if needed')
             prediction = prediction.to('cpu')
             self.perform_everything_on_gpu = original_perform_everything_on_gpu
-        #print("prediction shape",prediction.shape,"data_shape",data.shape,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        prediction = prediction*data[3,...]
+        
+        prediction = np.clip(prediction*data[dose_mask_channel,...],0,None)
         return prediction
 
     def _internal_get_sliding_window_slicers(self, image_size: Tuple[int, ...]):
@@ -692,13 +679,6 @@ def predict_entry_point_modelfolder():
                         help="Use this to set the device the inference should run with. Available options are 'cuda' "
                              "(GPU), 'cpu' (CPU) and 'mps' (Apple M1/M2). Do NOT use this to set which GPU ID! "
                              "Use CUDA_VISIBLE_DEVICES=X nnUNetv2_predict [...] instead!")
-    #TODO: add our description
-    # print(
-    #     "\n#######################################################################\nPlease cite the following paper "
-    #     "when using nnU-Net:\n"
-    #     "Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021). "
-    #     "nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. "
-    #     "Nature methods, 18(2), 203-211.\n#######################################################################\n")
 
     args = parser.parse_args()
     args.f = [i if i == 'all' else int(i) for i in args.f]
@@ -797,12 +777,6 @@ def predict_entry_point():
                              "(GPU), 'cpu' (CPU) and 'mps' (Apple M1/M2). Do NOT use this to set which GPU ID! "
                              "Use CUDA_VISIBLE_DEVICES=X nnUNetv2_predict [...] instead!")
 
-    print(
-        "\n#######################################################################\nPlease cite the following paper "
-        "when using nnU-Net:\n"
-        "Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021). "
-        "nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. "
-        "Nature methods, 18(2), 203-211.\n#######################################################################\n")
 
     args = parser.parse_args()
     args.f = [i if i == 'all' else int(i) for i in args.f]
@@ -849,78 +823,8 @@ def predict_entry_point():
                                  folder_with_segs_from_prev_stage=args.prev_stage_predictions,
                                  num_parts=args.num_parts,
                                  part_id=args.part_id)
-    # r = predict_from_raw_data(args.i,
-    #                           args.o,
-    #                           model_folder,
-    #                           args.f,
-    #                           args.step_size,
-    #                           use_gaussian=True,
-    #                           use_mirroring=not args.disable_tta,
-    #                           perform_everything_on_gpu=True,
-    #                           verbose=args.verbose,
-    #                           save_probabilities=args.save_probabilities,
-    #                           overwrite=not args.continue_prediction,
-    #                           checkpoint_name=args.chk,
-    #                           num_processes_preprocessing=args.npp,
-    #                           num_processes_segmentation_export=args.nps,
-    #                           folder_with_segs_from_prev_stage=args.prev_stage_predictions,
-    #                           num_parts=args.num_parts,
-    #                           part_id=args.part_id,
-    #                           device=device)
 
 
 if __name__ == '__main__':
     predict_entry_point()
-    # # predict a bunch of files
-    # from nndosenet.paths import nnUNet_results, nnUNet_raw
-    # predictor = nnUNetPredictor(
-    #     tile_step_size=0.5,
-    #     use_gaussian=True,
-    #     use_mirroring=True,
-    #     perform_everything_on_gpu=True,
-    #     device=torch.device('cuda', 0),
-    #     verbose=False,
-    #     verbose_preprocessing=False,
-    #     allow_tqdm=True
-    #     )
-    # predictor.initialize_from_trained_model_folder(
-    #     join(nnUNet_results, 'Dataset003_Liver/nnUNetTrainer__nnUNetPlans__3d_lowres'),
-    #     use_folds=(0, ),
-    #     checkpoint_name='checkpoint_final.pth',
-    # )
-    # predictor.predict_from_files(join(nnUNet_raw, 'Dataset003_Liver/imagesTs'),
-    #                              join(nnUNet_raw, 'Dataset003_Liver/imagesTs_predlowres'),
-    #                              save_probabilities=False, overwrite=False,
-    #                              num_processes_preprocessing=2, num_processes_segmentation_export=2,
-    #                              folder_with_segs_from_prev_stage=None, num_parts=1, part_id=0)
-
-    # # predict a numpy array
-    # from nndosenet.imageio.simpleitk_reader_writer import SimpleITKIO
-    # img, props = SimpleITKIO().read_images([join(nnUNet_raw, 'Dataset003_Liver/imagesTr/liver_63_0000.nii.gz')])
-    # ret = predictor.predict_single_npy_array(img, props, None, None, False)
-
-    # iterator = predictor.get_data_iterator_from_raw_npy_data([img], None, [props], None, 1)
-    # ret = predictor.predict_from_data_iterator(iterator, False, 1)
-
-
-    # # predictor = nnUNetPredictor(
-    # #     tile_step_size=0.5,
-    # #     use_gaussian=True,
-    # #     use_mirroring=True,
-    # #     perform_everything_on_gpu=True,
-    # #     device=torch.device('cuda', 0),
-    # #     verbose=False,
-    # #     allow_tqdm=True
-    # #     )
-    # # predictor.initialize_from_trained_model_folder(
-    # #     join(nnUNet_results, 'Dataset003_Liver/nnUNetTrainer__nnUNetPlans__3d_cascade_fullres'),
-    # #     use_folds=(0,),
-    # #     checkpoint_name='checkpoint_final.pth',
-    # # )
-    # # predictor.predict_from_files(join(nnUNet_raw, 'Dataset003_Liver/imagesTs'),
-    # #                              join(nnUNet_raw, 'Dataset003_Liver/imagesTs_predCascade'),
-    # #                              save_probabilities=False, overwrite=False,
-    # #                              num_processes_preprocessing=2, num_processes_segmentation_export=2,
-    #                              folder_with_segs_from_prev_stage='/media/isensee/data/nnUNet_raw/Dataset003_Liver/imagesTs_predlowres',
-    #                              num_parts=1, part_id=0)
 

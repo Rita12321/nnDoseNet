@@ -52,14 +52,11 @@ def ensemble_folders(list_of_input_folders: List[str],
                      num_processes: int = default_num_processes,
                      dataset_json_file_or_dict: str = None,
                      plans_json_file_or_dict: str = None):
-    """we need too much shit for this function. Problem is that we now have to support region-based training plus
-    multiple input/output formats so there isn't really a way around this.
-
+    """
     If plans and dataset json are not specified, we assume each of the folders has a corresponding plans.json
     and/or dataset.json in it. These are usually copied into those folders by nnU-Net during prediction.
     We just pick the dataset.json and plans.json from the first of the folders and we DONT check whether the 5
-    folders contain the same plans etc! This can be a feature if results from different datasets are to be merged (only
-    works if label dict in dataset.json is the same between these datasets!!!)"""
+    folders contain the same plans etc! This can be a feature if results from different datasets are to be merged """
     if dataset_json_file_or_dict is not None:
         if isinstance(dataset_json_file_or_dict, str):
             dataset_json = load_json(dataset_json_file_or_dict)
@@ -156,16 +153,14 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
             unique_filenames.update(files_per_folder[tr][f])
 
     # verify that all trained_model_folders have all predictions
-    ok = True
+
     for tr, fi in files_per_folder.items():
         all_files_here = set()
         for f in folds:
             all_files_here.update(fi[f])
         diff = unique_filenames.difference(all_files_here)
         if len(diff) > 0:
-            ok = False
             print(f'model {tr} does not seem to contain all predictions. Missing: {diff}')
-        if not ok:
             raise RuntimeError('There were missing files, see print statements above this one')
 
     # now we need to collect where these files are

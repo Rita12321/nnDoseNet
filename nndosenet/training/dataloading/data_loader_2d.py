@@ -8,7 +8,7 @@ class nnUNetDataLoader2D(nnUNetDataLoaderBase):
         selected_keys = self.get_indices()
         # preallocate memory for data and seg
         data_all = np.zeros(self.data_shape, dtype=np.float32)
-        seg_all = np.zeros(self.seg_shape, dtype=np.int16)
+        seg_all = np.zeros(self.seg_shape, dtype=np.float32)#NOTE: change
         case_properties = []
 
         for j, current_key in enumerate(selected_keys):
@@ -86,8 +86,4 @@ class nnUNetDataLoader2D(nnUNetDataLoaderBase):
         return {'data': data_all, 'seg': seg_all, 'properties': case_properties, 'keys': selected_keys}
 
 
-if __name__ == '__main__':
-    folder = '/media/fabian/data/nnUNet_preprocessed/Dataset004_Hippocampus/2d'
-    ds = nnUNetDataset(folder, None, 1000)  # this should not load the properties!
-    dl = nnUNetDataLoader2D(ds, 366, (65, 65), (56, 40), 0.33, None, None)
-    a = next(dl)
+

@@ -90,6 +90,13 @@ class nnUNetTrainer(object):
         self.loss_mode=loss_mode
         self.num_epochs=epoch_num
         self.device = device
+        
+        #TODO: adjustable
+        self.channel_ptv_oar=[0,1]
+        self.dose_mask=2
+        self.image_channel_num=1
+
+        
 
         # print what device we are using
         if self.is_ddp:  # implicitly it's clear that we use cuda in this case
@@ -149,8 +156,6 @@ class nnUNetTrainer(object):
         self.oversample_foreground_percent = 0.33
         self.num_iterations_per_epoch = 250
         self.num_val_iterations_per_epoch = 50
-        #NOTE: epoch
-        #self.num_epochs =1000
         self.current_epoch = 0
 
         ### Dealing with labels/regions
@@ -195,16 +200,8 @@ class nnUNetTrainer(object):
         ## DDP batch size and oversampling can differ between workers and needs adaptation
         # we need to change the batch size in DDP because we don't use any of those distributed samplers
         self._set_batch_size_and_oversample()
-
         self.was_initialized = False
 
-        self.print_to_log_file("\n#######################################################################\n"
-                               "Please cite the following paper when using nnU-Net:\n"
-                               "Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021). "
-                               "nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. "
-                               "Nature methods, 18(2), 203-211.\n"
-                               "#######################################################################\n",
-                               also_print_to_console=True, add_timestamp=False)
 
     def initialize(self):
         if not self.was_initialized:
@@ -286,12 +283,6 @@ class nnUNetTrainer(object):
         training, so if you change the network architecture during training by deriving a new trainer class then
         inference will know about it).
 
-        If you need to know how many segmentation outputs your custom architecture needs to have, use the following snippet:
-        > label_manager = plans_manager.get_label_manager(dataset_json)
-        > label_manager.num_segmentation_heads
-        (why so complicated? -> We can have either classical training (classes) or regions. If we have regions,
-        the number of outputs is != the number of classes. Also there is the ignore label for which no output
-        should be generated. label_manager takes care of all that for you.)
 
         """
         #label_managerr = plans_manager.get_label_manager(dataset_json)
@@ -351,44 +342,44 @@ class nnUNetTrainer(object):
 
             self.batch_size = batch_sizes[my_rank]
             self.oversample_foreground_percent = oversample_percents[my_rank]
-#NOTE: changed: add dose label condition to MSE
-    def _build_loss(self):         
-            
+
+    def _build_loss(self):
+        
         if (self.configuration_manager.dose==True) or self.label_manager.dose_label:
             #print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()")
             if self.configuration_manager.mask_channel != None:# if use criteria loss ptv_oar_channel is required 
                 if self.loss_mode=='0':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
                 elif self.loss_mode=='1':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
                 elif self.loss_mode=='2':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=[0,1],dose_mask=2)            
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)            
                 elif self.loss_mode=='3':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
                 elif self.loss_mode=='4':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
                 elif self.loss_mode=='5':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
                 elif self.loss_mode=='6':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
                 elif self.loss_mode=='7':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=[0,1],dose_mask=2)            
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)            
                 elif self.loss_mode=='8':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
                 elif self.loss_mode=='9':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
                 else:
                     print("unknown loss mode, set to default: MSE")
-                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)    
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)    
             else:
                 if self.loss_mode=='0':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
                 elif self.loss_mode=='5':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
                 else:
                     print("there aren't any masked channel, so you can't use DVH based loss. The only option left is mode 0:MSE(default) and 5:MAE(L1Loss)")
                     print("set to default loss: MSE")
-                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=[0,1],dose_mask=2)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
 
         else:
             print("Somehow it's not running in dose mode. Please check did you")
@@ -666,11 +657,10 @@ class nnUNetTrainer(object):
                                                         ,mask_channel=self.configuration_manager.mask_channel)
         
   
-
         dl_tr, dl_val = self.get_plain_dataloaders(initial_patch_size, dim)
 
         
-        #FIXME: 26 cpu
+
         allowed_num_processes = get_allowed_n_proc_DA()
         print(allowed_num_processes)
         if allowed_num_processes == 0:
@@ -867,16 +857,8 @@ class nnUNetTrainer(object):
         val_transforms = Compose(val_transforms)
         return val_transforms
 
-    # def set_deep_supervision_enabled(self, enabled: bool):
-    #     """
-    #     This function is specific for the default architecture in nnU-Net. If you change the architecture, there are
-    #     chances you need to change this as well!
-    #     """
-    #     if self.is_ddp: #FIXME: ddp problem very different in the new one
-    #         self.network.module.decoder.deep_supervision = enabled
-    #     else:
-    #         self.network.decoder.deep_supervision = enabled
-    def set_deep_supervision_enabled(self, enabled: bool):#NOTE: fixed  #FIXME: v2 update try
+
+    def set_deep_supervision_enabled(self, enabled: bool):
         """
         This function is specific for the default architecture in nnU-Net. If you change the architecture, there are
         chances you need to change this as well!
@@ -920,6 +902,7 @@ class nnUNetTrainer(object):
         save_json(self.plans_manager.plans, join(self.output_folder_base, 'plans.json'), sort_keys=False)
         save_json(self.dataset_json, join(self.output_folder_base, 'dataset.json'), sort_keys=False)
         
+        #we need structure.json for evaluation 
         shutil.copy(join(self.preprocessed_dataset_folder_base, 'structure.json'),
                     join(self.output_folder_base, 'structure.json'))
 
@@ -967,7 +950,6 @@ class nnUNetTrainer(object):
         self.logger.log('lrs', self.optimizer.param_groups[0]['lr'], self.current_epoch)
 
     def train_step(self, batch: dict) -> dict:
-        #print(batch.keys())#dict_keys(['data', 'properties', 'keys', 'target'])
         data = batch['data']#(b,c,x,y,z) check basedataloader shape
         target = batch['target']
         ddp_data = batch['data_mask']
@@ -1062,51 +1044,12 @@ class nnUNetTrainer(object):
         output = output[0]
         target = target[0]
 
-        # the following is needed for online evaluation. Fake dice (green line)
-        # axes = [0] + list(range(2, len(output.shape)))
-## FIXME: validation with region may get problem
-        # if self.label_manager.has_regions:
-        #     predicted_segmentation_onehot = (torch.sigmoid(output) > 0.5).long()
-        # else:
-        #     # no need for softmax
-        #     output_seg = output.argmax(1)[:, None]
-        #     predicted_segmentation_onehot = torch.zeros(output.shape, device=output.device, dtype=torch.float32)
-        #     predicted_segmentation_onehot.scatter_(1, output_seg, 1)
-        #     del output_seg
-
-        # if self.label_manager.has_ignore_label:
-        #     if not self.label_manager.has_regions:
-        #         mask = (target != self.label_manager.ignore_label).float()
-        #         # CAREFUL that you don't rely on target after this line!
-        #         target[target == self.label_manager.ignore_label] = 0
-        #     else:
-        #         mask = 1 - target[:, -1:]
-        #         # CAREFUL that you don't rely on target after this line!
-        #         target = target[:, :-1]
-        # else:
-        #     mask = None
-
-        # tp, fp, fn, _ = get_tp_fp_fn_tn(predicted_segmentation_onehot, target, axes=axes, mask=mask)
-
-        # tp_hard = tp.detach().cpu().numpy()
-        # fp_hard = fp.detach().cpu().numpy()
-        # fn_hard = fn.detach().cpu().numpy()
-        # if not self.label_manager.has_regions:
-        #     # if we train with regions all segmentation heads predict some kind of foreground. In conventional
-        #     # (softmax training) there needs tobe one output for the background. We are not interested in the
-        #     # background Dice
-        #     # [1:] in order to remove background
-        #     tp_hard = tp_hard[1:]
-        #     fp_hard = fp_hard[1:]
-        #     fn_hard = fn_hard[1:]
 
         return {'loss': l.detach().cpu().numpy()}
 
     def on_validation_epoch_end(self, val_outputs: List[dict]):
         outputs_collated = collate_outputs(val_outputs)
-        # tp = np.sum(outputs_collated['tp_hard'], 0)
-        # fp = np.sum(outputs_collated['fp_hard'], 0)
-        # fn = np.sum(outputs_collated['fn_hard'], 0)
+
 
         if self.is_ddp:
             world_size = dist.get_world_size()
@@ -1159,12 +1102,6 @@ class nnUNetTrainer(object):
             self.save_checkpoint(join(self.output_folder, 'checkpoint_latest.pth'))
      
 
-        # handle 'best' checkpointing. ema_fg_dice is computed by the logger and can be accessed like this
-        # if self._best_ema is None or self.logger.my_fantastic_logging['ema_fg_dice'][-1] > self._best_ema:
-        #     self._best_ema = self.logger.my_fantastic_logging['ema_fg_dice'][-1]
-        #     self.print_to_log_file(f"Yayy! New best EMA pseudo Dice: {np.round(self._best_ema, decimals=4)}")
-        #     self.save_checkpoint(join(self.output_folder, 'checkpoint_best.pth'))
-        # NOTE: chnaged best model evaluation with validation loss 
         if self._best_ema is None or self.logger.my_fantastic_logging['val_losses'][-1] < self._best_ema:
             self._best_ema = self.logger.my_fantastic_logging['val_losses'][-1]
             self.print_to_log_file(f"Yayy! New best validation_loss: {np.round(self._best_ema, decimals=4)}")
@@ -1222,8 +1159,8 @@ class nnUNetTrainer(object):
         self.inference_allowed_mirroring_axes = checkpoint[
             'inference_allowed_mirroring_axes'] if 'inference_allowed_mirroring_axes' in checkpoint.keys() else self.inference_allowed_mirroring_axes
 
-        # messing with state dict naming schemes. Facepalm.
-        if self.is_ddp: #fFIXME: ddp
+
+        if self.is_ddp:
             if isinstance(self.network.module, OptimizedModule):
                 self.network.module._orig_mod.load_state_dict(new_state_dict)
             else:
@@ -1290,14 +1227,15 @@ class nnUNetTrainer(object):
                     data = torch.from_numpy(data)
 
                 output_filename_truncated = join(validation_output_folder, k)
-
+                
+                #mask output with dose/body mask and make negatives 0
                 try:
                     prediction = predictor.predict_sliding_window_return_logits(data)
-                    prediction=prediction*data[3,...] #FIXME: added body mask
+                    prediction=torch.clamp(prediction*data[self.dose_mask+self.image_channel_num,...],min=0) 
                 except RuntimeError:
                     predictor.perform_everything_on_gpu = False
                     prediction = predictor.predict_sliding_window_return_logits(data)
-                    prediction=prediction*data[3,...] #FIXME: added
+                    prediction=np.clip(prediction*data[self.dose_mask+self.image_channel_num,...],0,None) 
                     predictor.perform_everything_on_gpu = True
                  
                 prediction = prediction.cpu()

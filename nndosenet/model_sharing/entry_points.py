@@ -45,7 +45,7 @@ def export_pretrained_model_entry():
     parser.add_argument('-d', type=str, required=True, help='Dataset name or id')
     parser.add_argument('-o', type=str, required=True, help='Output file name')
     parser.add_argument('-c', nargs='+', type=str, required=False,
-                        default=('3d_lowres', '3d_fullres', '2d', '3d_cascade_fullres'),
+                        default=('3d_lowres', '3d_fullres', '2d'),
                         help="List of configuration names")
     parser.add_argument('-tr', required=False, type=str, default='nnUNetTrainer', help='Trainer class')
     parser.add_argument('-p', required=False, type=str, default='nnUNetPlans', help='plans identifier')

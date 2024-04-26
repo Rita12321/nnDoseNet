@@ -51,7 +51,7 @@ def accumulate_cv_results(trained_model_folder,
             structure_json= load_json(join(trained_model_folder, 'structure.json'))['structure_label']
         except:
             try:
-                 structure_json= load_json( join(merged_output_folder, 'dataset.json'))['structure_label']
+                 structure_json= load_json( join(merged_output_folder, 'structure.json'))['structure_label']
             except:
                 structure_json=None
                 print("Warning: Error while reading structure label !")

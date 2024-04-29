@@ -30,8 +30,7 @@ from nndosenet.inference.predict_from_raw_data import nnUNetPredictor
 from nndosenet.inference.sliding_window_prediction import compute_gaussian
 from nndosenet.paths import nnDose_preprocessed, nnDose_results, nnDose_raw
 from nndosenet.training.data_augmentation.compute_initial_patch_size import get_patch_size
-from nndosenet.training.data_augmentation.custom_transforms.cascade_transforms import MoveSegAsOneHotToData, \
-    ApplyRandomBinaryOperatorTransform, RemoveRandomConnectedComponentFromOneHotEncodingTransform
+
 from nndosenet.training.data_augmentation.custom_transforms.deep_supervision_donwsampling import \
     DownsampleSegForDSTransform2
 from nndosenet.training.data_augmentation.custom_transforms.seperate_channel_transform import SeperateDataMask,revert_SeperateDataMask,CopyDataMask
@@ -47,17 +46,17 @@ from nndosenet.training.dataloading.data_loader_3d import nnUNetDataLoader3D
 from nndosenet.training.dataloading.nnunet_dataset import nnUNetDataset
 from nndosenet.training.dataloading.utils import get_case_identifiers, unpack_dataset
 from nndosenet.training.logging.nnunet_logger import nnUNetLogger
-from nndosenet.training.loss.compound_losses import Err_and_DVH_Loss#,MSE_and_DVH_loss,MSE_and_2DVH_loss,MAE_and_DVH_loss,MAE_and_2DVH_loss
+from nndosenet.training.loss.compound_losses import Err_and_DVH_Loss
 from nndosenet.training.loss.deep_supervision import DeepSupervisionWrapper
-#from nndosenet.training.loss.dice import get_tp_fp_fn_tn, MemoryEfficientSoftDiceLoss
+
 from nndosenet.training.loss.DVH_loss import value_DVH_Loss,criteria_DVH_Loss
 from nndosenet.training.lr_scheduler.polylr import PolyLRScheduler
 from nndosenet.utilities.collate_outputs import collate_outputs
 from nndosenet.utilities.default_n_proc_DA import get_allowed_n_proc_DA
 from nndosenet.utilities.file_path_utilities import check_workers_alive_and_busy
 from nndosenet.utilities.get_network_from_plans import get_network_from_plans
-from nndosenet.utilities.helpers import empty_cache, dummy_context
-from nndosenet.utilities.label_handling.label_handling import convert_labelmap_to_one_hot, determine_num_input_channels
+from nndosenet.utilities.helpers import empty_cache
+from nndosenet.utilities.label_handling.label_handling import  determine_num_input_channels
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager, ConfigurationManager
 from sklearn.model_selection import KFold
 from torch import autocast, nn
@@ -85,7 +84,7 @@ class nnUNetTrainer(object):
 
         # OK OK I am guilty. But I tried. http://tiny.cc/gzgwuz
 
-        self.is_ddp = dist.is_available() and dist.is_initialized() #FIXME: ddp
+        self.is_ddp = dist.is_available() and dist.is_initialized() 
         self.local_rank = 0 if not self.is_ddp else dist.get_rank()
         self.loss_mode=loss_mode
         self.num_epochs=epoch_num
@@ -211,7 +210,7 @@ class nnUNetTrainer(object):
             self.network = self.build_network_architecture(self.plans_manager, self.dataset_json,
                                                            self.configuration_manager,
                                                            self.num_input_channels,
-                                                           enable_deep_supervision=True).to(self.device)#FIXME: dspTrue-->False
+                                                           enable_deep_supervision=True).to(self.device)
             # compile network for free speedup
             if ('nnUNet_compile' in os.environ.keys()) and (
                     os.environ['nnUNet_compile'].lower() in ('true', '1', 't')):
@@ -271,7 +270,7 @@ class nnUNetTrainer(object):
                                    dataset_json,
                                    configuration_manager: ConfigurationManager,
                                    num_input_channels,
-                                   enable_deep_supervision: bool = True) -> nn.Module:#FIXME: dsp
+                                   enable_deep_supervision: bool = True) -> nn.Module:
         """
         his is where you build the architecture according to the plans. There is no obligation to use
         get_network_from_plans, this is just a utility we use for the nnU-Net default architectures. You can do what
@@ -285,8 +284,6 @@ class nnUNetTrainer(object):
 
 
         """
-        #label_managerr = plans_manager.get_label_manager(dataset_json)
-        #print("numof head",label_managerr.num_segmentation_heads,"~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         return get_network_from_plans(plans_manager, dataset_json, configuration_manager,
                                       num_input_channels, deep_supervision=enable_deep_supervision)
@@ -389,7 +386,6 @@ class nnUNetTrainer(object):
         print(loss)
         print("Using loss mode: ",self.loss_mode)
         
-        #if self.enable_deep_supervision:
 
         deep_supervision_scales = self._get_deep_supervision_scales()
 
@@ -537,9 +533,6 @@ class nnUNetTrainer(object):
                 self.print_to_log_file("Unable to plot network architecture:")
                 self.print_to_log_file(e)
 
-                # self.print_to_log_file("\nprinting the network instead:\n")
-                # self.print_to_log_file(self.network)
-                # self.print_to_log_file("\n")
             finally:
                 empty_cache(self.device)
 
@@ -742,7 +735,7 @@ class nnUNetTrainer(object):
             do_rotation=True, angle_x=rotation_for_DA['x'], angle_y=rotation_for_DA['y'], angle_z=rotation_for_DA['z'],
             p_rot_per_axis=1,  # todo experiment with this
             do_scale=True, scale=(0.7, 1.4),
-            border_mode_data="constant", border_cval_data=0, order_data=0,#FIXME:order_resampling_data,mode constant-
+            border_mode_data="constant", border_cval_data=0, order_data=0,# NOTE:changed order_resampling_data,mode constant-
             border_mode_seg="constant", border_cval_seg=border_val_seg, order_seg=order_resampling_seg,
             random_crop=False,  # random cropping is part of our dataloaders
             p_el_per_sample=0, p_scale_per_sample=0.2, p_rot_per_sample=0.2,
@@ -1013,29 +1006,22 @@ class nnUNetTrainer(object):
     def validation_step(self, batch: dict) -> dict:
         data = batch['data']
         target = batch['target']
-        ddp_data=batch['data_mask']
+        mask_data=batch['data_mask']
         
         data = data.to(self.device, non_blocking=True)
         if isinstance(target, list):
             target = [i.to(self.device, non_blocking=True) for i in target]
         else:
             target = target.to(self.device, non_blocking=True)
-        if isinstance(ddp_data, list):
+        if isinstance(mask_data, list):
 
-            ddp_data = [i.to(self.device, non_blocking=True) for i in ddp_data]
+            mask_data = [i.to(self.device, non_blocking=True) for i in mask_data]
         else:
 
-            ddp_data = ddp_data.to(self.device, non_blocking=True)
-        # Autocast is a little bitch.
-        # If the device_type is 'cpu' then it's slow as heck and needs to be disabled.
-        # If the device_type is 'mps' then it will complain that mps is not implemented, even if enabled=False is set. Whyyyyyyy. (this is why we don't make use of enabled=False)
-        # So autocast will only be active if we have a cuda device.
-        
-        #NOTE: changed disable autocast
-        #with autocast(self.device.type,,[data,data,data,data,data] enabled=True) if self.device.type == 'cuda' else dummy_context():
+            mask_data = mask_data.to(self.device, non_blocking=True)
         output = self.network(data)
         
-        l = self.loss(output, target,ddp_data)##FIXME: pass mask/data
+        l = self.loss(output, target,mask_data)
         del data
             
             
@@ -1053,30 +1039,12 @@ class nnUNetTrainer(object):
 
         if self.is_ddp:
             world_size = dist.get_world_size()
-
-            # tps = [None for _ in range(world_size)]
-            # dist.all_gather_object(tps, tp)
-            # tp = np.vstack([i[None] for i in tps]).sum(0)
-
-            # fps = [None for _ in range(world_size)]
-            # dist.all_gather_object(fps, fp)
-            # fp = np.vstack([i[None] for i in fps]).sum(0)
-
-            # fns = [None for _ in range(world_size)]
-            # dist.all_gather_object(fns, fn)
-            # fn = np.vstack([i[None] for i in fns]).sum(0)
-
             losses_val = [None for _ in range(world_size)]
             dist.all_gather_object(losses_val, outputs_collated['loss'])
             loss_here = np.vstack(losses_val).mean()
         else:
             loss_here = np.mean(outputs_collated['loss'])
 
-        # global_dc_per_class = [i for i in [2 * i / (2 * i + j + k) for i, j, k in
-        #                                    zip(tp, fp, fn)]]
-        # mean_fg_dice = np.nanmean(global_dc_per_class)
-        # self.logger.log('mean_fg_dice', mean_fg_dice, self.current_epoch)
-        # self.logger.log('dice_per_class_or_region', global_dc_per_class, self.current_epoch)
         self.logger.log('val_losses', loss_here, self.current_epoch)
 
     def on_epoch_start(self):
@@ -1088,10 +1056,6 @@ class nnUNetTrainer(object):
         # todo find a solution for this stupid shit
         self.print_to_log_file('train_loss', np.round(self.logger.my_fantastic_logging['train_losses'][-1], decimals=4))
         self.print_to_log_file('val_loss', np.round(self.logger.my_fantastic_logging['val_losses'][-1], decimals=4))
-        
-        #FIXME: pseudo dice disable
-        # self.print_to_log_file('Pseudo dice', [np.round(i, decimals=4) for i in
-        #                                        self.logger.my_fantastic_logging['dice_per_class_or_region'][-1]])
         self.print_to_log_file(
             f"Epoch time: {np.round(self.logger.my_fantastic_logging['epoch_end_timestamps'][-1] - self.logger.my_fantastic_logging['epoch_start_timestamps'][-1], decimals=2)} s")
 
@@ -1217,9 +1181,9 @@ class nnUNetTrainer(object):
 
                 self.print_to_log_file(f"predicting {k}")
                 data, seg, properties = dataset_val.load_case(k)
-                if self.is_cascaded:
-                    data = np.vstack((data, convert_labelmap_to_one_hot(seg[-1], self.label_manager.foreground_labels,
-                                                                   output_dtype=data.dtype)))
+                # if self.is_cascaded: #no cascade just keep for future use
+                #     data = np.vstack((data, convert_labelmap_to_one_hot(seg[-1], self.label_manager.foreground_labels,
+                #                                                    output_dtype=data.dtype)))
    
                 with warnings.catch_warnings():
                     # ignore 'The given NumPy array is not writable' warning
@@ -1253,7 +1217,7 @@ class nnUNetTrainer(object):
                 # export_prediction(prediction_for_export, properties, self.configuration, self.plans, self.dataset_json,
                 #              output_filename_truncated, save_probabilities)
 
-                # if needed, export the softmax prediction for the next stage
+                # if needed, export the prediction for the next stage
                 if next_stages is not None:
                     for n in next_stages:
                         next_stage_config_manager = self.plans_manager.get_configuration(n)
@@ -1290,7 +1254,7 @@ class nnUNetTrainer(object):
 
         if self.is_ddp:
             dist.barrier()
-##NOTE: changed pass dose label
+
         if self.local_rank == 0:
             try:
                 structure_json=load_json(join(self.raw_dataset_folder_base, 'structure.json'))['structure_label']
@@ -1303,13 +1267,10 @@ class nnUNetTrainer(object):
                                                 self.plans_manager.image_reader_writer_class(),
                                                 self.dataset_json["file_ending"],
                                                 structure_json,
-                                                # self.label_manager.foreground_regions if self.label_manager.has_regions else
-                                                # self.label_manager.foreground_labels,
                                                 self.label_manager.ignore_label,
                                                 self.label_manager.dose_label,
                                                 chill=True)
             self.print_to_log_file("Validation complete", also_print_to_console=True)
-            #self.print_to_log_file("Mean Validation Dice: ", (metrics['foreground_mean']["Dice"]), also_print_to_console=True)
 
         self.set_deep_supervision_enabled(True) 
         compute_gaussian.cache_clear()

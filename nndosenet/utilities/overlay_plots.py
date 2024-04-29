@@ -24,7 +24,7 @@ from nndosenet.imageio.reader_writer_registry import determine_reader_writer_fro
 from nndosenet.paths import nnDose_raw, nnDose_preprocessed
 from nndosenet.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 from nndosenet.utilities.utils import get_identifiers_from_splitted_dataset_folder
-
+#TODO: keep for futurework, need to change to plot dvh and maybe isodose line or sth else
 color_cycle = (
     "000000",
     "4363d8",
@@ -240,34 +240,35 @@ def generate_overlays_from_preprocessed(dataset_name_or_id: Union[int, str], out
 
 
 def entry_point_generate_overlay():
-    import argparse
-    parser = argparse.ArgumentParser("Plots png overlays of the slice with the most foreground. Note that this "
-                                     "disregards spacing information!")
-    parser.add_argument('-d', type=str, help="Dataset name or id", required=True)
-    parser.add_argument('-o', type=str, help="output folder", required=True)
-    parser.add_argument('-np', type=int, default=default_num_processes, required=False,
-                        help=f"number of processes used. Default: {default_num_processes}")
-    parser.add_argument('-channel_idx', type=int, default=0, required=False,
-                        help="channel index used (0 = _0000). Default: 0")
-    parser.add_argument('--use_raw', action='store_true', required=False, help="if set then we use raw data. else "
-                                                                               "we use preprocessed")
-    parser.add_argument('-p', type=str, required=False, default='nnUNetPlans',
-                        help='plans identifier. Only used if --use_raw is not set! Default: nnUNetPlans')
-    parser.add_argument('-c', type=str, required=False, default=None,
-                        help='configuration name. Only used if --use_raw is not set! Default: None = '
-                             '3d_fullres if available, else 2d')
-    parser.add_argument('-overlay_intensity', type=float, required=False, default=0.6,
-                        help='overlay intensity. Higher = brighter/less transparent')
+    print("unavaliable now")
+    # import argparse
+    # parser = argparse.ArgumentParser("Plots png overlays of the slice with the most foreground. Note that this "
+    #                                  "disregards spacing information!")
+    # parser.add_argument('-d', type=str, help="Dataset name or id", required=True)
+    # parser.add_argument('-o', type=str, help="output folder", required=True)
+    # parser.add_argument('-np', type=int, default=default_num_processes, required=False,
+    #                     help=f"number of processes used. Default: {default_num_processes}")
+    # parser.add_argument('-channel_idx', type=int, default=0, required=False,
+    #                     help="channel index used (0 = _0000). Default: 0")
+    # parser.add_argument('--use_raw', action='store_true', required=False, help="if set then we use raw data. else "
+    #                                                                            "we use preprocessed")
+    # parser.add_argument('-p', type=str, required=False, default='nnUNetPlans',
+    #                     help='plans identifier. Only used if --use_raw is not set! Default: nnUNetPlans')
+    # parser.add_argument('-c', type=str, required=False, default=None,
+    #                     help='configuration name. Only used if --use_raw is not set! Default: None = '
+    #                          '3d_fullres if available, else 2d')
+    # parser.add_argument('-overlay_intensity', type=float, required=False, default=0.6,
+    #                     help='overlay intensity. Higher = brighter/less transparent')
 
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
-    if args.use_raw:
-        generate_overlays_from_raw(args.d, args.o, args.np, args.channel_idx,
-                                   overlay_intensity=args.overlay_intensity)
-    else:
-        generate_overlays_from_preprocessed(args.d, args.o, args.np, args.channel_idx, args.c, args.p,
-                                            overlay_intensity=args.overlay_intensity)
+    # if args.use_raw:
+    #     generate_overlays_from_raw(args.d, args.o, args.np, args.channel_idx,
+    #                                overlay_intensity=args.overlay_intensity)
+    # else:
+    #     generate_overlays_from_preprocessed(args.d, args.o, args.np, args.channel_idx, args.c, args.p,
+    #                                         overlay_intensity=args.overlay_intensity)
 
 
 if __name__ == '__main__':

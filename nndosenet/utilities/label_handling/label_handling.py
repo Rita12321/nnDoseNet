@@ -9,7 +9,6 @@ from batchgenerators.utilities.file_and_folder_operations import join
 
 import nndosenet
 from nndosenet.utilities.find_class_by_name import recursive_find_python_class
-from nndosenet.utilities.helpers import softmax_helper_dim0
 
 from typing import TYPE_CHECKING
 
@@ -23,37 +22,30 @@ class LabelManager(object):
                  dose_label:bool = False, inference_nonlin=None):
         self._sanity_check(label_dict)
         self.label_dict = label_dict      
-#NOTE: add dose_label
         self.dose_label = dose_label
              
         self.regions_class_order = regions_class_order
         self._force_use_labels = force_use_labels
+        self._has_regions = False
 
-        if force_use_labels:
-            self._has_regions = False
-        else:
-            self._has_regions: bool = any(
-                [isinstance(i, (tuple, list)) and len(i) > 1 for i in self.label_dict.values()])
 
-## NOTE ignorelabel not the kind of ignore we want
-        self._ignore_label: Union[None, int] = self._determine_ignore_label()
+
+        self._ignore_label: Union[None, int] = None #TODO: self._determine_ignore_label()
         self._all_labels: List[int] = self._get_all_labels()
 
         self._regions: Union[None, List[Union[int, Tuple[int, ...]]]] = self._get_regions()
 
-        if self.has_ignore_label:
+        # if self.has_ignore_label:
             
-            assert self.ignore_label == max(
-                self.all_labels) + 1, 'If you use the ignore label it must have the highest ' \
-                                      'label value! It cannot be 0 or in between other labels. ' \
-                                      'Sorry bro.'
+        #     assert self.ignore_label == max(
+        #         self.all_labels) + 1, 'If you use the ignore label it must have the highest ' \
+        #                               'label value! It cannot be 0 or in between other labels. ' \
+        #                               'Sorry bro.'
 
-        if inference_nonlin is None:
-            self.inference_nonlin = torch.sigmoid if self.has_regions else softmax_helper_dim0
-        else:
-            self.inference_nonlin = inference_nonlin
 
-## NOTE no need to change, it only check if there is label back ground.
+        self.inference_nonlin = None #inference_nonlin
+
+    ## it only check if there is label back ground.
     def _sanity_check(self, label_dict: dict):
         if not 'background' in label_dict.keys():
             raise RuntimeError('Background label not declared (remeber that this should be label 0!)')
@@ -90,36 +82,39 @@ class LabelManager(object):
         
         return all_labels
 
-    def _get_regions(self) -> Union[None, List[Union[int, Tuple[int, ...]]]]:
-        if not self._has_regions or self._force_use_labels:
-            return None
-        else:
-            assert self.regions_class_order is not None, 'if region-based training is requested then you need to ' \
-                                                         'define regions_class_order!'
-            regions = []
-            for k, r in self.label_dict.items():
-                # ignore ignore label
-                if k == 'ignore':
-                    continue
-                # ignore regions that are background
-                if (np.isscalar(r) and r == 0) \
-                        or \
-                        (isinstance(r, (tuple, list)) and len(np.unique(r)) == 1 and np.unique(r)[0] == 0):
-                    continue
-                if isinstance(r, list):
-                    r = tuple(r)
-                regions.append(r)
-            assert len(self.regions_class_order) == len(regions), 'regions_class_order must have as ' \
-                                                                  'many entries as there are ' \
-                                                                  'regions'
-            return regions
+    def _get_regions(self) -> Union[None, List[Union[int, Tuple[int, ...]]]]: # TODO: just keeping this for futurework
+        # if not self._has_regions or self._force_use_labels:
+        #     return None
+        # else:
+        #     assert self.regions_class_order is not None, 'if region-based training is requested then you need to ' \
+        #                                                  'define regions_class_order!'
+        #     regions = []
+        #     for k, r in self.label_dict.items():
+        #         # ignore ignore label
+        #         if k == 'ignore':
+        #             continue
+        #         # ignore regions that are background
+        #         if (np.isscalar(r) and r == 0) \
+        #                 or \
+        #                 (isinstance(r, (tuple, list)) and len(np.unique(r)) == 1 and np.unique(r)[0] == 0):
+        #             continue
+        #         if isinstance(r, list):
+        #             r = tuple(r)
+        #         regions.append(r)
+        #     assert len(self.regions_class_order) == len(regions), 'regions_class_order must have as ' \
+        #                                                           'many entries as there are ' \
+        #                                                           'regions'
+        #     return regions
+        return None
 
-    def _determine_ignore_label(self) -> Union[None, int]:
-        ignore_label = self.label_dict.get('ignore')
-        if ignore_label is not None:
-            assert isinstance(ignore_label, int), f'Ignore label has to be an integer. It cannot be a region ' \
-                                                  f'(list/tuple). Got {type(ignore_label)}.'
-        return ignore_label
+    def _determine_ignore_label(self) -> Union[None, int]: # TODO: just keeping this for futurework
+        pass
+        # ignore_label = self.label_dict.get('ignore')
+        # if ignore_label is not None:
+        #     assert isinstance(ignore_label, int), f'Ignore label has to be an integer. It cannot be a region ' \
+        #                                           f'(list/tuple). Got {type(ignore_label)}.'
+        # return ignore_label
+        return None
 
     @property
     def has_regions(self) -> bool:
@@ -150,10 +145,9 @@ class LabelManager(object):
             logits = torch.from_numpy(logits)
 
         with torch.no_grad():
-            # softmax etc is not implemented for half
-            
-            logits = logits.float()
-            probabilities = self.inference_nonlin(logits)
+            probabilities = logits.float()
+            # logits = logits.float()
+            # probabilities = self.inference_nonlin(logits)
 
         return probabilities
 
@@ -168,32 +162,21 @@ class LabelManager(object):
             raise RuntimeError(f"Unexpected input type. Expected np.ndarray or torch.Tensor,"
                                f" got {type(predicted_probabilities)}")
 
-        if self.has_regions:
-            assert self.regions_class_order is not None, 'if region-based training is requested then you need to ' \
-                                                         'define regions_class_order!'
-            # check correct number of outputs
         assert predicted_probabilities.shape[0] == self.num_segmentation_heads, \
             f'unexpected number of channels in predicted_probabilities. Expected {self.num_segmentation_heads}, ' \
             f'got {predicted_probabilities.shape[0]}. Remeber that predicted_probabilities should have shape ' \
             f'(c, x, y(, z)).'
 
-        if self.has_regions:
-            if isinstance(predicted_probabilities, np.ndarray):
-                segmentation = np.zeros(predicted_probabilities.shape[1:], dtype=np.uint16)
-            else:
-                # no uint16 in torch
-                segmentation = torch.zeros(predicted_probabilities.shape[1:], dtype=torch.int16,
-                                           device=predicted_probabilities.device)
-            for i, c in enumerate(self.regions_class_order):
-                segmentation[predicted_probabilities[i] > 0.5] = c
-        else:
-            segmentation = predicted_probabilities.argmax(0)
+        segmentation = predicted_probabilities.argmax(0)
 
         return segmentation
 
     def convert_logits_to_segmentation(self, predicted_logits: Union[np.ndarray, torch.Tensor]) -> \
-            Union[np.ndarray, torch.Tensor]:
-        probabilities = self.apply_inference_nonlin(predicted_logits)
+            Union[np.ndarray, torch.Tensor]: 
+            # its not really converting to segmentation in nndosenet , 
+            # it only convert logit to numpy and float
+            # just keep the old function name for future use
+        probabilities = self.apply_inference_nonlin(predicted_logits) #no real nonlinear
         return self.convert_probabilities_to_segmentation(probabilities)
 
     def revert_cropping_on_probabilities(self, predicted_probabilities: Union[torch.Tensor, np.ndarray],
@@ -262,8 +245,10 @@ def get_labelmanager_class_from_plans(plans: dict) -> Type[LabelManager]:
 def convert_labelmap_to_one_hot(segmentation: Union[np.ndarray, torch.Tensor],
                                 all_labels: Union[List, torch.Tensor, np.ndarray, tuple],
                                 output_dtype=None) -> Union[np.ndarray, torch.Tensor]:
+    #It's not really going to convert anything, jsut changing shape since in nndosenet len(all_labels) is always 1
+    #just keepimg the function for future use
     """
-    if output_dtype is None then we use np.uint8/torch.uint8
+    if output_dtype is None then we use np.float32/torch.float32
     if input is torch.Tensor then output will be on the same device
 
     np.ndarray is faster than torch.Tensor
@@ -276,7 +261,7 @@ def convert_labelmap_to_one_hot(segmentation: Union[np.ndarray, torch.Tensor],
     """
     if isinstance(segmentation, torch.Tensor):
         result = torch.zeros((len(all_labels), *segmentation.shape),
-                             dtype=output_dtype if output_dtype is not None else torch.uint8,
+                             dtype=output_dtype if output_dtype is not None else torch.float32,
                              device=segmentation.device)
         # variant 1, 2x faster than 2
         result.scatter_(0, segmentation[None].long(), 1)  # why does this have to be long!?
@@ -285,7 +270,7 @@ def convert_labelmap_to_one_hot(segmentation: Union[np.ndarray, torch.Tensor],
         #     result[i] = segmentation == l
     else:
         result = np.zeros((len(all_labels), *segmentation.shape),
-                          dtype=output_dtype if output_dtype is not None else np.uint8)
+                          dtype=output_dtype if output_dtype is not None else np.float32)
         # variant 1, fastest in my testing
         for i, l in enumerate(all_labels):
             result[i] = segmentation == l
@@ -314,26 +299,6 @@ def determine_num_input_channels(plans_manager: PlansManager,
     return num_input_channels
 
 
-if __name__ == '__main__':
-    # this code used to be able to differentiate variant 1 and 2 to measure time.
-    #num_labels = 100
-    #seg = np.random.randint(0, num_labels, size=(256, 256, 256), dtype=np.uint8)
-    seg = np.random.uniform(low=-0.5,high=50.55,size=(256, 256, 256))
-    seg_torch = torch.from_numpy(seg)
-    st = time()
-    onehot_npy = convert_labelmap_to_one_hot(seg, np.arange(num_labels))
-    time_1 = time()
-    onehot_npy2 = convert_labelmap_to_one_hot(seg, np.arange(num_labels))
-    time_2 = time()
-    onehot_torch = convert_labelmap_to_one_hot(seg_torch, np.arange(num_labels))
-    time_torch = time()
-    onehot_torch2 = convert_labelmap_to_one_hot(seg_torch, np.arange(num_labels))
-    time_torch2 = time()
-    print(
-        f'np: {time_1 - st}, np2: {time_2 - time_1}, torch: {time_torch - time_2}, torch2: {time_torch2 - time_torch}')
-    onehot_torch = onehot_torch.numpy()
-    onehot_torch2 = onehot_torch2.numpy()
-    print(np.all(onehot_torch == onehot_npy))
-    print(np.all(onehot_torch2 == onehot_npy))
+
     
     

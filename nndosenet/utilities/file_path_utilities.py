@@ -108,16 +108,4 @@ def check_workers_alive_and_busy(export_pool: Pool, worker_list: List, results_l
     return False
 
 
-if __name__ == '__main__':
-    ### well at this point I could just write tests...
-    path = '/home/fabian/results/nnUNet_remake/Dataset002_Heart/nnUNetModule__nnUNetPlans__3d_fullres'
-    print(parse_dataset_trainer_plans_configuration_from_path(path))
-    path = 'Dataset002_Heart/nnUNetModule__nnUNetPlans__3d_fullres'
-    print(parse_dataset_trainer_plans_configuration_from_path(path))
-    path = '/home/fabian/results/nnUNet_remake/Dataset002_Heart/nnUNetModule__nnUNetPlans__3d_fullres/fold_all'
-    print(parse_dataset_trainer_plans_configuration_from_path(path))
-    try:
-        path = '/home/fabian/results/nnUNet_remake/Dataset002_Heart/'
-        print(parse_dataset_trainer_plans_configuration_from_path(path))
-    except AssertionError:
-        print('yayy, assertion works')
+

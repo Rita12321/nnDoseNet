@@ -153,6 +153,5 @@ def resample_and_save(predicted: Union[torch.Tensor, np.ndarray], target_shape: 
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):
         segmentation = segmentation.cpu().numpy()
-    #Note: changed prediction ave prediction np.uint8-->float32
     np.savez_compressed(output_file, seg=segmentation.astype(np.float32))
     torch.set_num_threads(old_threads)

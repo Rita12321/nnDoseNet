@@ -4,8 +4,9 @@ import os
 
 def get_allowed_n_proc_DA():
     """
-    This function is used to set the number of processes used on different Systems. It is specific to our cluster
-    infrastructure at DKFZ. You can modify it to suit your needs. Everything is allowed.
+    This function is used to set the number of processes used on different Systems. 
+    If not specified, it would auto matically use around 1/3 of cpu if 1/3 of cpu if less than 1 cpu, would just use 1 cpu.
+    You can modify it to suit your needs. Everything is allowed.
 
     IMPORTANT: if the environment variable nnDose_n_proc_DA is set it will overwrite anything in this script
     (see first line).
@@ -20,8 +21,8 @@ def get_allowed_n_proc_DA():
     if ' nnDose_n_proc_DA' in os.environ.keys():
         use_this = int(os.environ[' nnDose_n_proc_DA'])
     else:
-        if os.cpu_count()/2>1:
-            use_this=os.cpu_count()//2
+        if os.cpu_count()/3>1:
+            use_this=os.cpu_count()//3
         hostname = subprocess.getoutput(['hostname'])
         if hostname in ['Fabian', ]:
             use_this = 12

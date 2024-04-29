@@ -13,7 +13,7 @@
 #    limitations under the License.
 from typing import Union
 
-from nndosenet.paths import nnDose_preprocessed, nnDose_raw, nnDose_results
+from nndosenet.paths import nnDose_preprocessed, nnDose_raw, nnDose_results,nnDose_dicom,nnDose_prediction
 from batchgenerators.utilities.file_and_folder_operations import *
 import numpy as np
 
@@ -46,11 +46,13 @@ def convert_id_to_dataset_name(dataset_id: int):
                            "following folders:\n%s\n%s\n%s" % (dataset_id, nnDose_raw, nnDose_preprocessed, nnDose_results))
     if len(unique_candidates) == 0:
         raise RuntimeError(f"Could not find a dataset with the ID {dataset_id}. Make sure the requested dataset ID "
-                           f"exists and that nnU-Net knows where raw and preprocessed data are located "
+                           f"exists and that nnDoseNet knows where raw and preprocessed data are located "
                            f"(see Documentation - Installation). Here are your currently defined folders:\n"
-                           f"nnUNet_preprocessed={os.environ.get('nnUNet_preprocessed') if os.environ.get('nnUNet_preprocessed') is not None else 'None'}\n"
-                           f"nnUNet_results={os.environ.get('nnUNet_results') if os.environ.get('nnUNet_results') is not None else 'None'}\n"
-                           f"nnUNet_raw={os.environ.get('nnUNet_raw') if os.environ.get('nnUNet_raw') is not None else 'None'}\n"
+                           f"nnDose_dicom={os.environ.get('nnDose_dicom') if os.environ.get('nnDose_dicom') is not None else 'None'}\n"
+                           f"nnDose_preprocessed={os.environ.get('nnDose_preprocessed') if os.environ.get('nnDose_preprocessed') is not None else 'None'}\n"
+                           f"nnDose_results={os.environ.get('nnDose_results') if os.environ.get('nnDose_results') is not None else 'None'}\n"
+                           f"nnDose_raw={os.environ.get('nnDose_raw') if os.environ.get('nnDose_raw') is not None else 'None'}\n"
+                           f"nnDose_prediction={os.environ.get('nnDose_prediction') if os.environ.get('nnDose_prediction') is not None else 'None'}\n"                           
                            f"If something is not right, adapt your environment variables.")
     return unique_candidates[0]
 

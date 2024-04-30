@@ -259,6 +259,7 @@ def convert_labelmap_to_one_hot(segmentation: Union[np.ndarray, torch.Tensor],
     IMPORTANT: This function only works properly if your labels are consecutive integers, so something like 0, 1, 2, 3, ...
     DO NOT use it with 0, 32, 123, 255, ... or whatever (fix your labels, yo)
     """
+    print("oh noooooooooooooooooooooooooooooooooooooooooooooooooooooo")
     if isinstance(segmentation, torch.Tensor):
         result = torch.zeros((len(all_labels), *segmentation.shape),
                              dtype=output_dtype if output_dtype is not None else torch.float32,

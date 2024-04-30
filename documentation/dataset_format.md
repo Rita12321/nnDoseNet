@@ -1,12 +1,57 @@
-# nnU-Net dataset format
-The only way to bring your data into nnU-Net is by storing it in a specific format. Due to nnU-Net's roots in the
-[Medical Segmentation Decathlon](http://medicaldecathlon.com/) (MSD), its dataset is heavily inspired but has since 
-diverged (see also [here](#how-to-use-decathlon-datasets)) from the format used in the MSD.
-
-Datasets consist of three components: raw images, corresponding segmentation maps and a dataset.json file specifying 
-some metadata. 
-
-If you are migrating from nnU-Net v1, read [this](#how-to-use-nnu-net-v1-tasks) to convert your existing Tasks.
+# Dicom dataset format 1 in nnDose_dicom
+If the Datatset is in Dicom format
+ nnDose_dicom
+├──openkbp
+├──UAB_prostate
+├──UAB_headNneck
+├──...
+    ├──structure.json
+    ├──Ts
+    ├──Tr
+        ├──patient 1
+            ├──CT.12345678.91011112.dcm
+            ├──CT.12345678.91011113.dcm
+            ├──CT.12345678.91011114.dcm
+            ...
+            ├──RS.12345678.91011117.dcm
+            ├──RS.12345678.91011118.dcm
+            ...
+            └──RD.12345678.91011119.dcm
+        ├──patient 2
+            ├──CT.22345678.91011112.dcm
+            ├──CT.22345678.91011113.dcm
+            ├──CT.22345678.91011114.dcm
+            ...
+            ├──RS.22345678.91011117.dcm
+            ├──RS.22345678.91011118.dcm
+            ...
+            └──RD.22345678.91011119.dcm
+        ├──patient 3 
+        ...
+# Dicom dataset format 2 in nnDose_dicom
+ nnDose_dicom
+├──openkbp
+├──UAB_prostate
+├──UAB_headNneck
+├──...
+    ├──structure.json
+    ├──Ts
+    ├──Tr
+        ├──patient 1
+            ├──Nifti
+            ├──Dicom
+                ├──CT
+                    ├──CT.12345678.91011112.dcm
+                    ├──CT.12345678.91011113.dcm
+                    ├──CT.12345678.91011114.dcm
+                ├──RS
+                    ├──RS.12345678.91011117.dcm
+                    ├──RS.12345678.91011118.dcm
+                ├──RD
+                    └──RD.12345678.91011119.dcm
+        ├──patient 2
+        ├──patient 3 
+        ...
 
 
 ## What do training cases look like?

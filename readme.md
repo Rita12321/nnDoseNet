@@ -25,7 +25,7 @@ With given CT image(or other modality), Targets, OARs, and body contour(optinal)
 
 # How does nnDoseNet work?
 ### 1. Convertion & Label
-nnDoseNet first convert the provided dicom/nifti under `nnDose_dicom` into 4 seperate Nifti image composed dataset in `nnDose_raw`\
+nnDoseNet first convert the provided dicom/nifti under `nnDose_dicom` into 4 seperate Nifti image composed dataset in `nnDose_raw`
 - **_0000** `CT` : a full image, prefer CT, other modality also work.
 - **_0001** `Targets` : labeled targets with given prescription in structure.json.
 - **_0002** `OARs` : labeled OARs with given prescription in structure.json.
@@ -68,13 +68,26 @@ In training, nnDoseNet would find the correspond configured data in `nnDose_prep
 
 ### 4. Evaluation & Prediction
 
+If all folds finish training and find best configuration, there will be a summary.json auto generate under `nnDose_results` folder. \
+Then we can use prediction command and get prediction of Ts(testing files), then it would give a summary.json of Ts files. In summary.json nnDoseNet evaluate
+- `MSE` of full image
+- `mean`, `min`, `max` of each ROI in ground truth and prediction
+- `D_0.1cc`:  The minimum dose received by the hottest sub volume of 0.1cc of each ROI in ground truth and prediction
+- `D_99`, `D_95`, `D_1`: The minimum dose received by the hottest 99%, 95% and 1%  of  volume of each ROI in ground truth and prediction
 
+All above metrices are calculated case-by-case and also calculate average of metrices among all cases.
+
+In addition, if ground truth dicom files are provided, nnDoseNet provide the function of converting prediction(Nifti) into dicom format and do gamma analysis on those cases.
+
+> [!note]
+> Please check **[#########](documentation/evaluation.md)**
 
 ## How to get started?
 Read these:
 - [Installation instructions](documentation/installation_instructions.md)
 - [Dataset conversion](documentation/dataset_format.md)
 - [Usage instructions](documentation/how_to_use_nnunet.md)
+- [all the command you need](documentation/how_to_use_nnunet.md)
 
 Additional information:
 - [Region-based training](documentation/region_based_training.md)

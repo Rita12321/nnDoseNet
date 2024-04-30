@@ -32,9 +32,9 @@ nnDoseNet first convert the provided dicom/nifti under `nnDose_dicom` into 4 sep
 - **_0002** `OARs` : labeled OARs with given prescription in structure.json.
 - **_0003** `Body` : binary mask of body contour or dose range, if not provided would set 1 to full image by default for now.
 
-[!NOTE] 
-Please check **structure.json** section in **[dataset_format](documentation/dataset_format.md)**
 
+> [!NOTE]
+> Please check **structure.json** section in **[dataset_format](documentation/dataset_format.md)**
 #### 2. Prerpocess
 nnDoseNet will systematically analyze the provided training cases under `nnDose_raw` and create a 'dataset fingerprint' following nnUNet pipieline, 
 nnDoseNet then creates several U-Net configurations for each dataset in `nnDose_preprocessed`: 

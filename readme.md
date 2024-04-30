@@ -1,3 +1,4 @@
+
 # What is nnDoseNet?
 nnDoseNet is a U-Net based deep learning framework for **dose prediction** in radiotherapy(RT) planing.\
 User can easily train a model given dicom or nifti data, and the nnDose would automatically convert, label, analysis, preprocess and make training plan based on the input dataset.\
@@ -31,7 +32,9 @@ nnDoseNet first convert the provided dicom/nifti under `nnDose_dicom` into 4 sep
 - **_0002** `OARs` : labeled OARs with given prescription in structure.json.
 - **_0003** `Body` : binary mask of body contour or dose range, if not provided would set 1 to full image by default for now.
 
-***please check structure.json page**
+[!NOTE] 
+Please check **structure.json** section in **[dataset_format](documentation/dataset_format.md)**
+
 #### 2. Prerpocess
 nnDoseNet will systematically analyze the provided training cases under `nnDose_raw` and create a 'dataset fingerprint' following nnUNet pipieline, 
 nnDoseNet then creates several U-Net configurations for each dataset in `nnDose_preprocessed`: 
@@ -99,3 +102,4 @@ prompting us to extend nnU-Net to more image formats and domains. Take a look [h
 nnU-Net is developed and maintained by the Applied Computer Vision Lab (ACVL) of [Helmholtz Imaging](http://helmholtz-imaging.de) 
 and the [Division of Medical Image Computing](https://www.dkfz.de/en/mic/index.php) at the 
 [German Cancer Research Center (DKFZ)](https://www.dkfz.de/en/index.html).
+

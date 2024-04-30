@@ -18,8 +18,8 @@ def get_allowed_n_proc_DA():
     GPU without overloading the CPU (technically 11 because we have a main process as well), so that's what we use.
     """
 
-    if ' nnDose_n_proc_DA' in os.environ.keys():
-        use_this = int(os.environ[' nnDose_n_proc_DA'])
+    if 'nnDose_n_proc_DA' in os.environ.keys():
+        use_this = int(os.environ['nnDose_n_proc_DA'])
     else:
         if os.cpu_count()/3>1:
             use_this=os.cpu_count()//3
@@ -46,4 +46,5 @@ def get_allowed_n_proc_DA():
             use_this = 12  # default value
 
     use_this = min(use_this, os.cpu_count())
+    #print("Using ",use_this, "num of cpu")
     return use_this

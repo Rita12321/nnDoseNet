@@ -655,7 +655,7 @@ class nnUNetTrainer(object):
         
 
         allowed_num_processes = get_allowed_n_proc_DA()
-        print(allowed_num_processes)
+        print("Using",allowed_num_processes, "CPU")
         if allowed_num_processes == 0:
             
             mt_gen_train = SingleThreadedAugmenter(dl_tr, tr_transforms)

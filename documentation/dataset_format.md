@@ -2,57 +2,59 @@
 If the Datatset is in Dicom format
 
     nnDose_dicom
-        ├──openkbp
-        ├──UAB_prostate
-        ├──UAB_headNneck
-        ├──...
-            ├──structure.json
-            ├──Ts
-            ├──Tr
-                ├──patient 1
-                    ├──CT.12345678.91011112.dcm
-                    ├──CT.12345678.91011113.dcm
-                    ├──CT.12345678.91011114.dcm
-                    ...
-                    ├──RS.12345678.91011117.dcm
-                    ├──RS.12345678.91011118.dcm
-                    ...
-                    └──RD.12345678.91011119.dcm
-                ├──patient 2
-                    ├──CT.22345678.91011112.dcm
-                    ├──CT.22345678.91011113.dcm
-                    ├──CT.22345678.91011114.dcm
-                    ...
-                    ├──RS.22345678.91011117.dcm
-                    ├──RS.22345678.91011118.dcm
-                    ...
-                    └──RD.22345678.91011119.dcm
-                ├──patient 3 
+    ├──openkbp
+    ├──UAB_prostate
+    ├──UAB_headNneck
+    ├──...
+        ├──structure.json
+        ├──Ts
+        ├──Tr
+            ├──patient 1
+                ├──CT.12345678.91011112.dcm
+                ├──CT.12345678.91011113.dcm
+                ├──CT.12345678.91011114.dcm
                 ...
+                ├──RS.12345678.91011117.dcm
+                ├──RS.12345678.91011118.dcm
+                ...
+                └──RD.12345678.91011119.dcm
+            ├──patient 2
+                ├──CT.22345678.91011112.dcm
+                ├──CT.22345678.91011113.dcm
+                ├──CT.22345678.91011114.dcm
+                ...
+                ├──RS.22345678.91011117.dcm
+                ├──RS.22345678.91011118.dcm
+                ...
+                └──RD.22345678.91011119.dcm
+            ├──patient 3 
+            ...
 # Dicom dataset format 2 in nnDose_dicom
- nnDose_dicom
-├──openkbp
-├──UAB_prostate
-├──UAB_headNneck
-├──...
-    ├──structure.json
-    ├──Ts
-    ├──Tr
-        ├──patient 1
-            ├──Nifti
-            ├──Dicom
-                ├──CT
-                    ├──CT.12345678.91011112.dcm
-                    ├──CT.12345678.91011113.dcm
-                    ├──CT.12345678.91011114.dcm
-                ├──RS
-                    ├──RS.12345678.91011117.dcm
-                    ├──RS.12345678.91011118.dcm
-                ├──RD
-                    └──RD.12345678.91011119.dcm
-        ├──patient 2
-        ├──patient 3 
-        ...
+
+
+    nnDose_dicom
+    ├──openkbp
+    ├──UAB_prostate
+    ├──UAB_headNneck
+    ├──...
+        ├──structure.json
+        ├──Ts
+        ├──Tr
+            ├──patient 1
+                ├──Nifti
+                ├──Dicom
+                    ├──CT
+                        ├──CT.12345678.91011112.dcm
+                        ├──CT.12345678.91011113.dcm
+                        ├──CT.12345678.91011114.dcm
+                    ├──RS
+                        ├──RS.12345678.91011117.dcm
+                        ├──RS.12345678.91011118.dcm
+                    ├──RD
+                        └──RD.12345678.91011119.dcm
+            ├──patient 2
+            ├──patient 3 
+            ...
 
 
 ## What do training cases look like?

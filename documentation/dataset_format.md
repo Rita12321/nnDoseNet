@@ -1,62 +1,107 @@
-# Dicom dataset format 1 in nnDose_dicom
-If the Datatset is in Dicom format
+# Dicom dataset format 1 (unorganized) in nnDose_dicom
+If the Datatset is in Dicom format 1, please make sure 
+ - structure.json is in Dataset's folder
+ - data is divided to Tr for training and Ts for testing .
+ - CT or full image dcms start with CT.
+ - structure dcms start with RS.
+ - dose map start with RD, and should on;y has ONE RD file, otherwise would only use first one. 
 
-    nnDose_dicom
-    ├──openkbp
-    ├──UAB_prostate
-    ├──UAB_headNneck
-    ├──...
-        ├──structure.json
-        ├──Ts
-        ├──Tr
-            ├──patient 1
-                ├──CT.12345678.91011112.dcm
-                ├──CT.12345678.91011113.dcm
-                ├──CT.12345678.91011114.dcm
-                ...
-                ├──RS.12345678.91011117.dcm
-                ├──RS.12345678.91011118.dcm
-                ...
-                └──RD.12345678.91011119.dcm
-            ├──patient 2
-                ├──CT.22345678.91011112.dcm
-                ├──CT.22345678.91011113.dcm
-                ├──CT.22345678.91011114.dcm
-                ...
-                ├──RS.22345678.91011117.dcm
-                ├──RS.22345678.91011118.dcm
-                ...
-                └──RD.22345678.91011119.dcm
-            ├──patient 3 
+        nnDose_dicom
+        ├──openkbp
+        ├──UAB_headNneck
+        ├──...
+        ├──UAB_prostate       
+            ├──structure.json
+            ├──Ts
+            ├──Tr
+                ├──patient 1
+                    ├──CT.12345678.91011112.dcm
+                    ├──CT.12345678.91011113.dcm
+                    ├──CT.12345678.91011114.dcm
+                    ...
+                    ├──RS.12345678.91011117.dcm
+                    ├──RS.12345678.91011118.dcm
+                    ...
+                    └──RD.12345678.91011119.dcm
+                ├──patient 2
+                    ├──CT.22345678.91011112.dcm
+                    ├──CT.22345678.91011113.dcm
+                    ├──CT.22345678.91011114.dcm
+                    ...
+                    ├──RS.22345678.91011117.dcm
+                    ├──RS.22345678.91011118.dcm
+                    ...
+                    └──RD.22345678.91011119.dcm
+                ├──patient 3 
             ...
-# Dicom dataset format 2 in nnDose_dicom
+Please use this code to format dataset
 
+        nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts [Tr or Ts] -nps [num of processor]
 
-    nnDose_dicom
-    ├──openkbp
-    ├──UAB_prostate
-    ├──UAB_headNneck
-    ├──...
-        ├──structure.json
-        ├──Ts
-        ├──Tr
-            ├──patient 1
-                ├──Nifti
-                ├──Dicom
-                    ├──CT
-                        ├──CT.12345678.91011112.dcm
-                        ├──CT.12345678.91011113.dcm
-                        ├──CT.12345678.91011114.dcm
-                    ├──RS
-                        ├──RS.12345678.91011117.dcm
-                        ├──RS.12345678.91011118.dcm
-                    ├──RD
-                        └──RD.12345678.91011119.dcm
-            ├──patient 2
-            ├──patient 3 
-            ...
+# Dicom dataset format 2 (organized) in nnDose_dicom
+If the Datatset is in Dicom format 2, please make sure 
+ - structure.json is in Dataset's folder
+ - data is divided to Tr for training and Ts for testing .
 
+        nnDose_dicom
+        ├──openkbp
+        ├──UAB_prostate
+        ├──UAB_headNneck
+        ├──...
+            ├──structure.json
+            ├──Ts
+            ├──Tr
+                ├──patient 1
+                    ├──Nifti
+                    ├──Dicom
+                        ├──CT
+                            ├──CT.12345678.91011112.dcm
+                            ├──CT.12345678.91011113.dcm
+                            ├──CT.12345678.91011114.dcm
+                        ├──RS
+                            ├──RS.12345678.91011117.dcm
+                            ├──RS.12345678.91011118.dcm
+                        ├──RD
+                            └──RD.12345678.91011119.dcm
+                ├──patient 2
+                ├──patient 3 
+                ...
+Please use this code to format dataset
 
+        nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts [Tr or Ts] -nps [num of processor] --organized_dicom
+
+# Nifti dataset in nnDose_dicom/ already ran convertting just changing structure.json for different label
+If the Datatset is in Dicom format 2, please make sure 
+ - structure.json is in Dataset's folder
+ - data is divided to Tr for training and Ts for testing .
+ - The PTV, OAR and Body need to be the SAME name in structure.json
+
+        nnDose_dicom
+        ├──openkbp
+        ├──UAB_prostate
+        ├──UAB_headNneck
+        ├──...
+            ├──structure.json
+            ├──Ts
+            ├──Tr
+                ├──patient 1
+                    ├──Nifti                    
+                        ├──ct.nii.gz/img.nii.gz
+                        ├──dose.nii.gz
+                        ├──PTV1.nii.gz
+                        ├──PTV2.nii.gz
+                        ├──...
+                        ├──OAR1.nii.gz
+                        ├──OAR2.nii.gz
+                        ├──...
+                        ├──body.nii.gz
+                ├──patient 2
+                ├──patient 3 
+                ...
+Please use this code to label and final formating the dataset
+
+        nnDoseNet_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts [Tr or Ts] -nps [num of processor] 
+        
 ## What do training cases look like?
 Each training case is associated with an identifier = a unique name for that case. This identifier is used by nnU-Net to 
 connect images with the correct segmentation.

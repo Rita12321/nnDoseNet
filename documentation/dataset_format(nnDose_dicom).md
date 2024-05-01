@@ -1,4 +1,3 @@
-> [!note]
 > Here is how things should look like in nnDose_diom! 
 # Dicom dataset format 1 (unorganized) in nnDose_dicom
 If the Datatset is in Dicom format 1, please make sure 
@@ -172,4 +171,4 @@ nnDoseNet anonymize the cases name to number, and correspond id and orginal name
 
 *use -h to check how to use the command
 #
-> Please check **[dataset_format(nnDose_raw)](documentation/dataset_format(nnDose_raw).md)** for next step :)
+> Please check **[dataset_format(nnDose_raw)](dataset_format(nnDose_raw).md)** for next step :)

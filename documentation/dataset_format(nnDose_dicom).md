@@ -6,7 +6,7 @@ If the Datatset is in Dicom format 1, please make sure
  - data is divided to Tr for training and Ts for testing .
  - CT or full image dcms start with CT.
  - structure dcms start with RS.
- - dose map start with RD, and should on;y has ONE RD file, otherwise would only use first one. 
+ - dose map start with RD, and should only has **ONE** RD file, otherwise would only use first one. 
 
         nnDose_dicom
         ├──openkbp
@@ -71,6 +71,8 @@ If the Datatset is in Dicom format 2, please make sure
 Please use this code to format dataset
 
         nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts [Tr or Ts] -nps [num of processor] --organized_dicom
+> [!note]
+> id must be a 3 digit integer
 
 # Nifti dataset in nnDose_dicom
 If the Datatset is in Dicom format 2  or changing structure.json for different label, please make sure 
@@ -123,6 +125,7 @@ There are 2 major part of structure.json, `structure_name` and `structure_label`
         "Body":["BODY","body","Body","External","external","EXTERNAL"]}    
 
 
+> [!note]
 > nnDoseNet search the dicom following the order of potenial name list and once it's found, it won't keep searching.
 
 **`structure_label`** is used to label the structure nifti and combine it . The key has to be class `Target`, `OAR`, and `Body` which correspond to _0001, _0002, _0003 in Dataset_xxx under nnDoseNet_raw. In each class, the key is the prescription or clical goal of the correspond list of ROI.\
@@ -132,6 +135,8 @@ There are 2 major part of structure.json, `structure_name` and `structure_label`
         "Target": {"70": ["High_PTV"]}, 
         "OAR": {"31": ["Bladder"],"35":["Rectum"],"50":["Femur_Head_L","Femur_Head_R"],"54":["Bowel"]},
         "Body":{"1":["Body"]}}   
+
+> [!note]
 >Strongly suggest to put right and left contour in same value.The data augmentaion would mirror the image, so it won't tell the right and left. 
 
 Final look should be like this, if you have diocm dataset:
@@ -160,11 +165,11 @@ These file summarize which name in potential name list is converted into nifti a
 After running `nnDoseNet_format_dataset` or `nnDoseNet_label_nifti_and_final_formatting`, you should see patinetTr.csv in nnDose_raw/Datasetxxx or patinetTs.csv in nnDose_prediction/Datasetxxx/GroundTruth.\
 nnDoseNet anonymize the cases name to number, and correspond id and orginal name is in the csv.
 
-# All command related command
+# Related command
 - `nnDoseNet_format_dataset` 
 - `nnDoseNet_organize_and_convert_dicom` 
 - `nnDoseNet_label_nifti_and_final_formatting`
 
 *use -h to check how to use the command
 #
-> Please check **[dataset_format(nnDose_raw)](documentation/dataset_format(nnDose_raw).md)** for next step : )
+> Please check **[dataset_format(nnDose_raw)](documentation/dataset_format(nnDose_raw).md)** for next step :)

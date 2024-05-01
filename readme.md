@@ -28,7 +28,7 @@ With given CT image(or other modality), Targets, OARs, and body contour(optinal)
 nnDoseNet first convert the provided dicom/nifti under `nnDose_dicom` into 4 seperate Nifti image composed dataset in `nnDose_raw`
 - **_0000** `CT` : a full image, prefer CT, other modality also work.
 - **_0001** `Targets` : labeled targets with given prescription in structure.json.
-- **_0002** `OARs` : labeled OARs with given prescription in structure.json.
+- **_0002** `OARs` : labeled OARs with given clinical goal in structure.json.
 - **_0003** `Body` : binary mask of body contour or dose range, if not provided would set 1 to full image by default for now.
 
 

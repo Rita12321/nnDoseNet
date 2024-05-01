@@ -1,4 +1,4 @@
-# Intensity normalization in nnU-Net 
+# Intensity normalization in nnDoseNet
 
 The type of intensity normalization applied in nnU-Net can be controlled via the `channel_names` (former `modalities`)
 entry in the dataset.json. Just like the old nnU-Net, per-channel z-scoring as well as dataset-wide z-scoring based on 
@@ -6,10 +6,12 @@ foreground intensities are supported. However, there have been a few additions a
 
 Reminder: The `channel_names` entry typically looks like this: 
 
-    "channel_names": {
-        "0": "T2",
-        "1": "ADC"
-    },
+        "channel_names": {
+            "0": "CT",
+            "1": "Target",
+            "2": "OAR",
+            "3": "BODY"
+        },
 
 It has as many entries as there are input channels for the given dataset.
 

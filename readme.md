@@ -33,7 +33,9 @@ nnDoseNet first convert the provided dicom/nifti under `nnDose_dicom` into 4 sep
 
 
 > [!note]
-> Please check **structure.json** section in **[dataset_format](documentation/dataset_format.md)**
+> Please check **structure.json** section in 
+**[dataset_format(nnDose_dicom)](documentation/dataset_format(nnDose_dicom).md)** and 
+**[dataset_format(nnDose_raw)](documentation/dataset_format(nnDose_raw).md)** 
 
 
 ### 2. Analysis & Preprocess
@@ -54,7 +56,7 @@ memory constraint.
 - **Empirical parameters** are essentially trial-and-error. For example the selection of the best U-net configuration 
 for the given dataset (2D, 3D full resolution, 3D low resolution, 3D cascade) and the optimization of the postprocessing strategy.
 
-> [!tip]
+
 > Please check **plan.json** section in **[#########](documentation/plan_preprocess.md)**\
 > All of the above configuration can easily change by editing plan.json
 

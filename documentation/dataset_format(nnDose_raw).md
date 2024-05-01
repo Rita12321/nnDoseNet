@@ -1,6 +1,6 @@
 > [!note]
 > Here is how things should look like in nnDose_raw!\
-Please check **[dataset_format(nnDose_dicom)](documentation/dataset_format(nnDose_dicom).md)** before reading this! 
+Please check **[dataset_format(nnDose_dicom)](dataset_format(nnDose_dicom).md)** before reading this! 
 Unless you are formatting your own dataset,then please carefully read this page.
 
 # nnDose_raw folder structure

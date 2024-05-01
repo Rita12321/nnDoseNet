@@ -140,7 +140,8 @@ There are 2 major part of structure.json, `structure_name` and `structure_label`
 
 Final look should be like this, if you have diocm dataset:
 
-    {"structure_name":{
+    {
+    "structure_name":{
     "Bladder": ["Bladder"], 
     "Rectum": ["Rectum"], 
     "Femur_Head_L": ["Femur_Head_L"],

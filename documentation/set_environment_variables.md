@@ -1,9 +1,8 @@
 # How to set environment variables
 
-nnU-Net requires some environment variables so that it always knows where the raw data, preprocessed data and trained 
-models are. Depending on the operating system, these environment variables need to be set in different ways.
+nnDoseNet requires some environment variables so that it always knows where the dicom(unlabel) data, raw data, preprocessed data trained models and prediction data are. Depending on the operating system, these environment variables need to be set in different ways.
 
-Variables can either be set permanently (recommended!) or you can decide to set them everytime you call nnU-Net. 
+Variables can either be set permanently (recommended!) or you can decide to set them everytime you call nnDoseNet. 
 
 # Linux & MacOS
 
@@ -11,9 +10,11 @@ Variables can either be set permanently (recommended!) or you can decide to set 
 Locate the `.bashrc` file in your home folder and add the following lines to the bottom:
 
 ```bash
-export nnUNet_raw="/media/fabian/nnUNet_raw"
-export nnUNet_preprocessed="/media/fabian/nnUNet_preprocessed"
-export nnUNet_results="/media/fabian/nnUNet_results"
+export nnDose_dicom="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom"
+export nnDose_raw="/home/changh/Documents/2023_DosePredcition/nnDose_2_raw"
+export nnDose_preprocessed="/home/changh/Documents/2023_DosePredcition/nnDose_3_preprocess"
+export nnDose_results="/home/changh/Documents/2023_DosePredcition/nnDose_4_result"
+export nnDose_prediction="/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction"
 ```
 
 (of course you need to adapt the paths to the actual folders you intend to use).
@@ -22,9 +23,11 @@ If you are using a different shell, such as zsh, you will need to find the corre
 ## Temporary
 Just execute the following lines whenever you run nnU-Net:
 ```bash
-export nnUNet_raw="/media/fabian/nnUNet_raw"
-export nnUNet_preprocessed="/media/fabian/nnUNet_preprocessed"
-export nnUNet_results="/media/fabian/nnUNet_results"
+export nnDose_dicom="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom"
+export nnDose_raw="/home/changh/Documents/2023_DosePredcition/nnDose_2_raw"
+export nnDose_preprocessed="/home/changh/Documents/2023_DosePredcition/nnDose_3_preprocess"
+export nnDose_results="/home/changh/Documents/2023_DosePredcition/nnDose_4_result"
+export nnDose_prediction="/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction"
 ```
 (of course you need to adapt the paths to the actual folders you intend to use).
 
@@ -33,10 +36,10 @@ terminal window and DO NOT transfer to other terminals!
 
 Alternatively you can also just prefix them to your nnU-Net commands:
 
-`nnUNet_results="/media/fabian/nnUNet_results" nnUNet_preprocessed="/media/fabian/nnUNet_preprocessed" nnUNetv2_train[...]`
+`nnDose_dicom="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom" nnDose_raw="/home/changh/Documents/2023_DosePredcition/nnDose_2_raw" nnDoseNet_train[...]`
 
 ## Verify that environment parameters are set
-You can always execute `echo ${nnUNet_raw}` etc to print the environment variables. This will return an empty string if 
+You can always execute `echo ${nnDose_raw}` etc to print the environment variables. This will return an empty string if 
 they were not set.
 
 # Windows
@@ -49,20 +52,24 @@ See `Set Environment Variable in Windows via GUI` [here](https://phoenixnap.com/
 Or read about setx (command prompt).
 
 ## Temporary
-Just execute the following before you run nnU-Net:
+Just execute the following before you run nnDoseNet:
 
 (powershell)
 ```powershell
-$Env:nnUNet_raw = "/media/fabian/nnUNet_raw"
-$Env:nnUNet_preprocessed = "/media/fabian/nnUNet_preprocessed"
-$Env:nnUNet_results = "/media/fabian/nnUNet_results"
+$Env:nnDose_dicom="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom"
+$Env:nnDose_raw="/home/changh/Documents/2023_DosePredcition/nnDose_2_raw"
+$Env:nnDose_preprocessed="/home/changh/Documents/2023_DosePredcition/nnDose_3_preprocess"
+$Env:nnDose_results="/home/changh/Documents/2023_DosePredcition/nnDose_4_result"
+$Env:nnDose_prediction="/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction"
 ```
 
 (command prompt)
 ```commandline
-set nnUNet_raw="/media/fabian/nnUNet_raw"
-set nnUNet_preprocessed="/media/fabian/nnUNet_preprocessed"
-set nnUNet_results="/media/fabian/nnUNet_results"
+set nnDose_dicom="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom"
+set nnDose_raw="/home/changh/Documents/2023_DosePredcition/nnDose_2_raw"
+set nnDose_preprocessed="/home/changh/Documents/2023_DosePredcition/nnDose_3_preprocess"
+set nnDose_results="/home/changh/Documents/2023_DosePredcition/nnDose_4_result"
+set nnDose_prediction="/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction"
 ```
 
 (of course you need to adapt the paths to the actual folders you intend to use).

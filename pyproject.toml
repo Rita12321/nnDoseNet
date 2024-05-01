@@ -62,7 +62,7 @@ repository = "https://github.com/Rita12321/nnDoseNet"
 [project.scripts]
 nnDoseNet_format_dataset = "nndosenet.formating_dataset.format_dataset_entrypoints:format_dataset_entry"
 nnDoseNet_label_nifti_and_final_formatting = "nndosenet.formating_dataset.format_dataset_entrypoints:label_nifti_and_final_formatting_entry"
-nnDoseNet_organize_and_convert_dicom_entry = "nndosenet.formating_dataset.format_dataset_entrypoints:organize_and_convert_dicom_entry"
+nnDoseNet_organize_and_convert_dicom = "nndosenet.formating_dataset.format_dataset_entrypoints:organize_and_convert_dicom_entry"
 nnDoseNet_plan_and_preprocess = "nndosenet.experiment_planning.plan_and_preprocess_entrypoints:plan_and_preprocess_entry"
 nnDoseNet_extract_fingerprint = "nndosenet.experiment_planning.plan_and_preprocess_entrypoints:extract_fingerprint_entry"
 nnDoseNet_plan_experiment = "nndosenet.experiment_planning.plan_and_preprocess_entrypoints:plan_experiment_entry"

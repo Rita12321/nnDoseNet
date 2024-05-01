@@ -1,3 +1,5 @@
+# Dataset format
+Here is how things should look like in nnDose_diom! 
 # Dicom dataset format 1 (unorganized) in nnDose_dicom
 If the Datatset is in Dicom format 1, please make sure 
  - structure.json is in Dataset's folder
@@ -70,8 +72,8 @@ Please use this code to format dataset
 
         nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts [Tr or Ts] -nps [num of processor] --organized_dicom
 
-# Nifti dataset in nnDose_dicom/ already ran convertting just changing structure.json for different label
-If the Datatset is in Dicom format 2, please make sure 
+# Nifti dataset in nnDose_dicom
+If the Datatset is in Dicom format 2  or changing structure.json for different label, please make sure 
  - structure.json is in Dataset's folder
  - data is divided to Tr for training and Ts for testing .
  - The PTV, OAR and Body need to be the SAME name in structure.json
@@ -102,17 +104,59 @@ Please use this code to label and final formating the dataset
 
         nnDoseNet_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts [Tr or Ts] -nps [num of processor] 
         
-## What do training cases look like?
-Each training case is associated with an identifier = a unique name for that case. This identifier is used by nnU-Net to 
-connect images with the correct segmentation.
+# structure.json
 
-A training case consists of images and their corresponding segmentation. 
+nnDoseNet use the structure.json for ROI extractiong and labeling.
+There are 2 major part of structure.json, `structure_name` and `structure_label`.
 
+
+**`structure_name`** is used to extract structure from dicom to nifti. The key is **ROI's final name** and value is a **list of potential name** of the ROI in dicom.\
+*If the dataset is in nifti format, you don't need stucture_name.
+
+    "structure_name":{
+        "Bladder": ["Bladder"], 
+        "Rectum": ["Rectum"], 
+        "Femur_Head_L": ["Femur_Head_L"],
+        "Femur_Head_R": ["Femur_Head_R"],
+        "Bowel": ["Bowel_Large","Bowel_Small","Bag_Bowel","Bowel"],
+        "High_PTV": ["PTV","PTV_High","PTV_High^p","PTV_High^p+sv","PTV_Pros_7000","PTV^p+sv","PTV1","PTVp_High"],
+        "Body":["BODY","body","Body","External","external","EXTERNAL"]}    
+
+
+> nnDoseNet search the dicom following the order of potenial name list and once it's found, it won't keep searching.
+
+**`structure_label`** is used to label the structure nifti and combine it . The key has to be class `Target`, `OAR`, and `Body` which correspond to _0001, _0002, _0003 in Dataset_xxx under nnDoseNet_raw. In each class, the key is the prescription or clical goal of the correspond list of ROI.\
+*Please make sure the ROI name is the same as ROI's final name in structure_name.
+
+    "structure_label":{
+        "Target": {"70": ["High_PTV"]}, 
+        "OAR": {"31": ["Bladder"],"35":["Rectum"],"50":["Femur_Head_L","Femur_Head_R"],"54":["Bowel"]},
+        "Body":{"1":["Body"]}}   
+>Strongly suggest to put right and left contour in same value.The data augmentaion would mirror the image, so it won't tell the right and left. 
+
+Final look should be like this, if you have diocm dataset:
+
+    {"structure_name":{
+    "Bladder": ["Bladder"], 
+    "Rectum": ["Rectum"], 
+    "Femur_Head_L": ["Femur_Head_L"],
+    "Femur_Head_R": ["Femur_Head_R"],
+    "Bowel": ["Bowel_Large","Bowel_Small","Bag_Bowel","Bowel"],
+    "High_PTV": ["PTV","PTV_High","PTV_High^p","PTV_High^p+sv","PTV_Pros_7000","PTV^p+sv","PTV1","PTVp_High"],
+    "Body":["BODY","body","Body","External","external","EXTERNAL"]},
+
+    "structure_label":{
+        "Target": {"70": ["High_PTV"]}, 
+        "OAR": {"31": ["Bladder"],"35":["Rectum"],"50":["Femur_Head_L","Femur_Head_R"],"54":["Bowel"]},
+        "Body":{"1":["Body"]}}
+    }
+
+# 
 **Images** is plural because nnU-Net supports arbitrarily many input channels. In order to be as flexible as possible, 
 nnU-net requires each input channel to be stored in a separate image (with the sole exception being RGB natural 
 images). So these images could for example be a T1 and a T2 MRI (or whatever else you want). The different input 
 channels MUST have the same geometry (same shape, spacing (if applicable) etc.) and
-must be co-registered (if applicable). Input channels are identified by nnU-Net by their FILE_ENDING: a four-digit integer at the end 
+mus[text](dataset_format.md)t be co-registered (if applicable). Input channels are identified by nnU-Net by their FILE_ENDING: a four-digit integer at the end 
 of the filename. Image files must therefore follow the following naming convention: {CASE_IDENTIFIER}_{XXXX}.{FILE_ENDING}. 
 Hereby, XXXX is the 4-digit modality/channel identifier (should be unique for each modality/chanel, e.g., “0000” for T1, “0001” for 
 T2 MRI, …) and FILE_ENDING is the file extension used by your image format (.png, .nii.gz, ...). See below for concrete examples.

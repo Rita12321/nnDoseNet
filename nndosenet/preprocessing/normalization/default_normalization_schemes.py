@@ -54,7 +54,6 @@ class CTNormalization(ImageNormalization):
 
     def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
         assert self.intensityproperties is not None, "CTNormalization requires intensity properties"
-        #TODO: add clip 
         image = image.astype(self.target_dtype)
         mean_intensity = self.intensityproperties['mean']
         std_intensity = self.intensityproperties['std']
@@ -75,23 +74,6 @@ class NoNormalization_mask(ImageNormalization):
 
     def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
         return image.astype(np.uint8)   
-    
-# #TODO: merge the labeling thing here, please don't make me do this now....
-class PTV_labeling(ImageNormalization):
-    leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
-
-    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
-        return image.astype(np.uint8)
-class OAR_labeling(ImageNormalization):
-    leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
-
-    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
-        return image.astype(np.uint8)
-class Body_mask_generater(ImageNormalization):
-    leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
-
-    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
-        return image.astype(np.uint8)
 
 class RescaleTo01Normalization(ImageNormalization):
     leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False

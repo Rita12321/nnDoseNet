@@ -37,15 +37,18 @@ Folder structure should look like this in imagesTr:
         ├── 002_0003.nii.gz
         ├── ...
 
-First 3 digit represent the patient number, that is anonymized while formatting it from nnDose_dicom folder. Please check the section **patinet__.csv** in  **[dataset_format(nnDose_dicom)](documentation/dataset_format(nnDose_dicom).md)**
-- **_0000** `CT` : a full image.
-- **_0001** `Targets` : labeled targets .
+First 3 digit represent the patient number, that is anonymized while formatting it from nnDose_dicom folder. Please check the section **patinet__.csv** in  **[dataset_format(nnDose_dicom)](documentation/dataset_format(nnDose_dicom).md)**. \
+And each image file in imagesTr represent certain modality .
+
+- **_0000** `CT` : a full image(you can use MR or other instead, just rememeber to change it in dataset.json).
+- **_0001** `Targets` : labeled targets.
 - **_0002** `OARs` : labeled OARs.
 - **_0003** `Body` : binary mask of body contour or dose range.
 
 
 ## labelsTr
 contains the images with the ground truth dose maps for the training cases. 
+Folder structure should look like this in labelsTr:
 
     labelsTr
         ├── 001.nii.gz
@@ -53,7 +56,7 @@ contains the images with the ground truth dose maps for the training cases.
         ├── ...
 
 ## dataset.json
-Inside dataset.json should look like this. "CT" in "channel_name" should be changed if using other modality.\
+Inside dataset.json should look like this. "CT" in "channel_name" should be changed if using other modality.(*please check [normalization](channel_modality_normalization) if you have question about modality operation )\
 *Please don't change "labels" and "mask_channel".
 
     {

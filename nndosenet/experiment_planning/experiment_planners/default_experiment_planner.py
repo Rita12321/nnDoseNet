@@ -237,7 +237,7 @@ class ExperimentPlanner(object):
             target[worst_spacing_axis] = target_spacing_of_that_axis
         return target
 
-#FIXME: cahnge to get OAR PTV location !!
+#todo: cahnge to get OAR PTV location !!
     def determine_normalization_scheme_and_whether_mask_is_used_for_norm(self) -> Tuple[List[str], List[bool]]:
         if 'channel_names' not in self.dataset_json.keys():
             print('WARNING: "Please enter "channel_names" in nnDoseNets dataset.json. Thank U')
@@ -256,7 +256,7 @@ class ExperimentPlanner(object):
                 PTV_OAR_BODY[2]=c
         if -1 in PTV_OAR_BODY:
             print('WARNING: "Target","OAR","BODY" should be mention in channel_names and please specific which channel it is in'\
-                '"Traget" is the PTV or CTV or GTV or anything you that you target for traetment'\
+                '"Target" is the PTV or CTV or GTV or anything you that you target for traetment'\
                 '"OAR" is the oragn at risk or anything you want to minimize the deliverd dosage'\
                 '"BODY" is the contour of the patient, or the range that the treatment would be deliverd '\
                 'Preferred format:'\

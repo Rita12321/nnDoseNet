@@ -1,4 +1,14 @@
-> Here is how things should look like in nnDose_diom! 
+Welcome to dataset_format in `nnDose_diom`! Here are the section in this page:)
+
+ - [unorganized Dicom dataset](#dicom-dataset-format-1-unorganized-in-nndose_dicom)
+ - [organized Dicom dataset](#dicom-dataset-format-2-organized-in-nndose_dicom)
+ - [Nifti dataset](#nifti-dataset-in-nndose_dicom)
+ - [structure.json](#structurejson)
+ - [roi_summary](#roi_summary)
+ - [patient__.csv](#patinet__csv)
+ - [related-command](#related-command)
+
+
 # Dicom dataset format 1 (unorganized) in nnDose_dicom
 If the Datatset is in Dicom format 1, please make sure 
  - structure.json is in Dataset's folder
@@ -37,7 +47,7 @@ If the Datatset is in Dicom format 1, please make sure
             ...
 Please use this code to format dataset
 
-        nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts [Tr or Ts] -nps [num of processor]
+    nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor]
 
 # Dicom dataset format 2 (organized) in nnDose_dicom
 If the Datatset is in Dicom format 2, please make sure 
@@ -69,7 +79,7 @@ If the Datatset is in Dicom format 2, please make sure
                 ...
 Please use this code to format dataset
 
-        nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts [Tr or Ts] -nps [num of processor] --organized_dicom
+    nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] --organized_dicom
 > [!note]
 > id must be a 3 digit integer
 
@@ -103,7 +113,7 @@ If the Datatset is in Dicom format 2  or changing structure.json for different l
                 ...
 Please use this code to label and final formating the dataset
 
-        nnDoseNet_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts [Tr or Ts] -nps [num of processor] 
+    nnDoseNet_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] 
         
 # structure.json
 

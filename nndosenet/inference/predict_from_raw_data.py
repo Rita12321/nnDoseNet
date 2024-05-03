@@ -558,17 +558,9 @@ class nnUNetPredictor(object):
 
         empty_cache(self.device)
 
-        # Autocast is a little bitch.---totally agree with you, I hate it
-        # If the device_type is 'cpu' then it's slow as heck on some CPUs (no auto bfloat16 support detection)
-        # and needs to be disabled.
-        # If the device_type is 'mps' then it will complain that mps is not implemented, even if enabled=False
-        # is set. Whyyyyyyy. (this is why we don't make use of enabled=False)
-        # So autocast will only be active if we have a cuda device.
-        #
+
 
         with torch.no_grad():
-            #print("autocast can you stop float16 my data? please~~~~~~~~~~~~~~~~~")
-            #with torch.autocast(self.device.type, enabled=True) if self.device.type == 'cuda' else dummy_context():
             with dummy_context():
                 assert len(input_image.shape) == 4, 'input_image must be a 4D np.ndarray or torch.Tensor (c, x, y, z)'
 
@@ -589,10 +581,9 @@ class nnUNetPredictor(object):
                 try:
                     data = data.to(self.device)
                     predicted_logits = torch.zeros((self.label_manager.num_segmentation_heads, *data.shape[1:]),
-                                                   dtype=torch.float32,#FIXME: torch_half-->float 32
+                                                   dtype=torch.float32,
                                                    device=results_device)
-                    #FIXME: torch_half-->float 32
-                    n_predictions = torch.zeros(data.shape[1:], dtype=torch.float32,#FIXME: torch_half-->float 32
+                    n_predictions = torch.zeros(data.shape[1:], dtype=torch.float32,
                                                 device=results_device)
                     if self.use_gaussian:
                         gaussian = compute_gaussian(tuple(self.configuration_manager.patch_size), sigma_scale=1. / 8,
@@ -603,9 +594,9 @@ class nnUNetPredictor(object):
                     results_device = torch.device('cpu')
                     data = data.to(results_device)
                     predicted_logits = torch.zeros((self.label_manager.num_segmentation_heads, *data.shape[1:]),
-                                                   dtype=torch.float32,#FIXME: torch_half-->float 32
+                                                   dtype=torch.float32,
                                                    device=results_device)
-                    n_predictions = torch.zeros(data.shape[1:], dtype=torch.float32,#FIXME: torch_half-->float 32
+                    n_predictions = torch.zeros(data.shape[1:], dtype=torch.float32,
                                                 device=results_device)
                     if self.use_gaussian:
                         gaussian = compute_gaussian(tuple(self.configuration_manager.patch_size), sigma_scale=1. / 8,
@@ -640,6 +631,7 @@ def predict_entry_point_modelfolder():
                                                  'you want to manually specify a folder containing a trained nnU-Net '
                                                  'model. This is useful when the nnunet environment variables '
                                                  '(nnUNet_results) are not set.')
+    
     parser.add_argument('-i', type=str, required=True,
                         help='input folder. Remember to use the correct channel numberings for your files (_0000 etc). '
                              'File endings must be the same as the training dataset!')

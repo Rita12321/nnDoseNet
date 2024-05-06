@@ -244,7 +244,7 @@ def run_training_entry():
     parser.add_argument('-device', type=str, default='cuda', required=False,
                     help="Use this to set the device the training should run with. Available options are 'cuda' "
                          "(GPU), 'cpu' (CPU) and 'mps' (Apple M1/M2). Do NOT use this to set which GPU ID! "
-                         "Use CUDA_VISIBLE_DEVICES=X nnUNetv2_train [...] instead!")
+                         "Use CUDA_VISIBLE_DEVICES=X nnDoseNet_train [...] instead!")
     args = parser.parse_args()
 
     assert args.device in ['cpu', 'cuda', 'mps'], f'-device must be either cpu, mps or cuda. Other devices are not tested/supported. Got: {args.device}.'

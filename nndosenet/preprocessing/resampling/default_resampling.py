@@ -32,7 +32,7 @@ def resample_data_or_seg_to_spacing(data: np.ndarray,
                                     current_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
                                     new_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
                                     is_seg: bool = False,
-                                    order: int = 0, order_z: int = 0,#FIXME: order3-->0
+                                    order: int = 0, order_z: int = 0,#NOTE: order3-->0
                                     force_separate_z: Union[bool, None] = False,
                                     separate_z_anisotropy_threshold: float = ANISO_THRESHOLD):
     if force_separate_z is not None:
@@ -79,7 +79,7 @@ def resample_data_or_seg_to_shape(data: Union[torch.Tensor, np.ndarray],
                                   current_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
                                   new_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
                                   is_seg: bool = False,
-                                  order: int = 0, order_z: int = 0,#FIXME: order 3-->0
+                                  order: int = 0, order_z: int = 0, #NOTE: order 3-->0
                                   force_separate_z: Union[bool, None] = False,
                                   separate_z_anisotropy_threshold: float = ANISO_THRESHOLD):
     """
@@ -133,7 +133,7 @@ def resample_data_or_seg_to_shape(data: Union[torch.Tensor, np.ndarray],
 
 
 def resample_data_or_seg(data: np.ndarray, new_shape: Union[Tuple[float, ...], List[float], np.ndarray],
-                         is_seg: bool = False, axis: Union[None, int] = None, order: int = 0,#FIXME: order 3-->0
+                         is_seg: bool = False, axis: Union[None, int] = None, order: int = 0,#NOTE: order 3-->0
                          do_separate_z: bool = False, order_z: int = 0):
     """
     separate_z=True will resample with order 0 along z
@@ -152,7 +152,7 @@ def resample_data_or_seg(data: np.ndarray, new_shape: Union[Tuple[float, ...], L
 #NOTE: changed change the setting 
     if is_seg:
         resize_fn = resize #it would change to onehot encoded
-        kwargs = {'mode':'constant','cval': 0 ,'anti_aliasing': False}#OrderedDict() #FIXME: add mode nearest  ,'cval':0
+        kwargs = {'mode':'constant','cval': 0 ,'anti_aliasing': False}#OrderedDict() #NOTE: add mode nearest  ,'cval':0
 
     else:
         resize_fn = resize

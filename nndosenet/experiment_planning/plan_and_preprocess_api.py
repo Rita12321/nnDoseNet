@@ -37,7 +37,7 @@ def extract_fingerprints(dataset_ids: List[int], fingerprint_extractor_class_nam
                          num_processes: int = default_num_processes, check_dataset_integrity: bool = False, dose: bool =False,
                          clean: bool = True, verbose: bool = True):
     """
-    clean = False will not actually run this. This is just a switch for use with nnUNetv2_plan_and_preprocess where
+    clean = False will not actually run this. This is just a switch for use with nnDoseNet_plan_and_preprocess where
     we don't want to rerun fingerprint extraction every time.
     """
     fingerprint_extractor_class = recursive_find_python_class(join(nndosenet.__path__[0], "experiment_planning"),

@@ -80,7 +80,7 @@ class DefaultPreprocessor(object):
         # print('current shape', data.shape[1:], 'current_spacing', original_spacing,
         #       '\ntarget shape', new_shape, 'target_spacing', target_spacing)
         old_shape = data.shape[1:]
-     #FIXME: add masked_channel process
+     # NOTE: add masked_channel process
         mask_channel=configuration_manager.mask_channel
         if mask_channel is not None:  
             for i in range(0,data.shape[0]):
@@ -298,33 +298,3 @@ class DefaultPreprocessor(object):
         return seg
 
 
-def example_test_case_preprocessing():
-    # (paths to files may need adaptations)
-    plans_file = '/home/isensee/drives/gpu_data/nnUNet_preprocessed/Dataset219_AMOS2022_postChallenge_task2/nnUNetPlans.json'
-    dataset_json_file = '/home/isensee/drives/gpu_data/nnUNet_preprocessed/Dataset219_AMOS2022_postChallenge_task2/dataset.json'
-    input_images = ['/home/isensee/drives/e132-rohdaten/nnUNetv2/Dataset219_AMOS2022_postChallenge_task2/imagesTr/amos_0600_0000.nii.gz', ]  # if you only have one channel, you still need a list: ['case000_0000.nii.gz']
-
-    configuration = '3d_fullres'
-    pp = DefaultPreprocessor()
-
-    # _ because this position would be the segmentation if seg_file was not None (training case)
-    # even if you have the segmentation, don't put the file there! You should always evaluate in the original
-    # resolution. What comes out of the preprocessor might have been resampled to some other image resolution (as
-    # specified by plans)
-    plans_manager = PlansManager(plans_file)
-    data, _, properties = pp.run_case(input_images, seg_file=None, plans_manager=plans_manager,
-                                      configuration_manager=plans_manager.get_configuration(configuration),
-                                      dataset_json=dataset_json_file)
-
-    # voila. Now plug data into your prediction function of choice. We of course recommend nnU-Net's default (TODO)
-    return data
-
-
-if __name__ == '__main__':
-    example_test_case_preprocessing()
-    # pp = DefaultPreprocessor()
-    # pp.run(2, '2d', 'nnUNetPlans', 8)
-
-    ###########################################################################################################
-    # how to process a test cases? This is an example:
-    # example_test_case_preprocessing()

@@ -4,7 +4,7 @@ from nndosenet.experiment_planning.plan_and_preprocess_api import extract_finger
 
 
 
-def extract_fingerprint_entry():#nnUNetv2_extract_fingerprint
+def extract_fingerprint_entry():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', nargs='+', type=int,
@@ -21,7 +21,7 @@ def extract_fingerprint_entry():#nnUNetv2_extract_fingerprint
                              "each dataset!")
     parser.add_argument('--dose', type=bool, default=False, required=False,
                         help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
-                             f'Default: {False}') #FIXME: add dose mode
+                             f'Default: {False}')
     parser.add_argument("--clean", required=False, default=False, action="store_true",
                         help='[OPTIONAL] Set this flag to overwrite existing fingerprints. If this flag is not set and a '
                              'fingerprint already exists, the fingerprint extractor will not run.')
@@ -32,7 +32,7 @@ def extract_fingerprint_entry():#nnUNetv2_extract_fingerprint
     extract_fingerprints(args.d, args.fpe, args.np, args.verify_dataset_integrity, args.dose, args.clean, args.verbose)
 
 
-def plan_experiment_entry():#nnUNetv2_plan_experiment
+def plan_experiment_entry():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', nargs='+', type=int,
@@ -68,7 +68,7 @@ def plan_experiment_entry():#nnUNetv2_plan_experiment
                              'running other nnunet commands (training, inference etc)')
     parser.add_argument('--dose', default=False, required=False, action="store_true",
                         help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
-                             f'Default: {False}') #FIXME: add dose mode
+                             f'Default: {False}')
     args, unrecognized_args = parser.parse_known_args()
     plan_experiments(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing,
                      args.overwrite_plans_name,args.dose)
@@ -114,7 +114,7 @@ def preprocess_entry():
     preprocess(args.d, args.plans_name, configurations=args.c, num_processes=np, verbose=args.verbose)
 
 
-def plan_and_preprocess_entry():#nnUNetv2_plan_and_preprocess
+def plan_and_preprocess_entry():
      import argparse
      parser = argparse.ArgumentParser()
      parser.add_argument('-d', nargs='+', type=int,
@@ -130,7 +130,7 @@ def plan_and_preprocess_entry():#nnUNetv2_plan_and_preprocess
                               "each dataset!")
      parser.add_argument('--dose', default=False, required=False, action="store_true",
                          help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
-                              f'Default: {False}') #FIXME: add dose mode
+                              f'Default: {False}')
      parser.add_argument('--no_pp', default=False, action='store_true', required=False,
                          help='[OPTIONAL] Set this to only run fingerprint extraction and experiment planning (no '
                               'preprocesing). Useful for debugging.')

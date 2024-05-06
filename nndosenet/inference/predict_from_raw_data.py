@@ -670,7 +670,7 @@ def predict_entry_point_modelfolder():
     parser.add_argument('-device', type=str, default='cuda', required=False,
                         help="Use this to set the device the inference should run with. Available options are 'cuda' "
                              "(GPU), 'cpu' (CPU) and 'mps' (Apple M1/M2). Do NOT use this to set which GPU ID! "
-                             "Use CUDA_VISIBLE_DEVICES=X nnUNetv2_predict [...] instead!")
+                             "Use CUDA_VISIBLE_DEVICES=X nnDoseNet_predict [...] instead!")
 
     args = parser.parse_args()
     args.f = [i if i == 'all' else int(i) for i in args.f]
@@ -757,17 +757,17 @@ def predict_entry_point():
     parser.add_argument('-prev_stage_predictions', type=str, required=False, default=None,
                         help='Folder containing the predictions of the previous stage. Required for cascaded models.')
     parser.add_argument('-num_parts', type=int, required=False, default=1,
-                        help='Number of separate nnUNetv2_predict call that you will be making. Default: 1 (= this one '
+                        help='Number of separate nnDoseNet_predict call that you will be making. Default: 1 (= this one '
                              'call predicts everything)')
     parser.add_argument('-part_id', type=int, required=False, default=0,
-                        help='If multiple nnUNetv2_predict exist, which one is this? IDs start with 0 can end with '
-                             'num_parts - 1. So when you submit 5 nnUNetv2_predict calls you need to set -num_parts '
+                        help='If multiple nnDoseNet_predict exist, which one is this? IDs start with 0 can end with '
+                             'num_parts - 1. So when you submit 5 nnDoseNet_predict calls you need to set -num_parts '
                              '5 and use -part_id 0, 1, 2, 3 and 4. Simple, right? Note: You are yourself responsible '
                              'to make these run on separate GPUs! Use CUDA_VISIBLE_DEVICES (google, yo!)')
     parser.add_argument('-device', type=str, default='cuda', required=False,
                         help="Use this to set the device the inference should run with. Available options are 'cuda' "
                              "(GPU), 'cpu' (CPU) and 'mps' (Apple M1/M2). Do NOT use this to set which GPU ID! "
-                             "Use CUDA_VISIBLE_DEVICES=X nnUNetv2_predict [...] instead!")
+                             "Use CUDA_VISIBLE_DEVICES=X nnDoseNet_predict [...] instead!")
 
 
     args = parser.parse_args()
@@ -779,7 +779,7 @@ def predict_entry_point():
         maybe_mkdir_p(args.o)
 
     # slightly passive agressive haha
-    assert args.part_id < args.num_parts, 'Do you even read the documentation? See nnUNetv2_predict -h.'
+    assert args.part_id < args.num_parts, 'Do you even read the documentation? See nnDoseNet_predict -h.'
 
     assert args.device in ['cpu', 'cuda',
                            'mps'], f'-device must be either cpu, mps or cuda. Other devices are not tested/supported. Got: {args.device}.'

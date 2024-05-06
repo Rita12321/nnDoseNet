@@ -5,7 +5,7 @@ from batchgenerators.utilities.file_and_folder_operations import *
 
                     
                     
-def organize_and_convert_dicom_entry():#nnUNetv2_extract_fingerprint
+def organize_and_convert_dicom_entry():
      import argparse
      parser = argparse.ArgumentParser()
      parser.add_argument('-name', type=str,
@@ -26,7 +26,7 @@ def organize_and_convert_dicom_entry():#nnUNetv2_extract_fingerprint
      format_dataset_from_dicom(raw_dicom_folder,args.trts,args.nps)
           
 
-def label_nifti_and_final_formatting_entry():#nnUNetv2_plan_experiment
+def label_nifti_and_final_formatting_entry():
      import argparse
      parser = argparse.ArgumentParser()
      parser.add_argument('-name', type=str,
@@ -47,7 +47,7 @@ def label_nifti_and_final_formatting_entry():#nnUNetv2_plan_experiment
      organize_nifti(join(raw_dicom_folder,args.trts))
      format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,args.name,args.trts,num_processes=args.nps)
 
-def format_dataset_entry():#nnUNetv2_plan_and_preprocess
+def format_dataset_entry():
      import argparse
      parser = argparse.ArgumentParser()
      parser.add_argument('-name', type=str,

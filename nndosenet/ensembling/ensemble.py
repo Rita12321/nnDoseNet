@@ -4,7 +4,7 @@ import shutil
 from copy import deepcopy
 from multiprocessing import Pool
 from typing import List, Union, Tuple
-
+import torch
 import numpy as np
 from batchgenerators.utilities.file_and_folder_operations import load_json, join, subfiles, \
     maybe_mkdir_p, isdir, save_pickle, load_pickle, isfile
@@ -40,6 +40,10 @@ def merge_files(list_of_files,
     # load and average predictions
     probabilities = average_probabilities(list_of_files)
     segmentation = label_manager.convert_logits_to_segmentation(probabilities)
+    
+    if isinstance(segmentation, torch.Tensor):
+        segmentation=segmentation.numpy()
+        
     image_reader_writer.write_seg(segmentation, output_filename_truncated + output_file_ending, properties)
     if save_probabilities:
         np.savez_compressed(output_filename_truncated + '.npz', probabilities=probabilities)
@@ -141,23 +145,23 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
     unique_filenames = set()
     for tr in list_of_trained_model_folders:
         files_per_folder[tr] = {}
-        for f in folds:
-            if not isdir(join(tr, f'fold_{f}', 'validation')):
+        for fold in folds:
+            if not isdir(join(tr, f'fold_{fold}', 'validation')):
                 raise RuntimeError(f'Expected model output directory does not exist. You must train all requested '
-                                   f'folds of the speficied model.\nModel: {tr}\nFold: {f}')
-            files_here = subfiles(join(tr, f'fold_{f}', 'validation'), suffix='.npz', join=False)
+                                   f'folds of the speficied model.\nModel: {tr}\nFold: {fold}')
+            files_here = subfiles(join(tr, f'fold_{fold}', 'validation'), suffix='.npz', join=False)
             if len(files_here) == 0:
-                raise RuntimeError(f"No .npz files found in folder {join(tr, f'fold_{f}', 'validation')}. Rerun your "
-                                   f"validation with the --npz flag. Use nnUNetv2_train [...] --val --npz.")
-            files_per_folder[tr][f] = subfiles(join(tr, f'fold_{f}', 'validation'), suffix='.npz', join=False)
-            unique_filenames.update(files_per_folder[tr][f])
+                raise RuntimeError(f"No .npz files found in folder {join(tr, f'fold_{fold}', 'validation')}. Rerun your "
+                                   f"validation with the --npz flag. Use nnDoseNet_train [...] --val --npz.")
+            files_per_folder[tr][fold] = subfiles(join(tr, f'fold_{fold}', 'validation'), suffix='.npz', join=False)
+            unique_filenames.update(files_per_folder[tr][fold])
 
     # verify that all trained_model_folders have all predictions
 
     for tr, fi in files_per_folder.items():
         all_files_here = set()
-        for f in folds:
-            all_files_here.update(fi[f])
+        for fold in folds:
+            all_files_here.update(fi[fold])
         diff = unique_filenames.difference(all_files_here)
         if len(diff) > 0:
             print(f'model {tr} does not seem to contain all predictions. Missing: {diff}')
@@ -168,7 +172,8 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
     for tr in list_of_trained_model_folders:
         file_mapping.append({})
         for fold in folds:
-            for fi in files_per_folder[tr][f]:
+            for fi in files_per_folder[tr][fold]:
+                #print("####",file_mapping)
                 # check for duplicates
                 assert fi not in file_mapping[-1].keys(), f" \
                 detected. Case {fi} is present in more than " \

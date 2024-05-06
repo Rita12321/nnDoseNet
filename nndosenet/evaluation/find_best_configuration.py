@@ -18,8 +18,7 @@ from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 default_trained_models = tuple([
     {'plans': 'nnUNetPlans', 'configuration': '2d',                 'trainer': 'nnUNetTrainer'},
     {'plans': 'nnUNetPlans', 'configuration': '3d_fullres',         'trainer': 'nnUNetTrainer'},
-    {'plans': 'nnUNetPlans', 'configuration': '3d_lowres',          'trainer': 'nnUNetTrainer'},
-    {'plans': 'nnUNetPlans', 'configuration': '3d_cascade_fullres', 'trainer': 'nnUNetTrainer'},
+    {'plans': 'nnUNetPlans', 'configuration': '3d_lowres',          'trainer': 'nnUNetTrainer'}
 ])
 
 
@@ -70,7 +69,7 @@ def generate_inference_command(dataset_name_or_id: Union[int, str], configuratio
                                                       folds, None, output_folder='OUTPUT_FOLDER_PREV_STAGE') + '\n'
         folder_with_segs_from_prev_stage = 'OUTPUT_FOLDER_PREV_STAGE'
 
-    predict_command = f'nnUNetv2_predict -d {dataset_name_or_id} -i {input_folder} -o {output_folder} -f {fold_str} ' \
+    predict_command = f'nnDoseNet_predict -d {dataset_name_or_id} -i {input_folder} -o {output_folder} -f {fold_str} ' \
                       f'-tr {trainer_name} -c {configuration_name} -p {plans_identifier}'
     if folder_with_segs_from_prev_stage is not None:
         predict_command += f' -prev_stage_predictions {folder_with_segs_from_prev_stage}'
@@ -102,7 +101,7 @@ def find_best_configuration(dataset_name_or_id,
 
         all_results[identifier] = {
             'source': merged_output_folder,
-            'result': load_summary_json(join(merged_output_folder, 'summary.json'))['mean']        
+            'result': load_summary_json(join(merged_output_folder, 'summary.json'))['mean']['MSE']        
         }
 
 
@@ -114,7 +113,6 @@ def find_best_configuration(dataset_name_or_id,
                 output_folder_1 = get_output_folder(dataset_name_or_id, m1['trainer'], m1['plans'], m1['configuration'], fold=None)
                 output_folder_2 = get_output_folder(dataset_name_or_id, m2['trainer'], m2['plans'], m2['configuration'], fold=None)
                 identifier = get_ensemble_name(output_folder_1, output_folder_2, folds)
-
                 output_folder_ensemble = join(nnDose_results, dataset_name, 'ensembles', identifier)
 
                 ensemble_crossvalidations([output_folder_1, output_folder_2], output_folder_ensemble, folds,
@@ -126,27 +124,31 @@ def find_best_configuration(dataset_name_or_id,
                 try: 
                     structure_json = load_json(join(output_folder_1, 'structure.json'))
                 except:
-                    structure_json=None
+                    try:
+                        structure_json = load_json(join(output_folder_2, 'structure.json'))
+                    except:
+                        try:
+                            structure_json = load_json(join(output_folder, 'structure.json'))    
+                        except:                
+                            structure_json=None
                 label_manager = plans_manager.get_label_manager(dataset_json)
                 rw = plans_manager.image_reader_writer_class()
-
+                #print(structure_json)
                 compute_dose_metrics_on_folder(join(nnDose_raw, dataset_name, 'labelsTr'),
                                           output_folder_ensemble,
                                           join(nnDose_raw, dataset_name, 'imagesTr'),
                                           join(output_folder_ensemble, 'summary.json'),
                                           rw,
                                           dataset_json['file_ending'],
-                                          structure_json,
-                                        #   label_manager.foreground_regions if label_manager.has_regions else
-                                        #   label_manager.foreground_labels,
+                                          structure_json['structure_label'],
                                           label_manager.ignore_label,
                                           num_processes)
                 all_results[identifier] = \
                     {
                     'source': output_folder_ensemble,
-                    'result': load_summary_json(join(output_folder_ensemble, 'summary.json'))['foreground_mean']['Dice']
+                    'result': load_summary_json(join(output_folder_ensemble, 'summary.json'))['mean']['MSE']
                     }
-
+    print(all_results)
     # pick best and report inference command
     best_score = max([i['result'] for i in all_results.values()])
     best_keys = [k for k in all_results.keys() if all_results[k]['result'] == best_score]  # may never happen but theoretically
@@ -169,6 +171,7 @@ def find_best_configuration(dataset_name_or_id,
 
     # in addition to just reading the console output (how it was previously) we should return the information
     # needed to run the full inference via API
+    
     return_dict = {
         'folds': folds,
         'dataset_name_or_id': dataset_name_or_id,
@@ -256,11 +259,11 @@ def print_inference_instructions(inference_info_dict: dict, instructions_file: s
             output_folder_str += f' {o}'
         output_ensemble = f"OUTPUT_FOLDER"
         _print_and_maybe_write_to_file('\nThe run ensembling with:\n')
-        _print_and_maybe_write_to_file(f"nnUNetv2_ensemble -i {output_folder_str} -o {output_ensemble} -np {default_num_processes}")
+        _print_and_maybe_write_to_file(f"nnDoseNet_ensemble -i {output_folder_str} -o {output_ensemble} -np {default_num_processes}")
 
-    #FIXME: chnage to our post pocess
+    #todo: chnage to our post pocess
     # _print_and_maybe_write_to_file("\n***Once inference is completed, run postprocessing like this:***\n")
-    # _print_and_maybe_write_to_file(f"nnUNetv2_apply_postprocessing -i OUTPUT_FOLDER -o OUTPUT_FOLDER_PP "
+    # _print_and_maybe_write_to_file(f"nnDoseNet_apply_postprocessing -i OUTPUT_FOLDER -o OUTPUT_FOLDER_PP "
     #       f"-pp_pkl_file {inference_info_dict['best_model_or_ensemble']['postprocessing_file']} -np {default_num_processes} "
     #       f"-plans_json {inference_info_dict['best_model_or_ensemble']['some_plans_file']}")
 
@@ -284,8 +287,8 @@ def find_best_configuration_entry_point():
     parser.add_argument('dataset_name_or_id', type=str, help='Dataset Name or id')
     parser.add_argument('-p', nargs='+', required=False, default=['nnUNetPlans'],
                         help='List of plan identifiers. Default: nnUNetPlans')
-    parser.add_argument('-c', nargs='+', required=False, default=['2d', '3d_fullres', '3d_lowres', '3d_cascade_fullres'],
-                        help="List of configurations. Default: ['2d', '3d_fullres', '3d_lowres', '3d_cascade_fullres']")
+    parser.add_argument('-c', nargs='+', required=False, default=['2d', '3d_fullres', '3d_lowres'],
+                        help="List of configurations. Default: ['2d', '3d_fullres', '3d_lowres']")
     parser.add_argument('-tr', nargs='+', required=False, default=['nnUNetTrainer'],
                         help='List of trainers. Default: nnUNetTrainer')
     parser.add_argument('-np', required=False, default=default_num_processes, type=int,
@@ -302,7 +305,6 @@ def find_best_configuration_entry_point():
 
     model_dict = dumb_trainer_config_plans_to_trained_models_dict(args.tr, args.c, args.p)
     dataset_name = maybe_convert_to_dataset_name(args.dataset_name_or_id)
-
     find_best_configuration(dataset_name, model_dict, allow_ensembling=not args.disable_ensembling,
                             num_processes=args.np, overwrite=not args.no_overwrite, folds=args.f,
                             strict=False)

@@ -21,7 +21,7 @@ def move_plans_between_datasets(
 
     source_folder = join(nnDose_preprocessed, source_dataset_name)
     assert isdir(source_folder), f"Cannot move plans because preprocessed directory of source dataset is missing. " \
-                                 f"Run nnUNetv2_plan_and_preprocess for source dataset first!"
+                                 f"Run nnDoseNet_plan_and_preprocess for source dataset first!"
 
     source_plans_file = join(source_folder, source_plans_identifier + '.json')
     assert isfile(source_plans_file), f"Source plans are missing. Run the corresponding experiment planning first! " \

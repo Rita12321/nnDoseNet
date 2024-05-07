@@ -41,7 +41,7 @@ def sanity_check_dcm_find():
 def organize_dicom(DATA_FOLDER):
 
     """
-    DATA_FOLDER=nnUNet_dicom/Dataset/Tr
+    DATA_FOLDER=nnDose_dicom/Dataset/Tr
     CT for CT image, RS for structure of image, RD or dose map (just 1 RD file please)
     The data structure of DATA_FOLDER should be like this
     -DATA_FOLDER

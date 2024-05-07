@@ -390,7 +390,6 @@ def evaluate_folder_by_label_entry_point():
 if __name__ == '__main__':
     folder_ref = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/GroundTruth/labelsTs'
     folder_pred = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/Prediction'
-    #folder_input ='/home/changh/Documents/nnUNet_prediction/imagesTs'
     folder_input = '/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom/openkbp/Ts'
     output_file = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/summary.json'
     structure_json = load_json('/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/Prediction/structure.json')['structure_label']

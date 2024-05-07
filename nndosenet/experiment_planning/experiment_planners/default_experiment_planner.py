@@ -39,7 +39,7 @@ class ExperimentPlanner(object):
 
         # load dataset fingerprint
         if not isfile(join(preprocessed_folder, 'dataset_fingerprint.json')):
-            raise RuntimeError('Fingerprint missing for this dataset. Please run nnUNet_extract_dataset_fingerprint')
+            raise RuntimeError('Fingerprint missing for this dataset. Please run nnDoseNet_extract_dataset_fingerprint')
 
         self.dataset_fingerprint = load_json(join(preprocessed_folder, 'dataset_fingerprint.json'))
 

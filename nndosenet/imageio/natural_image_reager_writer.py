@@ -65,9 +65,3 @@ class NaturalImage2DIO(BaseReaderWriter):
         io.imsave(output_fname, seg[0].astype(np.uint8), check_contrast=False)
 
 
-if __name__ == '__main__':
-    images = ('/media/fabian/data/nnUNet_raw/Dataset120_RoadSegmentation/imagesTr/img-11_0000.png',)
-    segmentation = '/media/fabian/data/nnUNet_raw/Dataset120_RoadSegmentation/labelsTr/img-11.png'
-    imgio = NaturalImage2DIO()
-    img, props = imgio.read_images(images)
-    seg, segprops = imgio.read_seg(segmentation)

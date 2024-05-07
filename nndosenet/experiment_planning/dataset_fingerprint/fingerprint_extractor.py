@@ -106,7 +106,7 @@ class DatasetFingerprintExtractor(object):
 
     def run(self, overwrite_existing: bool = False) -> dict:
         # we do not save the properties file in self.input_folder because that folder might be read-only. We can only
-        # reliably write in nnUNet_preprocessed and nnUNet_results, so nnUNet_preprocessed it is
+        # reliably write in nnDoseNet_preprocessed and nnDose_results, so nnDose_preprocessed it is
         preprocessed_output_folder = join(nnDose_preprocessed, self.dataset_name)
         maybe_mkdir_p(preprocessed_output_folder)
         properties_file = join(preprocessed_output_folder, 'dataset_fingerprint.json')

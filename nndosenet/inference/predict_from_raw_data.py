@@ -630,7 +630,7 @@ def predict_entry_point_modelfolder():
     parser = argparse.ArgumentParser(description='Use this to run inference with nnU-Net. This function is used when '
                                                  'you want to manually specify a folder containing a trained nnU-Net '
                                                  'model. This is useful when the nnunet environment variables '
-                                                 '(nnUNet_results) are not set.')
+                                                 '(nnDose_results) are not set.')
     
     parser.add_argument('-i', type=str, required=True,
                         help='input folder. Remember to use the correct channel numberings for your files (_0000 etc). '

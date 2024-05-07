@@ -22,7 +22,7 @@ from nndosenet.utilities.utils import get_identifiers_from_splitted_dataset_fold
 class ExperimentPlanner(object):
     def __init__(self, dataset_name_or_id: Union[str, int],
                  gpu_memory_target_in_gb: float = 8,
-                 preprocessor_name: str = 'DefaultPreprocessor', plans_name: str = 'nnUNetPlans',dose=False,
+                 preprocessor_name: str = 'DefaultPreprocessor', plans_name: str = 'nnDosePlans',dose=False,
                  overwrite_target_spacing: Union[List[float], Tuple[float, ...]] = None, 
                  suppress_transpose: bool = False):
         """

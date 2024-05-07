@@ -62,15 +62,15 @@ def entry_point_move_plans_between_datasets():
     parser.add_argument('-t', type=str, required=True,
                         help='Target dataset name or id')
     parser.add_argument('-sp', type=str, required=True,
-                        help='Source plans identifier. If your plans are named "nnUNetPlans.json" then the '
-                             'identifier would be nnUNetPlans')
+                        help='Source plans identifier. If your plans are named "nnDosePlans.json" then the '
+                             'identifier would be nnDosePlans')
     parser.add_argument('-tp', type=str, required=False, default=None,
                         help='Target plans identifier. Default is None meaning the source plans identifier will '
                              'be kept. Not recommended if the source plans identifier is a default nnU-Net identifier '
-                             'such as nnUNetPlans!!!')
+                             'such as nnDosePlans!!!')
     args = parser.parse_args()
     move_plans_between_datasets(args.s, args.t, args.sp, args.tp)
 
 
 if __name__ == '__main__':
-    move_plans_between_datasets(2, 4, 'nnUNetPlans', 'nnUNetPlansFrom2')
+    move_plans_between_datasets(2, 4, 'nnDosePlans', 'nnDosePlansFrom2')

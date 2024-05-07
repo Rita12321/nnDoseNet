@@ -48,7 +48,7 @@ def export_pretrained_model_entry():
                         default=('3d_lowres', '3d_fullres', '2d'),
                         help="List of configuration names")
     parser.add_argument('-tr', required=False, type=str, default='nnUNetTrainer', help='Trainer class')
-    parser.add_argument('-p', required=False, type=str, default='nnUNetPlans', help='plans identifier')
+    parser.add_argument('-p', required=False, type=str, default='nnDosePlans', help='plans identifier')
     parser.add_argument('-f', required=False, nargs='+', type=str, default=(0, 1, 2, 3, 4), help='list of fold ids')
     parser.add_argument('-chk', required=False, nargs='+', type=str, default=('checkpoint_final.pth', ),
                         help='Lis tof checkpoint names to export. Default: checkpoint_final.pth')

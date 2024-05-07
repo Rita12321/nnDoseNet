@@ -80,7 +80,7 @@ def preprocess_entry():
     parser.add_argument('-d', nargs='+', type=int,
                         help="[REQUIRED] List of dataset IDs. Example: 2 4 5. This will run fingerprint extraction, experiment "
                              "planning and preprocessing for these datasets. Can of course also be just one dataset")
-    parser.add_argument('-plans_name', default='nnUNetPlans', required=False,
+    parser.add_argument('-plans_name', default='nnDosePlans', required=False,
                         help='[OPTIONAL] You can use this to specify a custom plans file that you may have generated')
     parser.add_argument('-c', required=False, default=['2d', '3d_fullres', '3d_lowres'], nargs='+',
                         help='[OPTIONAL] Configurations for which the preprocessing should be run. Default: 2d 3f_fullres '
@@ -160,7 +160,7 @@ def plan_and_preprocess_entry():
                               'know what you are doing and NEVER use this without running the default nnU-Net first '
                               '(as a baseline). Changing the target spacing for the other configurations is currently '
                               'not implemented. New target spacing must be a list of three numbers!')
-     parser.add_argument('-overwrite_plans_name', default='nnUNetPlans', required=False,
+     parser.add_argument('-overwrite_plans_name', default='nnDosePlans', required=False,
                          help='[OPTIONAL] uSE A CUSTOM PLANS IDENTIFIER. If you used -gpu_memory_target, '
                               '-preprocessor_name or '
                               '-overwrite_target_spacing it is best practice to use -overwrite_plans_name to generate a '

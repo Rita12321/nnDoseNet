@@ -209,7 +209,7 @@ def generate_overlays_from_raw(dataset_name_or_id: Union[int, str], output_folde
 def generate_overlays_from_preprocessed(dataset_name_or_id: Union[int, str], output_folder: str,
                                         num_processes: int = 8, channel_idx: int = 0,
                                         configuration: str = None,
-                                        plans_identifier: str = 'nnUNetPlans',
+                                        plans_identifier: str = 'nnDosePlans',
                                         overlay_intensity: float = 0.6):
     dataset_name = maybe_convert_to_dataset_name(dataset_name_or_id)
     folder = join(nnDose_preprocessed, dataset_name)
@@ -252,8 +252,8 @@ def entry_point_generate_overlay():
     #                     help="channel index used (0 = _0000). Default: 0")
     # parser.add_argument('--use_raw', action='store_true', required=False, help="if set then we use raw data. else "
     #                                                                            "we use preprocessed")
-    # parser.add_argument('-p', type=str, required=False, default='nnUNetPlans',
-    #                     help='plans identifier. Only used if --use_raw is not set! Default: nnUNetPlans')
+    # parser.add_argument('-p', type=str, required=False, default='nnDosePlans',
+    #                     help='plans identifier. Only used if --use_raw is not set! Default: nnDosePlans')
     # parser.add_argument('-c', type=str, required=False, default=None,
     #                     help='configuration name. Only used if --use_raw is not set! Default: None = '
     #                          '3d_fullres if available, else 2d')

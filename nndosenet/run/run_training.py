@@ -32,7 +32,7 @@ def get_trainer_from_args(dataset_name_or_id: Union[int, str],
                           configuration: str,
                           fold: int,
                           trainer_name: str = 'nnUNetTrainer',
-                          plans_identifier: str = 'nnUNetPlans',
+                          plans_identifier: str = 'nnDosePlans',
                           loss_mode: str='3',
                           epoch_num: int=1000,
                           use_compressed: bool = False,
@@ -137,7 +137,7 @@ def run_ddp(rank, dataset_name_or_id, configuration, fold, tr, p,loss_mode, epoc
 def run_training(dataset_name_or_id: Union[str, int],
                  configuration: str, fold: Union[int, str],
                  trainer_class_name: str = 'nnUNetTrainer',
-                 plans_identifier: str = 'nnUNetPlans',
+                 plans_identifier: str = 'nnDosePlans',
                  loss_mode: str ='3',
                  epoch_num:int =1000,
                  pretrained_weights: Optional[str] = None,
@@ -215,8 +215,8 @@ def run_training_entry():
                         help='Fold of the 5-fold cross-validation. Should be an int between 0 and 4.')
     parser.add_argument('-tr', type=str, required=False, default='nnUNetTrainer',
                         help='[OPTIONAL] Use this flag to specify a custom trainer. Default: nnUNetTrainer')
-    parser.add_argument('-p', type=str, required=False, default='nnUNetPlans',
-                        help='[OPTIONAL] Use this flag to specify a custom plans identifier. Default: nnUNetPlans')
+    parser.add_argument('-p', type=str, required=False, default='nnDosePlans',
+                        help='[OPTIONAL] Use this flag to specify a custom plans identifier. Default: nnDosePlans')
     parser.add_argument('-loss', type=str, required=False, default='3',
                         help='[OPTIONAL] Choose a loss mode for training. Default is mode 3: 0.4*MSE+0.3*vDVH+0.3*cDVH')
     parser.add_argument('-epoch', type=int, required=False, default=1000,

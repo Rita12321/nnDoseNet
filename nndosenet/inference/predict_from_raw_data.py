@@ -722,9 +722,9 @@ def predict_entry_point():
                              'have the same name as their source images.')
     parser.add_argument('-d', type=str, required=True,
                         help='Dataset with which you would like to predict. You can specify either dataset name or id')
-    parser.add_argument('-p', type=str, required=False, default='nnUNetPlans',
+    parser.add_argument('-p', type=str, required=False, default='nnDosePlans',
                         help='Plans identifier. Specify the plans in which the desired configuration is located. '
-                             'Default: nnUNetPlans')
+                             'Default: nnDosePlans')
     parser.add_argument('-tr', type=str, required=False, default='nnUNetTrainer',
                         help='What nnU-Net trainer class was used for training? Default: nnUNetTrainer')
     parser.add_argument('-c', type=str, required=True,

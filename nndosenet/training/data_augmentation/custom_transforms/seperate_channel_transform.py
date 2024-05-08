@@ -25,30 +25,9 @@ class SeperateDataMask(AbstractTransform):
     def __call__(self, **data_dict):
 
         data_channel=list(set(np.arange(data_dict[self.input_key].shape[1])) - set(self.mask_channel))
-        data_shape=data_dict[self.input_key].shape
-        # print(data_shape)
-        # print("data_channel",data_channel)
-        # print("mask_channel",self.mask_channel)
-        
-        # if len(self.mask_channel)>1:
-        #     out_mask=data_dict[self.input_key][self.mask_channel[0]]
-        #     for i in range(1,len(self.mask_channel)):
-        #         np.vstack(out_mask,data_dict[self.input_key][self.mask_channel[i]])
-        #     data_dict[self.output_key] = out_mask
-        # else:
-        #     data_dict[self.output_key] = np.expand_dims(data_dict[self.input_key][self.mask_channel[0]], axis=0)
-        # if len(data_channel)>1:
-        #     out_mask=data_dict[self.input_key][data_channel[0]]
-        #     for i in range(1,len(data_channel)+1):
-        #         np.vstack(out_mask,data_dict[self.input_key][data_channel[i]])
-        #     data_dict[self.output_key] = out_mask
-        # else:
-        #     data_dict[self.input_key] = np.expand_dims(data_dict[self.input_key][data_channel[0]], axis=0)        
+        data_shape=data_dict[self.input_key].shape     
         data_dict[self.output_key] =data_dict[self.input_key][:,self.mask_channel,...]
-        
-        #print("datamask_channel",data_dict[self.output_key].shape)
         data_dict[self.input_key] =data_dict[self.input_key][:,data_channel,...]
-        #print("dataout_channel",data_dict[self.input_key].shape)
         return data_dict
 class CopyDataMask(AbstractTransform):
     '''
@@ -95,7 +74,6 @@ class revert_SeperateDataMask(AbstractTransform):
             mask=data_dict[self.output_key]
             
         all_channel=list(set(np.arange(int(data_dict[self.input_key].shape[1]+mask.shape[1]))))
-        #print("all channel",all_channel,"##################################")
         data_channel=list(set(all_channel)- set(self.mask_channel))
         index_data=0
         index_mask=0

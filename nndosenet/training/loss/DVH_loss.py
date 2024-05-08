@@ -56,30 +56,32 @@ class criteria_DVH_Loss(nn.Module):
             L=0
             
             #PTV/Target
-            label=mask_index[channel_ptv_oar[0]]
-            if len(label)>0:
-                L+=len(label)*3
-                for l in label:
+            if channel_ptv_oar[0]>0:
+                label=mask_index[channel_ptv_oar[0]]
+                if len(label)>0:
+                    L+=len(label)*3
+                    for l in label:
 
-                    dose_x=torch.take(x,l)
-                    dose_y=torch.take(y,l)  
-                    criteria+=torch.abs(torch.quantile(dose_x,0.01)-torch.quantile(dose_y,0.01))#d99
-                    criteria+=torch.abs(torch.quantile(dose_x,0.05)-torch.quantile(dose_y,0.05))#d95
-                    criteria+=torch.abs(torch.quantile(dose_x,0.99)-torch.quantile(dose_y,0.99))#d01
+                        dose_x=torch.take(x,l)
+                        dose_y=torch.take(y,l)  
+                        criteria+=torch.abs(torch.quantile(dose_x,0.01)-torch.quantile(dose_y,0.01))#d99
+                        criteria+=torch.abs(torch.quantile(dose_x,0.05)-torch.quantile(dose_y,0.05))#d95
+                        criteria+=torch.abs(torch.quantile(dose_x,0.99)-torch.quantile(dose_y,0.99))#d01
 
             #OAR
-            label=mask_index[channel_ptv_oar[1]]
-            if len(label)>0:
-                L+=len(label)*2
-                for l in label:
+            if channel_ptv_oar[1]>0:
+                label=mask_index[channel_ptv_oar[1]]
+                if len(label)>0:
+                    L+=len(label)*2
+                    for l in label:
 
-                    dose_x=torch.take(x,l)
-                    dose_y=torch.take(y,l)  
+                        dose_x=torch.take(x,l)
+                        dose_y=torch.take(y,l)  
 
-    
-                    fractional_volume_to_evaluate = 1 - 1 / len(l)
-                    criteria+=torch.abs(torch.quantile(dose_x, fractional_volume_to_evaluate)-torch.quantile(dose_y, fractional_volume_to_evaluate))
-                    criteria+=torch.abs(torch.mean(dose_x)-torch.mean(dose_y))#mean  
+        
+                        fractional_volume_to_evaluate = 1 - 1 / len(l)
+                        criteria+=torch.abs(torch.quantile(dose_x, fractional_volume_to_evaluate)-torch.quantile(dose_y, fractional_volume_to_evaluate))
+                        criteria+=torch.abs(torch.mean(dose_x)-torch.mean(dose_y))#mean  
             if L==0:
                 return None        
                

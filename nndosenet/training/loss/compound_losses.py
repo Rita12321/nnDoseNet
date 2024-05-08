@@ -5,7 +5,7 @@ from torch import nn
 from torch.nn import MSELoss,L1Loss
 
 class Err_and_DVH_Loss(nn.Module):
-    def __init__(self,losses:list=[MSELoss],kwargs:[{}]=[{}],weights:list=[1], channel_ptv_oar:list=[1,2],dose_mask=None):
+    def __init__(self,losses:list=[MSELoss],kwargs:[{}]=[{}],weights:list=[1], channel_ptv_oar:list=[0,1],dose_mask=None):
         """ 
         Weights for Err and DVH do not need to sum to one. You can set whatever you want.
         :param error-loss_list:
@@ -99,6 +99,8 @@ def get_roi_indexs(x:torch.Tensor,return_label=False, channel_ptv_oar=[0,1],retu
         indexs=[]
         
         for c in channel_ptv_oar:
+            if c<0:
+                indexs.append([])
             index=[]#
             temp=x[c].flatten()
             label=temp.unique()

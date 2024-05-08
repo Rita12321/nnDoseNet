@@ -430,6 +430,8 @@ class ExperimentPlanner(object):
             'resampling_fn_seg_kwargs': resampling_seg_kwargs,
             'resampling_fn_probabilities': resampling_softmax.__name__,
             'resampling_fn_probabilities_kwargs': resampling_softmax_kwargs,
+            'loss_mode' : 3,
+            'epoch_num' : 1000,
             'mask_channel' : mask_channel,
             'PTV_OAR_BODY' : PTV_OAR_BODY 
 

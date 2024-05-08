@@ -176,12 +176,29 @@ class ConfigurationManager(object):
         return fn
     @property
     def mask_channel(self) : 
+        return self.configuration['mask_channel']
+
+        
+    @property
+    def PTV_OAR_BODY(self) : 
+        return self.configuration['PTV_OAR_BODY']
+
+    @property
+    def loss_mode(self) : 
         
         try:
-            return self.configuration['mask_channel']
+            return self.configuration['loss_mode']
         except:
-            return None
-    
+            return 3  
+        
+    @property
+    def epoch_num(self) : 
+        
+        try:
+            return self.configuration['epoch_num']
+        except:
+            return 1000 
+        
     @property
     def batch_dice(self) -> bool:
         return self.configuration['batch_dice']

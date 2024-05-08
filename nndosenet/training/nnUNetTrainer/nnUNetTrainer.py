@@ -66,8 +66,7 @@ from torch.cuda.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 class nnUNetTrainer(object):
-    def __init__(self, plans: dict, configuration: str, fold: int,loss_mode: str, 
-                 epoch_num:int,dataset_json: dict, unpack_dataset: bool = True,
+    def __init__(self, plans: dict, configuration: str, fold: int,dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         # From https://grugbrain.dev/. Worth a read ya big brains ;-)
 
@@ -86,14 +85,9 @@ class nnUNetTrainer(object):
 
         self.is_ddp = dist.is_available() and dist.is_initialized() 
         self.local_rank = 0 if not self.is_ddp else dist.get_rank()
-        self.loss_mode=loss_mode
-        self.num_epochs=epoch_num
         self.device = device
         
-        #TODO: adjustable
-        self.channel_ptv_oar=[0,1]
-        self.dose_mask=2
-        self.image_channel_num=1
+
 
         
 
@@ -124,6 +118,11 @@ class nnUNetTrainer(object):
         
         self.fold = fold
         self.unpack_dataset = unpack_dataset
+        self.num_epochs=self.configuration_manager.epoch_num
+        self.mask_channel=self.configuration_manager.mask_channel
+        self.PTV_OAR_BODY=self.configuration_manager.PTV_OAR_BODY
+        
+
 
         ### Setting all the folder names. We need to make sure things don't crash in case we are just running
         # inference and some of the folders may not be defined!
@@ -142,7 +141,7 @@ class nnUNetTrainer(object):
         # be a different configuration in the same plans
         # IMPORTANT! the mapping must be bijective, so lowres must point to fullres and vice versa (using
         # "previous_stage" and "next_stage"). Otherwise it won't work!
-        self.is_cascaded = self.configuration_manager.previous_stage_name is not None
+        self.is_cascaded = False #self.configuration_manager.previous_stage_name is not None #TODO: cascade not avaliable yet
         self.folder_with_segs_from_previous_stage = \
             join(nnDose_results, self.plans_manager.dataset_name,
                  self.__class__.__name__ + '__' + self.plans_manager.plans_name + "__" +
@@ -332,8 +331,8 @@ class nnUNetTrainer(object):
                                                     sample_id_low / global_batch_size) / percent_covered_by_this_rank)
                     oversample_percents.append(oversample_percent_here)
 
-            print("worker", my_rank, "oversample", oversample_percents[my_rank])
-            print("worker", my_rank, "batch_size", batch_sizes[my_rank])
+            self.print_to_log_file("worker", my_rank, "oversample", oversample_percents[my_rank])
+            self.print_to_log_file("worker", my_rank, "batch_size", batch_sizes[my_rank])
             # self.print_to_log_file("worker", my_rank, "oversample", oversample_percents[my_rank])
             # self.print_to_log_file("worker", my_rank, "batch_size", batch_sizes[my_rank])
 
@@ -343,48 +342,76 @@ class nnUNetTrainer(object):
     def _build_loss(self):
         
         if (self.configuration_manager.dose==True) or self.label_manager.dose_label:
-            #print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()")
+            #print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()"
+            
+            channel_ptv_oar=[self.mask_channel.index(int(self.PTV_OAR_BODY[0])),self.mask_channel.index(int(self.PTV_OAR_BODY[1]))]
+            dose_mask=self.mask_channel.index(int(self.PTV_OAR_BODY[2]))
+            if dose_mask <0:
+                dose_mask==None
+                
+            self.print_to_log_file("Order of Target, OAR, Body in mask_channel:",channel_ptv_oar[0],channel_ptv_oar[1],dose_mask)
+                
+            self.loss_mode=str(self.configuration_manager.loss_mode)
             if self.configuration_manager.mask_channel != None:# if use criteria loss ptv_oar_channel is required 
                 if self.loss_mode=='0':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    self.print_to_log_file(loss)
+                    self.print_to_log_file("Using loss mode 0: 1*MSE")
                 elif self.loss_mode=='1':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    self.print_to_log_file(loss)
+                    self.print_to_log_file("Using loss mode 1: 0.5*MSE+0.5*vDVH")
                 elif self.loss_mode=='2':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)            
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)            
+                    self.print_to_log_file(loss)
+                    self.print_to_log_file("Using loss mode 2: 0.5*MSE+0.5*cDVH")
                 elif self.loss_mode=='3':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    self.print_to_log_file(loss)
+                    self.print_to_log_file("Using loss mode 3: 0.4*MSE+0.3*vDVH+0.3*cDVH")
                 elif self.loss_mode=='4':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    self.print_to_log_file(loss)
+                    self.print_to_log_file("Using loss mode 4: 0.6*MSE+0.2*vDVH+0.2*cDVH")                
                 elif self.loss_mode=='5':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    self.print_to_log_file(loss)
+                    self.print_to_log_file("Using loss mode 5: 1*MAE")
                 elif self.loss_mode=='6':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    self.print_to_log_file(loss)
+                    self.print_to_log_file("Using loss mode 6: 0.5*MAE+0.5*vDVH")
                 elif self.loss_mode=='7':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)            
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)            
+                    self.print_to_log_file(loss)
+                    self.print_to_log_file("Using loss mode 7: 0.5*MSE+0.5*cDVH")
                 elif self.loss_mode=='8':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    self.print_to_log_file(loss)
+                    self.print_to_log_file("Using loss mode 8: 0.4*MAE+0.3*vDVH+0.3*cDVH")
                 elif self.loss_mode=='9':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    self.print_to_log_file(loss)
+                    self.print_to_log_file("Using loss mode 9: 0.6*MAE+0.2*vDVH+0.2*cDVH")
                 else:
-                    print("unknown loss mode, set to default: MSE")
-                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)    
+                    self.print_to_log_file("unknown loss mode, set to default: MSE")
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)    
             else:
                 if self.loss_mode=='0':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                 elif self.loss_mode=='5':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                 else:
-                    print("there aren't any masked channel, so you can't use DVH based loss. The only option left is mode 0:MSE(default) and 5:MAE(L1Loss)")
-                    print("set to default loss: MSE")
-                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=self.channel_ptv_oar,dose_mask=self.dose_mask)
+                    self.print_to_log_file("there aren't any masked channel(for PTV and OAR), so you can't use DVH based loss. The only option left is mode 0:MSE(default) and 5:MAE(L1Loss)")
+                    self.print_to_log_file("set to default loss: MSE")
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
 
         else:
-            print("Somehow it's not running in dose mode. Please check did you")
-            print("1. put dose as label in dataset.json") 
-            print("2. Or put --dose argument when planning")
+            self.print_to_log_file("Somehow it's not running in dose mode. Please check did you")
+            self.print_to_log_file("1. put dose as label in dataset.json") 
+            self.print_to_log_file("2. Or put --dose argument when planning")
             
-        print(loss)
-        print("Using loss mode: ",self.loss_mode)
+
         
 
         deep_supervision_scales = self._get_deep_supervision_scales()
@@ -638,7 +665,7 @@ class nnUNetTrainer(object):
             use_mask_for_norm=self.configuration_manager.use_mask_for_norm,
             is_cascaded=self.is_cascaded, foreground_labels=self.label_manager.foreground_labels,
             regions=self.label_manager.foreground_regions if self.label_manager.has_regions else None,
-            ignore_label=self.label_manager.ignore_label,mask_channel=self.configuration_manager.mask_channel)
+            ignore_label=self.label_manager.ignore_label,mask_channel=self.configuration_manager.mask_channel,PTV_OAR_BODY=self.configuration_manager.PTV_OAR_BODY)
 
         # validation pipeline
         val_transforms = self.get_validation_transforms(deep_supervision_scales,
@@ -655,7 +682,7 @@ class nnUNetTrainer(object):
         
 
         allowed_num_processes = get_allowed_n_proc_DA()
-        print("Using",allowed_num_processes, "CPU")
+        self.print_to_log_file("Using",allowed_num_processes, "CPU")
         if allowed_num_processes == 0:
             
             mt_gen_train = SingleThreadedAugmenter(dl_tr, tr_transforms)
@@ -716,7 +743,7 @@ class nnUNetTrainer(object):
                                 is_cascaded: bool = False,
                                 foreground_labels: Union[Tuple[int, ...], List[int]] = None,
                                 regions: List[Union[List[int], Tuple[int, ...], int]] = None,
-                                ignore_label: int = None,mask_channel=None) -> AbstractTransform:
+                                ignore_label: int = None,mask_channel=None,PTV_OAR_BODY=None) -> AbstractTransform:
         
         
         tr_transforms = []
@@ -748,10 +775,8 @@ class nnUNetTrainer(object):
         if do_dummy_2d_data_aug:#False
             tr_transforms.append(Convert2DTo3DTransform())
         if mask_channel is not None :
-            
             if len(mask_channel)>0:
                 tr_transforms.append(SeperateDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask'))
-                
         if deep_supervision_scales is not None:#NOTE: fixed
             tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data_mask',
                                                               output_key='data_mask'))
@@ -796,12 +821,6 @@ class nnUNetTrainer(object):
 
         tr_transforms.append(RenameTransform('seg', 'target', True))
 
-        if regions is not None:#false
-            # the ignore label must also be converted
-            tr_transforms.append(ConvertSegmentationToRegionsTransform(list(regions) + [ignore_label]
-                                                                       if ignore_label is not None else regions,
-                                                                       'target', 'target'))
-
         if deep_supervision_scales is not None:
             tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
                                                               output_key='target'))
@@ -833,12 +852,6 @@ class nnUNetTrainer(object):
         #     val_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg', 'data'))
 
         val_transforms.append(RenameTransform('seg', 'target', True))
-
-        # if regions is not None:
-        #     # the ignore label must also be converted
-        #     val_transforms.append(ConvertSegmentationToRegionsTransform(list(regions) + [ignore_label]
-        #                                                                 if ignore_label is not None else regions,
-        #                                                                 'target', 'target'))
 
         if deep_supervision_scales is not None:
             val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
@@ -1193,14 +1206,15 @@ class nnUNetTrainer(object):
                 output_filename_truncated = join(validation_output_folder, k)
                 
                 #mask output with dose/body mask and make negatives 0
-                try:
-                    prediction = predictor.predict_sliding_window_return_logits(data)
-                    prediction=torch.clamp(prediction*data[self.dose_mask+self.image_channel_num,...],min=0) 
-                except RuntimeError:
-                    predictor.perform_everything_on_gpu = False
-                    prediction = predictor.predict_sliding_window_return_logits(data)
-                    prediction=np.clip(prediction*data[self.dose_mask+self.image_channel_num,...],0,None) 
-                    predictor.perform_everything_on_gpu = True
+                if int(self.PTV_OAR_BODY[2])>0:
+                    try:
+                        prediction = predictor.predict_sliding_window_return_logits(data)
+                        prediction=torch.clamp(prediction*data[int(self.PTV_OAR_BODY[2]),...],min=0) 
+                    except RuntimeError:
+                        predictor.perform_everything_on_gpu = False
+                        prediction = predictor.predict_sliding_window_return_logits(data)
+                        prediction=np.clip(prediction*data[int(self.PTV_OAR_BODY[2]),...],0,None) 
+                        predictor.perform_everything_on_gpu = True
                  
                 prediction = prediction.cpu()
 

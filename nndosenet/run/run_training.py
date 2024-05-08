@@ -33,8 +33,6 @@ def get_trainer_from_args(dataset_name_or_id: Union[int, str],
                           fold: int,
                           trainer_name: str = 'nnUNetTrainer',
                           plans_identifier: str = 'nnDosePlans',
-                          loss_mode: str='3',
-                          epoch_num: int=1000,
                           use_compressed: bool = False,
                           device: torch.device = torch.device('cuda')):
     # load nnunet class and do sanity checks
@@ -64,7 +62,7 @@ def get_trainer_from_args(dataset_name_or_id: Union[int, str],
     plans_file = join(preprocessed_dataset_folder_base, plans_identifier + '.json')
     plans = load_json(plans_file)
     dataset_json = load_json(join(preprocessed_dataset_folder_base, 'dataset.json'))
-    nnunet_trainer = nnunet_trainer(plans=plans, configuration=configuration, fold=fold, loss_mode=loss_mode,epoch_num=epoch_num,
+    nnunet_trainer = nnunet_trainer(plans=plans, configuration=configuration, fold=fold,
                                     dataset_json=dataset_json, unpack_dataset=not use_compressed, device=device)
     return nnunet_trainer
 
@@ -113,7 +111,7 @@ def run_ddp(rank, dataset_name_or_id, configuration, fold, tr, p,loss_mode, epoc
     setup_ddp(rank, world_size)
     torch.cuda.set_device(torch.device('cuda', dist.get_rank()))
 
-    nnunet_trainer = get_trainer_from_args(dataset_name_or_id, configuration, fold, tr, p,loss_mode,epoch_num,
+    nnunet_trainer = get_trainer_from_args(dataset_name_or_id, configuration, fold, tr, p,
                                            use_compressed)
 
     if disable_checkpointing:
@@ -138,8 +136,6 @@ def run_training(dataset_name_or_id: Union[str, int],
                  configuration: str, fold: Union[int, str],
                  trainer_class_name: str = 'nnUNetTrainer',
                  plans_identifier: str = 'nnDosePlans',
-                 loss_mode: str ='3',
-                 epoch_num:int =1000,
                  pretrained_weights: Optional[str] = None,
                  num_gpus: int = 1,
                  use_compressed_data: bool = False,
@@ -172,8 +168,6 @@ def run_training(dataset_name_or_id: Union[str, int],
                      fold,
                      trainer_class_name,
                      plans_identifier,
-                     loss_mode,
-                     epoch_num,
                      use_compressed_data,
                      disable_checkpointing,
                      continue_training,
@@ -185,7 +179,7 @@ def run_training(dataset_name_or_id: Union[str, int],
                  join=True)
     else:
         nnunet_trainer = get_trainer_from_args(dataset_name_or_id, configuration, fold, trainer_class_name,
-                                               plans_identifier,loss_mode, epoch_num,use_compressed_data, device=device)
+                                               plans_identifier,use_compressed_data, device=device)
 
         if disable_checkpointing:
             nnunet_trainer.disable_checkpointing = disable_checkpointing
@@ -217,11 +211,6 @@ def run_training_entry():
                         help='[OPTIONAL] Use this flag to specify a custom trainer. Default: nnUNetTrainer')
     parser.add_argument('-p', type=str, required=False, default='nnDosePlans',
                         help='[OPTIONAL] Use this flag to specify a custom plans identifier. Default: nnDosePlans')
-    parser.add_argument('-loss', type=str, required=False, default='3',
-                        help='[OPTIONAL] Choose a loss mode for training. Default is mode 3: 0.4*MSE+0.3*vDVH+0.3*cDVH')
-    parser.add_argument('-epoch', type=int, required=False, default=1000,
-                        help='[OPTIONAL] Choose # of epoch for training. Default is 1000 epoch. \
-                        Notice: changing #epoch during would change the lr rate curve, better decided it in the begining of training.')
     parser.add_argument('-pretrained_weights', type=str, required=False, default=None,
                         help='[OPTIONAL] path to nnU-Net checkpoint file to be used as pretrained model. Will only '
                              'be used when actually training. Beta. Use with caution.')
@@ -261,7 +250,7 @@ def run_training_entry():
     else:
         device = torch.device('mps')
 
-    run_training(args.dataset_name_or_id, args.configuration, args.fold, args.tr, args.p, args.loss, args.epoch,args.pretrained_weights,
+    run_training(args.dataset_name_or_id, args.configuration, args.fold, args.tr, args.p,args.pretrained_weights,
                  args.num_gpus, args.use_compressed, args.npz, args.c, args.val, args.disable_checkpointing,
                  device=device)
 

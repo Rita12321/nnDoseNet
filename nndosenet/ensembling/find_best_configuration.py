@@ -7,7 +7,7 @@ from batchgenerators.utilities.file_and_folder_operations import load_json, join
 
 from nndosenet.configuration import default_num_processes
 from nndosenet.ensembling.ensemble import ensemble_crossvalidations
-from nndosenet.evaluation.accumulate_cv_results import accumulate_cv_results
+from nndosenet.ensembling.accumulate_cv_results import accumulate_cv_results
 from nndosenet.evaluation.evaluate_predictions import compute_dose_metrics_on_folder, load_summary_json
 from nndosenet.paths import nnDose_preprocessed, nnDose_raw, nnDose_results
 #from nndosenet.postprocessing.postprocess_nnunet import determine_postprocessing

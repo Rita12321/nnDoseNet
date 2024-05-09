@@ -20,7 +20,7 @@ from nndosenet.paths import nnDose_raw,nnDose_prediction,nnDose_results,nnDose_d
 # from nndosenet.utilities.json_export import recursive_fix_for_json_export
 # from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 from nndosenet.dicom_bridge.nifti2dicom import dose_to_dicom
-from nndosenet.postprocessing.gamma_analysis import gamma_analysis
+from nndosenet.evaluation.gamma_analysis import gamma_analysis
 
 def nii2dcm_and_gamma(ref_path,pred_path,save_folder) -> np.ndarray:
     
@@ -68,7 +68,7 @@ def entry_point_nii2dcm_and_gamma_analysis():
     parser.add_argument('-name', type=str, required=False, help='Dataset Name')
     
     parser.add_argument('-pred', type=str, required=False, default=None,help='Prediction folder, default use\
-                        "[nndose_prediction]/[-name]/Dataset+[-id]}/Prediction" that is created format and creat when formatting datset Ts')
+                        "[nndose_prediction]/[-name]/Dataset+[-id]}/Prediction/[all_configure_and esemble folder]" that is created format and creat when formatting datset Ts')
     parser.add_argument('-ref', type=str, required=False, default=None, help='Reference folder')
     parser.add_argument('-out', type=str, required=False, default=None, help='Output folder')
     
@@ -84,41 +84,46 @@ def entry_point_nii2dcm_and_gamma_analysis():
     if prediction_folder is None:
         if args.name is None or args.id is None:
             raise(RuntimeError("Either input predict folder or input dataset name and id"))
-        prediction_folder=join(nnDose_prediction,args.name,"Dataset"+args.id,"Prediction")
+        prediction_folder=join(nnDose_prediction,args.name,"Dataset"+args.id+"_"+args.name,"Prediction")
         
-    if not os.path.isdir(prediction_folder):
-        raise(RuntimeError("Prediction folder: "+prediction_folder+" do not exist"))
-    elif len(os.listdir(prediction_folder))<1:
-        raise(RuntimeError("There is no files in Prediction folder: "+prediction_folder))
-    elif len(glob.glob(join(prediction_folder,"*.nii.gz")))<1:
-        raise(RuntimeError("There is no nifti file in Prediction folder: "+prediction_folder))
+    # if not os.path.isdir(prediction_folder):
+    #     raise(RuntimeError("Prediction folder: "+prediction_folder+" do not exist"))
+    # elif len(os.listdir(prediction_folder))<1:
+    #     raise(RuntimeError("There is no files in Prediction folder: "+prediction_folder))
+    # elif len(glob.glob(join(prediction_folder,"*.nii.gz")))<1:
+    #     raise(RuntimeError("There is no nifti file in Prediction folder: "+prediction_folder))
     
     ## reference folder default    
     reference_folder=args.ref
     if reference_folder is None:
-        reference_folder=join(nnDose_dicom,args.name,"Tr")
+        reference_folder=join(nnDose_dicom,args.name,"Ts")
     
     if not os.path.isdir(reference_folder):
         raise(RuntimeError("Reference_folder: "+reference_folder+" do not exist"))  
     
     ## patient csv default  
-    patient_csv=args.patientcsv
+    patient_csv=args.csv
     if patient_csv is None:
-        patient_csv=join(nnDose_prediction,args.name,"GroundTruth","patientTs.csv")
+        patient_csv=join(nnDose_prediction,args.name,"Dataset"+args.id+"_"+args.name,"GroundTruth","patientTs.csv")
     if not os.path.isfile(patient_csv):
         raise(RuntimeError("Patient_csv: "+patient_csv+" do not exist"))      
     #TODO: else glob csv
     
     ## output folder default
     output_folder=args.out
-    if output_folder is None:
-        output_folder=os.path.dirname(prediction_folder)
+    # if output_folder is None:
+    #     output_folder=os.path.dirname(prediction_folder)
     
-    if not os.path.isdir(output_folder):
-        raise(RuntimeError("Output_folder: "+output_folder+" do not exist"))   
+    # if not os.path.isdir(output_folder):
+    #     raise(RuntimeError("Output_folder: "+output_folder+" do not exist"))   
     
-    apply_nii2dcm_and_gamma_to_folder(prediction_folder, reference_folder, output_folder, patient_csv, args.np)
-
+    for config in os.listdir(prediction_folder):
+        if os.path.isdir(join(prediction_folder,config)):
+            print("runnnig: ", config)
+            if output_folder is None:
+                output_folder=join(prediction_folder,config)
+            apply_nii2dcm_and_gamma_to_folder(join(prediction_folder,config), reference_folder, output_folder, patient_csv, args.np)
+            print("all done")
 if __name__ == '__main__':
     ## reference folder default    
     reference_folder=None
@@ -162,8 +167,8 @@ if __name__ == '__main__':
     
     ## output folder default
     
-    if output_folder is None:
-        output_folder=os.path.dirname(prediction_folder)
+    # if output_folder is None:
+    #     output_folder=os.path.dirname(prediction_folder)
     
     if not os.path.isdir(output_folder):
         raise(RuntimeError("Output_folder: "+output_folder+" do not exist")) 

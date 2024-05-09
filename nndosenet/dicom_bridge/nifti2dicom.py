@@ -26,7 +26,6 @@ def resample2gt(ref_dicom:sitk.Image,prediction:sitk.Image):
 def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: str,for_gamma=True):
     """
     Copyright (C) 2020-2024 M. Gronberg and S. Gay
-    #TODO: include their info maybe?
     Args:
         dose:       One of a Numpy array, SimpleITK image, or string or
                     path-like object to the saved dose file. This is the dose
@@ -62,26 +61,28 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
         raise ValueError(
             'Must be 16-bit or 32-bit unsigned integer data in `dicom_path` dicom'
         )
-
-    pre_np_dose = pre_np_dose.astype(float)
-    predict_dicom.DoseGridScaling = float(pre_np_dose.max()-1) / float(np.iinfo(out_type).max)
-    dose_map_scaled = pre_np_dose / predict_dicom.DoseGridScaling
- 
-
+        
     # ori_dose=ori_dose.astype(float)
     ori_dose=sitk.GetImageFromArray(reference_dicom.pixel_array)
     ori_dose.SetOrigin(reference_dicom.ImagePositionPatient)
     ori_dose.SetSpacing([reference_dicom.PixelSpacing[0],reference_dicom.PixelSpacing[1],reference_dicom.PixelSpacing[0]])
     
-    pre_dose=sitk.GetImageFromArray(dose_map_scaled)
-    pre_dose.SetOrigin(dose_sitk.GetOrigin())
-    pre_dose.SetSpacing(dose_sitk.GetSpacing())
-
-    dose_map=sitk.GetArrayFromImage(resample2gt(ori_dose,pre_dose))
-    #print(type(dose_map.dtype))
-    dose_map = dose_map.astype(out_type)
+    pre_np_dose = pre_np_dose.astype(float)
+    pre_np_dose=sitk.GetImageFromArray(pre_np_dose)
+    pre_np_dose.SetOrigin(dose_sitk.GetOrigin())
+    pre_np_dose.SetSpacing(dose_sitk.GetSpacing())
+    pre_np_dose=sitk.GetArrayFromImage(resample2gt(ori_dose,pre_np_dose))
     
-    predict_dicom.PixelData = dose_map.tobytes()
+    predict_dicom.DoseGridScaling = float(pre_np_dose.max()) / float(np.iinfo(out_type).max)
+    dose_map_scaled = pre_np_dose / predict_dicom.DoseGridScaling
+ 
+
+    #print(dose_map_scaled.dtype,out_type,np.min(dose_map_scaled),np.max(dose_map_scaled),dose_map_scaled.shape)
+    dose_map_scaled = dose_map_scaled.astype(out_type)
+    
+        
+    
+    predict_dicom.PixelData = dose_map_scaled.tobytes()
     
 
     # Change Series number       

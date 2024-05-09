@@ -65,7 +65,7 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
     image.SetOrigin(reference.ImagePositionPatient)
     sitk.WriteImage(image,save_path)
     return gamma
-
+    
 if __name__ == '__main__':
 
     import os

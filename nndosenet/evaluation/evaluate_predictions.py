@@ -14,7 +14,7 @@ from nndosenet.imageio.base_reader_writer import BaseReaderWriter
 from nndosenet.imageio.reader_writer_registry import determine_reader_writer_from_dataset_json, \
     determine_reader_writer_from_file_ending
 from nndosenet.imageio.simpleitk_reader_writer import SimpleITKIO
-# the Evaluator class of the previous nnU-Net was great and all but man was it overengineered. Keep it simple
+# the Evaluator class of the previous nnDoseNet was great and all but man was it overengineered. Keep it simple
 from nndosenet.utilities.json_export import recursive_fix_for_json_export
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 from nndosenet.evaluation.basic_DVH_metrics import DoseEvaluator

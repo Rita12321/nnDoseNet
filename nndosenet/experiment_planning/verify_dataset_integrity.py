@@ -143,7 +143,7 @@ def verify_dataset_integrity(folder: str, num_processes: int = 8,dose: bool=Fals
     required_keys = ['labels', "channel_names", "numTraining", "file_ending"]
     assert all([i in dataset_keys for i in required_keys]), 'not all required keys are present in dataset.json.' \
                                                             '\n\nRequired: \n%s\n\nPresent: \n%s\n\nMissing: ' \
-                                                            '\n%s\n\nUnused by nnU-Net:\n%s' % \
+                                                            '\n%s\n\nUnused by nnDoseNet:\n%s' % \
                                                             (str(required_keys),
                                                              str(dataset_keys),
                                                              str([i for i in required_keys if i not in dataset_keys]),

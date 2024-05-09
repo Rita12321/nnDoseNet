@@ -47,7 +47,7 @@ class nnUNetLogger(object):
         epoch = min([len(i) for i in self.my_fantastic_logging.values()]) - 1  # lists of epoch 0 have len 1
         sns.set(font_scale=2.5)
         fig, ax_all = plt.subplots(3, 1, figsize=(30, 54))
-        # regular progress.png as we are used to from previous nnU-Net versions
+        # regular progress.png as we are used to from previous nnDoseNet versions
         ax = ax_all[0]
 
         x_values = list(range(epoch + 1))

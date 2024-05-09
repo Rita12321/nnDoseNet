@@ -151,33 +151,22 @@ class LabelManager(object):
 
         return probabilities
 
-    def convert_probabilities_to_segmentation(self, predicted_probabilities: Union[np.ndarray, torch.Tensor]) -> \
+    def probability_squeeze_channel(self, predicted_probabilities: Union[np.ndarray, torch.Tensor]) -> \
             Union[np.ndarray, torch.Tensor]:
-        """
-        assumes that inference_nonlinearity was already applied!
 
-        predicted_probabilities has to have shape (c, x, y(, z)) where c is the number of classes/regions
-        """
-        if not isinstance(predicted_probabilities, (np.ndarray, torch.Tensor)):
-            raise RuntimeError(f"Unexpected input type. Expected np.ndarray or torch.Tensor,"
-                               f" got {type(predicted_probabilities)}")
+        
+        if isinstance(predicted_probabilities,  torch.Tensor):
+            predicted_probabilities.cpu().numpy()
+        if predicted_probabilities.dtype != np.float32:
+            predicted_probabilities = predicted_probabilities.astype(np.float32)
+            
+        # predicted_probabilities = predicted_probabilities.argmax(0)
+        return predicted_probabilities[0].squeeze()
 
-        assert predicted_probabilities.shape[0] == self.num_segmentation_heads, \
-            f'unexpected number of channels in predicted_probabilities. Expected {self.num_segmentation_heads}, ' \
-            f'got {predicted_probabilities.shape[0]}. Remeber that predicted_probabilities should have shape ' \
-            f'(c, x, y(, z)).'
-
-        segmentation = predicted_probabilities.argmax(0)
-
-        return segmentation
-
-    def convert_logits_to_segmentation(self, predicted_logits: Union[np.ndarray, torch.Tensor]) -> \
+    def convert_logits_to_image_array(self, predicted_logits: Union[np.ndarray, torch.Tensor]) -> \
             Union[np.ndarray, torch.Tensor]: 
-            # its not really converting to segmentation in nndosenet , 
-            # it only convert logit to numpy and float
-            # just keep the old function name for future use
-        probabilities = self.apply_inference_nonlin(predicted_logits) #no real nonlinear
-        return self.convert_probabilities_to_segmentation(probabilities)
+                
+        return self.probability_squeeze_channel(predicted_logits)
 
     def revert_cropping_on_probabilities(self, predicted_probabilities: Union[torch.Tensor, np.ndarray],
                                          bbox: List[List[int]],
@@ -187,7 +176,7 @@ class LabelManager(object):
 
         predicted_probabilities must be (c, x, y(, z))
 
-        Why do we do this here? Well if we pad probabilities we need to make sure that convert_logits_to_segmentation
+        Why do we do this here? Well if we pad probabilities we need to make sure that convert_logits_to_image_array
         correctly returns background in the padded areas. Also we want to ba able to look at the padded probabilities
         and not have strange artifacts.
         Only LabelManager knows how this needs to be done. So let's let him/her do it, ok?
@@ -245,7 +234,7 @@ def get_labelmanager_class_from_plans(plans: dict) -> Type[LabelManager]:
 def convert_labelmap_to_one_hot(segmentation: Union[np.ndarray, torch.Tensor],
                                 all_labels: Union[List, torch.Tensor, np.ndarray, tuple],
                                 output_dtype=None) -> Union[np.ndarray, torch.Tensor]:
-    #It's not really going to convert anything, jsut changing shape since in nndosenet len(all_labels) is always 1
+    #It's not really going to convert anything, just changing shape since in nndosenet len(all_labels) is always 1
     #just keepimg the function for future use
     """
     if output_dtype is None then we use np.float32/torch.float32

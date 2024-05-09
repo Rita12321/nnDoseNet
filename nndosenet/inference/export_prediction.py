@@ -47,7 +47,7 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
                                               dtype=np.float32)
         
     else:
-        segmentation = label_manager.convert_probabilities_to_segmentation(predicted_probabilities)#it would done argmax on probability
+        segmentation = label_manager.probability_squeeze_channel(predicted_probabilities)
         segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
                                                 dtype=np.uint8 if len(label_manager.foreground_labels) < 255 else np.uint16)
     
@@ -149,7 +149,7 @@ def resample_and_save(predicted: Union[torch.Tensor, np.ndarray], target_shape: 
     # create segmentation (argmax, regions, etc)
     label_manager = plans_manager.get_label_manager(dataset_json_dict_or_file)
     
-    segmentation = label_manager.convert_logits_to_segmentation(predicted_array_or_file)
+    segmentation = label_manager.convert_logits_to_image_array(predicted_array_or_file)
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):
         segmentation = segmentation.cpu().numpy()

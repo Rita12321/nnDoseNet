@@ -146,11 +146,11 @@ def find_best_configuration(dataset_name_or_id,
                 all_results[identifier] = \
                     {
                     'source': output_folder_ensemble,
-                    'result': load_summary_json(join(output_folder_ensemble, 'summary.json'))['mean']['MSE']
+                    'result': load_summary_json(join(output_folder_ensemble, 'summary.json'))['mean']['MSE'] #NOTE: if you change the the result metrice make sure you change the min or max for best score
                     }
     print(all_results)
     # pick best and report inference command
-    best_score = max([i['result'] for i in all_results.values()])
+    best_score = min([i['result'] for i in all_results.values()])  #NOTE: if you change the the result metrice make sure you change the min or max for best score
     best_keys = [k for k in all_results.keys() if all_results[k]['result'] == best_score]  # may never happen but theoretically
     # there can be a tie. Let's pick the first model in this case because it's going to be the simpler one (ensembles
     # come after single configs)

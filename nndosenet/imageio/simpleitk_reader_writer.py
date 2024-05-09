@@ -100,7 +100,6 @@ class SimpleITKIO(BaseReaderWriter):
         stacked_images = np.vstack(images)
         dict = {
             'sitk_stuff': {
-                # this saves the sitk geometry information. This part is NOT used by nnU-Net!
                 'spacing': spacings[0],
                 'origin': origins[0],
                 'direction': directions[0]

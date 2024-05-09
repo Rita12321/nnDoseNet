@@ -212,7 +212,7 @@ def run_training_entry():
     parser.add_argument('-p', type=str, required=False, default='nnDosePlans',
                         help='[OPTIONAL] Use this flag to specify a custom plans identifier. Default: nnDosePlans')
     parser.add_argument('-pretrained_weights', type=str, required=False, default=None,
-                        help='[OPTIONAL] path to nnU-Net checkpoint file to be used as pretrained model. Will only '
+                        help='[OPTIONAL] path to nnDoseNet checkpoint file to be used as pretrained model. Will only '
                              'be used when actually training. Beta. Use with caution.')
     parser.add_argument('-num_gpus', type=int, default=1, required=False,
                         help='Specify the number of GPUs to use for training')
@@ -243,7 +243,7 @@ def run_training_entry():
         torch.set_num_threads(multiprocessing.cpu_count())
         device = torch.device('cpu')
     elif args.device == 'cuda':
-        # multithreading in torch doesn't help nnU-Net if run on GPU
+        # multithreading in torch doesn't help nnDoseNet if run on GPU
         torch.set_num_threads(1)
         torch.set_num_interop_threads(1)
         device = torch.device('cuda')

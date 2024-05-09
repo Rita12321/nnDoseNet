@@ -272,7 +272,7 @@ class nnUNetTrainer(object):
                                    enable_deep_supervision: bool = True) -> nn.Module:
         """
         his is where you build the architecture according to the plans. There is no obligation to use
-        get_network_from_plans, this is just a utility we use for the nnU-Net default architectures. You can do what
+        get_network_from_plans, this is just a utility we use for the nnDoseNet default architectures. You can do what
         you want. Even ignore the plans and just return something static (as long as it can process the requested
         patch size)
         but don't bug us with your bugs arising from fiddling with this :-P
@@ -565,12 +565,12 @@ class nnUNetTrainer(object):
 
     def do_split(self):
         """
-        The default split is a 5 fold CV on all available training cases. nnU-Net will create a split (it is seeded,
+        The default split is a 5 fold CV on all available training cases. nnDoseNet will create a split (it is seeded,
         so always the same) and save it as splits_final.pkl file in the preprocessed data directory.
         Sometimes you may want to create your own split for various reasons. For this you will need to create your own
-        splits_final.pkl file. If this file is present, nnU-Net is going to use it and whatever splits are defined in
+        splits_final.pkl file. If this file is present, nnDoseNet is going to use it and whatever splits are defined in
         it. You can create as many splits in this file as you want. Note that if you define only 4 splits (fold 0-3)
-        and then set fold=4 when training (that would be the fifth split), nnU-Net will print a warning and proceed to
+        and then set fold=4 when training (that would be the fifth split), nnDoseNet will print a warning and proceed to
         use a random 80:20 data split.
         :return:
         """
@@ -866,7 +866,7 @@ class nnUNetTrainer(object):
 
     def set_deep_supervision_enabled(self, enabled: bool):
         """
-        This function is specific for the default architecture in nnU-Net. If you change the architecture, there are
+        This function is specific for the default architecture in nnDoseNet. If you change the architecture, there are
         chances you need to change this as well!
         """
         if self.is_ddp:

@@ -39,10 +39,7 @@ def merge_files(list_of_files,
     properties = load_pickle(list_of_files[0][:-4] + '.pkl')
     # load and average predictions
     probabilities = average_probabilities(list_of_files)
-    segmentation = label_manager.convert_logits_to_segmentation(probabilities)
-    
-    if isinstance(segmentation, torch.Tensor):
-        segmentation=segmentation.numpy()
+    segmentation=label_manager.probability_squeeze_channel(probabilities)
         
     image_reader_writer.write_seg(segmentation, output_filename_truncated + output_file_ending, properties)
     if save_probabilities:
@@ -58,7 +55,7 @@ def ensemble_folders(list_of_input_folders: List[str],
                      plans_json_file_or_dict: str = None):
     """
     If plans and dataset json are not specified, we assume each of the folders has a corresponding plans.json
-    and/or dataset.json in it. These are usually copied into those folders by nnU-Net during prediction.
+    and/or dataset.json in it. These are usually copied into those folders byet during prediction.
     We just pick the dataset.json and plans.json from the first of the folders and we DONT check whether the 5
     folders contain the same plans etc! This can be a feature if results from different datasets are to be merged """
     if dataset_json_file_or_dict is not None:

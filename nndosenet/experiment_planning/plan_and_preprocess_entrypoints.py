@@ -46,18 +46,18 @@ def plan_experiment_entry():
                         help='[OPTIONAL] DANGER ZONE! Sets a custom GPU memory target. Default: 8 [GB]. Changing this will '
                              'affect patch and batch size and will '
                              'definitely affect your models performance! Only use this if you really know what you '
-                             'are doing and NEVER use this without running the default nnU-Net first (as a baseline).')
+                             'are doing and NEVER use this without running the default nnDoseNet first (as a baseline).')
     parser.add_argument('-preprocessor_name', default='DefaultPreprocessor', type=str, required=False,
                         help='[OPTIONAL] DANGER ZONE! Sets a custom preprocessor class. This class must be located in '
                              'nndosenet.preprocessing. Default: \'DefaultPreprocessor\'. Changing this may affect your '
                              'models performance! Only use this if you really know what you '
-                             'are doing and NEVER use this without running the default nnU-Net first (as a baseline).')
+                             'are doing and NEVER use this without running the default nnDoseNet first (as a baseline).')
     parser.add_argument('-overwrite_target_spacing', default=None, nargs='+', required=False,
                         help='[OPTIONAL] DANGER ZONE! Sets a custom target spacing for the 3d_fullres and 3d_cascade_fullres '
                              'configurations. Default: None [no changes]. Changing this will affect image size and '
                              'potentially patch and batch '
                              'size. This will definitely affect your models performance! Only use this if you really '
-                             'know what you are doing and NEVER use this without running the default nnU-Net first '
+                             'know what you are doing and NEVER use this without running the default nnDoseNet first '
                              '(as a baseline). Changing the target spacing for the other configurations is currently '
                              'not implemented. New target spacing must be a list of three numbers!')
     parser.add_argument('-overwrite_plans_name', default=None, required=False,
@@ -146,18 +146,18 @@ def plan_and_preprocess_entry():
                          help='[OPTIONAL] DANGER ZONE! Sets a custom GPU memory target. Default: 8 [GB]. Changing this will '
                               'affect patch and batch size and will '
                               'definitely affect your models performance! Only use this if you really know what you '
-                              'are doing and NEVER use this without running the default nnU-Net first (as a baseline).')
+                              'are doing and NEVER use this without running the default nnDoseNet first (as a baseline).')
      parser.add_argument('-preprocessor_name', default='DefaultPreprocessor', type=str, required=False,
                          help='[OPTIONAL] DANGER ZONE! Sets a custom preprocessor class. This class must be located in '
                               'nndosenet.preprocessing. Default: \'DefaultPreprocessor\'. Changing this may affect your '
                               'models performance! Only use this if you really know what you '
-                              'are doing and NEVER use this without running the default nnU-Net first (as a baseline).')
+                              'are doing and NEVER use this without running the default nnDoseNet first (as a baseline).')
      parser.add_argument('-overwrite_target_spacing', default=None, nargs='+', required=False,
                          help='[OPTIONAL] DANGER ZONE! Sets a custom target spacing for the 3d_fullres and 3d_cascade_fullres '
                               'configurations. Default: None [no changes]. Changing this will affect image size and '
                               'potentially patch and batch '
                               'size. This will definitely affect your models performance! Only use this if you really '
-                              'know what you are doing and NEVER use this without running the default nnU-Net first '
+                              'know what you are doing and NEVER use this without running the default nnDoseNet first '
                               '(as a baseline). Changing the target spacing for the other configurations is currently '
                               'not implemented. New target spacing must be a list of three numbers!')
      parser.add_argument('-overwrite_plans_name', default='nnDosePlans', required=False,

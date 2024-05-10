@@ -21,14 +21,26 @@ def sitk_read_dcm(in_path):
 
            
 class DicomConverter():#patient wise
-    def __init__(self,folder,patient_folder):      
+    def __init__(self,folder,patient_folder,structure_name=None):      
         
         self.patient_folder=patient_folder
         
         
         self.raw_dicom_folder = join(folder,patient_folder)
         
-        self.structure_name  = load_json(join(os.path.dirname(folder),'structure.json'))["structure_name"]
+        if structure_name is None:
+            self.structure_name  = load_json(join(os.path.dirname(folder),'structure.json'))["structure_name"]
+        elif isinstance(structure_name,dict):
+            if "structure_name" in structure_name:
+                self.structure_name = structure_name["structure_name"]
+            else:
+                self.structure_name = structure_name        
+        elif isinstance(structure_name,str):
+            if structure_name.endswith(".json") and isfile(structure_name):
+                self.structure_name = load_json()["structure_name"]
+            else:
+                raise ValueError('the structure.json does not exist or it is not end wih json, please check the input again! ')
+
 
         
         self.ct_folder=join(self.raw_dicom_folder,"Dicom","CT")

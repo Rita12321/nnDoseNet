@@ -20,6 +20,7 @@ def sitk_read_dcm(in_path):
     reader.SetFileNames(dicom_names)
     dicom = reader.Execute()
     return dicom 
+
 def create_folder(path):
     if not os.path.isdir(path):
         os.makedirs(path)
@@ -32,6 +33,7 @@ def create_folderlist(path,folder_list=[],overwrite=False):
         elif overwrite:
             shutil.rmtree(join(path,sub_folder))
             os.makedirs(join(path,sub_folder))
+            
 def sanity_check_match_roi():
     #TODO: load match roi summary if none check if structure set is all good
     
@@ -186,11 +188,11 @@ def organize_nifti(DATA_FOLDER):
         #             continue
         #         shutil.move(dcm,join(patient_path,"Dicom",type))  
     print(' finish organizing the the data in dir: '+DATA_FOLDER)  
-def dicom_convert(folder,patient):
-    temp=DicomConverter(folder,patient_folder=patient).run()
+def dicom_convert(folder,patient,structure_json=None):
+    temp=DicomConverter(folder,patient_folder=patient,structure_name=structure_json).run()
     return {patient:temp}
     
-def format_dataset_from_dicom(folder,tr_ts,num_processes=3):
+def format_dataset_from_dicom(folder,tr_ts,num_processes=3,structure_json=None):
     folder=join(folder,tr_ts)
 
     patients=sorted(os.listdir(folder))
@@ -206,7 +208,7 @@ def format_dataset_from_dicom(folder,tr_ts,num_processes=3):
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
         for patient in patients:
             r.append(p.starmap_async(dicom_convert,
-                                     ((folder,patient),)))
+                                     ((folder,patient,structure_json),)))
             
         remaining = list(range(len(patients)))
             # p is pretty nifti. If we kill workers they just respawn but don't do any work.
@@ -237,10 +239,10 @@ def format_dataset_from_dicom(folder,tr_ts,num_processes=3):
     dataFrame.to_csv(save_sum_name)
     save_json(results_dict,save_sum_name.replace('.csv', '.json'))
     
-def nifti_label(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts):
-    NiftiLabeler(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts).run()
+def nifti_label(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts,structure_label=None):
+    NiftiLabeler(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts,structure__label=structure_label).run()
                        
-def format_dataset_from_nifti(folder,dataset_id,dataset_name_only=None,tr_ts="Tr",num_processes=8):
+def format_dataset_from_nifti(folder,dataset_id,dataset_name_only=None,tr_ts="Tr",num_processes=8,structure_label=None):
     id_list=[]
     if dataset_name_only==None:
         dataset_name_only=folder.split("/")[-1]
@@ -270,7 +272,7 @@ def format_dataset_from_nifti(folder,dataset_id,dataset_name_only=None,tr_ts="Tr
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
         for patient,id in zip(patients,id_list):
             r.append(p.starmap_async(nifti_label,
-                                     ((folder,patient,id,dataset_name,dataset_id,tr_ts),)))
+                                     ((folder,patient,id,dataset_name,dataset_id,tr_ts,structure_label),)))
         remaining = list(range(len(patients)))
             # p is pretty nifti. If we kill workers they just respawn but don't do any work.
             # So we need to store the original pool of workers.
@@ -307,10 +309,7 @@ def write_dataset_json(patient_num,dataset_name):
 
     with open(join(nnDose_raw,dataset_name,"dataset.json"), "w") as outfile:
         outfile.write(json_object)
-def write_csv_summary():
-    pass
-# def multi_processs(function,list_parameter_zip,num_processes):
-#     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
-#         _ = p.starmap(function,list_parameter_zip)
+
+
                       
     

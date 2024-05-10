@@ -30,4 +30,4 @@ def MAE_from_diff(diff_map,num_dose=None):
             return np.sum(np.abs(diff_map.flatten()))/num_dose
     
     return np.mean(np.sum(np.abs(diff_map.flatten())))    
-    
+#TODO: difference map api

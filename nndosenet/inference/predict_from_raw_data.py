@@ -31,8 +31,8 @@ from nndosenet.utilities.json_export import recursive_fix_for_json_export
 from nndosenet.utilities.label_handling.label_handling import determine_num_input_channels
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager, ConfigurationManager
 from nndosenet.utilities.utils import create_lists_from_splitted_dataset_folder
-from nndosenet.paths import nnDose_prediction,nnDose_dicom
-
+from nndosenet.paths import nnDose_prediction,nnDose_dicom,nnDose_raw
+from nndosenet.evaluation.evaluate_predictions import compute_dose_metrics_on_folder2
 class nnUNetPredictor(object):
     def __init__(self,
                  tile_step_size: float = 0.5,
@@ -624,88 +624,37 @@ class nnUNetPredictor(object):
         empty_cache(self.device)
         return predicted_logits[tuple([slice(None), *slicer_revert_padding[1:]])]
 
-
-# def predict_entry_point_modelfolder():
-#     import argparse
-#     parser = argparse.ArgumentParser(description='Use this to run inference with nnDoseNet. This function is used when '
-#                                                  'you want to manually specify a folder containing a trained nnDoseNet '
-#                                                  'model. This is useful when the nnunet environment variables '
-#                                                  '(nnDose_results) are not set.')
+def try_find_same_structure_of_model(dataset):
+    structure_file=join(nnDose_raw,dataset,"structure.json")
+    if isfile(structure_file):
+         return structure_file
+    print("cannot find ",structure_file,".Using the one in nnDose_dicom")
+    return None
     
-#     parser.add_argument('-i', type=str, required=True,
-#                         help='input folder. Remember to use the correct channel numberings for your files (_0000 etc). '
-#                              'File endings must be the same as the training dataset!')
-#     parser.add_argument('-o', type=str, required=True,
-#                         help='Output folder. If it does not exist it will be created. Predicted segmentations will '
-#                              'have the same name as their source images.')
-#     parser.add_argument('-m', type=str, required=True,
-#                         help='Folder in which the trained model is. Must have subfolders fold_X for the different '
-#                              'folds you trained')
-#     parser.add_argument('-f', nargs='+', type=str, required=False, default=(0, 1, 2, 3, 4),
-#                         help='Specify the folds of the trained model that should be used for prediction. '
-#                              'Default: (0, 1, 2, 3, 4)')
-#     parser.add_argument('-step_size', type=float, required=False, default=0.5,
-#                         help='Step size for sliding window prediction. The larger it is the faster but less accurate '
-#                              'the prediction. Default: 0.5. Cannot be larger than 1. We recommend the default.')
-#     parser.add_argument('--disable_tta', action='store_true', required=False, default=False,
-#                         help='Set this flag to disable test time data augmentation in the form of mirroring. Faster, '
-#                              'but less accurate inference. Not recommended.')
-#     parser.add_argument('--verbose', action='store_true', help="Set this if you like being talked to. You will have "
-#                                                                "to be a good listener/reader.")
-#     parser.add_argument('--save_probabilities', action='store_true',
-#                         help='Set this to export predicted class "probabilities". Required if you want to ensemble '
-#                              'multiple configurations.')
-#     parser.add_argument('--continue_prediction', '--c', action='store_true',
-#                         help='Continue an aborted previous prediction (will not overwrite existing files)')
-#     parser.add_argument('-chk', type=str, required=False, default='checkpoint_final.pth',
-#                         help='Name of the checkpoint you want to use. Default: checkpoint_final.pth')
-#     parser.add_argument('-npp', type=int, required=False, default=3,
-#                         help='Number of processes used for preprocessing. More is not always better. Beware of '
-#                              'out-of-RAM issues. Default: 3')
-#     parser.add_argument('-nps', type=int, required=False, default=3,
-#                         help='Number of processes used for segmentation export. More is not always better. Beware of '
-#                              'out-of-RAM issues. Default: 3')
-#     # parser.add_argument('-prev_stage_predictions', type=str, required=False, default=None,
-#     #                     help='Folder containing the predictions of the previous stage. Required for cascaded models.')
-#     parser.add_argument('-device', type=str, default='cuda', required=False,
-#                         help="Use this to set the device the inference should run with. Available options are 'cuda' "
-#                              "(GPU), 'cpu' (CPU) and 'mps' (Apple M1/M2). Do NOT use this to set which GPU ID! "
-#                              "Use CUDA_VISIBLE_DEVICES=X nnDoseNet_predict [...] instead!")
-
-#     args = parser.parse_args()
-#     args.f = [i if i == 'all' else int(i) for i in args.f]
-
-#     if not isdir(args.o):
-#         maybe_mkdir_p(args.o)
-
-#     assert args.device in ['cpu', 'cuda',
-#                            'mps'], f'-device must be either cpu, mps or cuda. Other devices are not tested/supported. Got: {args.device}.'
-#     if args.device == 'cpu':
-#         # let's allow torch to use hella threads
-#         import multiprocessing
-#         torch.set_num_threads(multiprocessing.cpu_count())
-#         device = torch.device('cpu')
-#     elif args.device == 'cuda':
-#         # multithreading in torch doesn't help nnDoseNet if run on GPU
-#         torch.set_num_threads(1)
-#         torch.set_num_interop_threads(1)
-#         device = torch.device('cuda')
-#     else:
-#         device = torch.device('mps')
-
-#     predictor = nnUNetPredictor(tile_step_size=args.step_size,
-#                                 use_gaussian=True,
-#                                 use_mirroring=not args.disable_tta,
-#                                 perform_everything_on_gpu=True,
-#                                 device=device,
-#                                 verbose=args.verbose)
-#     predictor.initialize_from_trained_model_folder(args.m, args.f, args.chk)
-#     predictor.predict_from_files(args.i, args.o, save_probabilities=args.save_probabilities,
-#                                  overwrite=not args.continue_prediction,
-#                                  num_processes_preprocessing=args.npp,
-#                                  num_processes_segmentation_export=args.nps,
-#                                  folder_with_segs_from_prev_stage=args.prev_stage_predictions,
-#                                  num_parts=1, part_id=0)
+def try_to_run_format_onTS(name,id,nps):
+        print('Have not run "nnDose_format_dataset" on Ts yet.')
+        print('Try running it now...')
+        from nndosenet.formating_dataset.format_dataset_api import organize_dicom,organize_nifti,format_dataset_from_dicom,format_dataset_from_nifti
+        raw_dicom_folder = join(nnDose_dicom,name)
+        structure=try_find_same_structure_of_model("Dataset"+id+"_"+name)
+        
+        try:
+            print('Can not find dicom or converting it, trying "format_dataset_from_nifti"')
+            organize_dicom(join(raw_dicom_folder,"Ts"))
+            format_dataset_from_dicom(raw_dicom_folder,"Ts",nps,structure)
+        except:
+            print('Can not find dicom or converting it, trying "format_dataset_from_nifti"')
+        try:
+            organize_nifti(join(raw_dicom_folder,"Ts"))
+            format_dataset_from_nifti(join(raw_dicom_folder,"Ts"), id,name,"Ts",nps,structure )
+        except:
+            print('Can not find nifti or labeling it')
+            print('1. If you do not have Ts folder for testing dataset  prediction, plese use other prediction method, such as...... ')
+            print('')# TODO: example of other prediction method
+            print('2. If you ahave a Ts folder please convert it as the same way you convert it to Tr.')
+            print('Can not find nifti or labeling it')
+            raise("please check description before running this")
+            
 
 
 def predict_entry_point():
@@ -778,8 +727,7 @@ def predict_entry_point():
     if not isdir(args.o):
         maybe_mkdir_p(args.o)
 
-    # slightly passive agressive haha
-    assert args.part_id < args.num_parts, 'Do you even read the documentation? See nnDoseNet_predict -h.'
+    assert args.part_id < args.num_parts, 'You can not have a part_id larger than nums_parts. See nnDoseNet_predict -h.'
 
     assert args.device in ['cpu', 'cuda',
                            'mps'], f'-device must be either cpu, mps or cuda. Other devices are not tested/supported. Got: {args.device}.'
@@ -857,7 +805,7 @@ def predict_Ts_entry_point():
                         help='Number of processes used for preprocessing. More is not always better. Beware of '
                              'out-of-RAM issues. Default: 3')
     parser.add_argument('-nps', type=int, required=False, default=3,
-                        help='Number of processes used for segmentation export. More is not always better. Beware of '
+                        help='Number of processes used for dose map export. More is not always better. Beware of '
                              'out-of-RAM issues. Default: 3')
     # parser.add_argument('-prev_stage_predictions', type=str, required=False, default=None,
     #                     help='Folder containing the predictions of the previous stage. Required for cascaded models.')
@@ -879,30 +827,15 @@ def predict_Ts_entry_point():
     args.f = [i if i == 'all' else int(i) for i in args.f]
 
     model_folder = get_output_folder(args.id, args.tr, args.p, args.c)
-
+    
     input_folder = join(nnDose_prediction,args.name,"Dataset"+args.id+"_"+args.name,"GroundTruth","imagesTs")
+    
     if not isdir(input_folder):
-        print("Cannot find ", input_folder)#TODO: need double check if there are complet files
-        print('Have not run "nnDose_format_dataset" yet.')
-        print('Runing it now...')
-        from nndosenet.formating_dataset.format_dataset_api import organize_dicom,organize_nifti,format_dataset_from_dicom,format_dataset_from_nifti
-        raw_dicom_folder = join(nnDose_dicom,args.name)
-        try:
-            print('Can not find dicom or converting it, trying "format_dataset_from_nifti"')
-            organize_dicom(join(raw_dicom_folder,"Ts"))
-            format_dataset_from_dicom(raw_dicom_folder,"Ts",args.nps)
-        except:
-            print('Can not find dicom or converting it, trying "format_dataset_from_nifti"')
-        try:
-            organize_nifti(join(raw_dicom_folder,"Ts"))
-            format_dataset_from_nifti(join(raw_dicom_folder,"Ts"), args.id,args.name,"Ts",args.nps )
-        except:
-            print('Can not find nifti or labeling it')
-            print('1. If you do not have Ts folder for testing dataset  prediction, plese use other prediction method, such as...... ')
-            print('')# TODO: example of other prediction method
-            print('2. If you ahave a Ts folder please convert it as the same way you convert it to Tr.')
-            print('Can not find nifti or labeling it')
-            raise("please check description before running this")
+        print("Cannot find ", input_folder)
+        try_to_run_format_onTS(name=args.name,id=args.id,nps=args.nps)       
+    elif len(os.listdir(input_folder))<=0:
+        try_to_run_format_onTS(name=args.name,id=args.id,nps=args.nps)  
+        
 
     output_folder = join(nnDose_prediction,args.name,"Dataset"+args.id+"_"+args.name,"Prediction",args.c)
     
@@ -946,8 +879,21 @@ def predict_Ts_entry_point():
                                  folder_with_segs_from_prev_stage=None,#TODO: casacade not avaliable yet. args.prev_stage_predictions,
                                  num_parts=args.num_parts,
                                  part_id=args.part_id)
-    #TODO:
-    # create inference text for esemble
+    
+
+    compute_dose_metrics_on_folder2(input_folder.replace("imagesTs", "labelsTs"), output_folder,
+                                    join(nnDose_dicom,args.name,"Ts"),
+                                    join(output_folder,"dataset.json"), 
+                                    join(nnDose_prediction,args.name,"Dataset"+args.id+"_"+args.name,"GroundTruth","structure.json"),
+                                    join(output_folder,"summary.json"), 
+                                    args.nps,raw_folder=True,
+                                    patient_csv=join(nnDose_prediction,args.name,"Dataset"+args.id+"_"+args.name,"GroundTruth","patientTs.csv"))
+       
+    print("prediction is in ",output_folder)
+    print("Please check \n nnDoseNet_ensemble -h \n to ensemble prediction if needed ")
+    print("Also check  \n nnDoseNet_dicom_based_evaluation -h \n If Ts files has dicom ground truth ")
+    print("If not we still offer \n nnDoseNet_difference_map -h \n for more visualize evaluation method")
+
 if __name__ == '__main__':
     predict_entry_point()
 

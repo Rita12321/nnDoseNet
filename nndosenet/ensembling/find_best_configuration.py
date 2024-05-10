@@ -46,6 +46,35 @@ def filter_available_models(model_dict: Union[List[dict], Tuple[dict, ...]], dat
         valid.append(trained_model)
     return valid
 
+def generate_inference_command_on_Ts(dataset_name_or_id: Union[int, str], configuration_name: str,
+                               plans_identifier: str = 'nnDosePlans', trainer_name: str = 'nnUNetTrainer',
+                               folds: Union[List[int], Tuple[int, ...]] = (0, 1, 2, 3, 4),
+                               folder_with_segs_from_prev_stage: str = None,
+                               input_folder: str = 'INPUT_FOLDER',
+                               output_folder: str = 'OUTPUT_FOLDER',
+                               save_npz: bool = False):
+    fold_str = ''
+    for f in folds:
+        fold_str += f' {f}'
+
+    #TODO: might need to change inference command yo nndosenet prediction folder command
+    predict_command = ''
+    trained_model_folder = get_output_folder(dataset_name_or_id, trainer_name, plans_identifier, configuration_name, fold=None)
+    plans_manager = PlansManager(join(trained_model_folder, 'plans.json'))
+    configuration_manager = plans_manager.get_configuration(configuration_name)
+    # if 'previous_stage' in plans_manager.available_configurations:
+    #     prev_stage = configuration_manager.previous_stage_name
+    #     predict_command += generate_inference_command(dataset_name_or_id, prev_stage, plans_identifier, trainer_name,
+    #                                                   folds, None, output_folder='OUTPUT_FOLDER_PREV_STAGE') + '\n'
+    #     folder_with_segs_from_prev_stage = 'OUTPUT_FOLDER_PREV_STAGE'
+
+    predict_command = f'nnDoseNet_predict_Ts -name {dataset_name_or_id} -id {input_folder} -f {fold_str} ' \
+                      f'-tr {trainer_name} -c {configuration_name} -p {plans_identifier}'
+    # if folder_with_segs_from_prev_stage is not None:
+    #     predict_command += f' -prev_stage_predictions {folder_with_segs_from_prev_stage}'
+    if save_npz:
+        predict_command += ' --npz'
+    return predict_command
 
 def generate_inference_command(dataset_name_or_id: Union[int, str], configuration_name: str,
                                plans_identifier: str = 'nnDosePlans', trainer_name: str = 'nnUNetTrainer',
@@ -63,16 +92,16 @@ def generate_inference_command(dataset_name_or_id: Union[int, str], configuratio
     trained_model_folder = get_output_folder(dataset_name_or_id, trainer_name, plans_identifier, configuration_name, fold=None)
     plans_manager = PlansManager(join(trained_model_folder, 'plans.json'))
     configuration_manager = plans_manager.get_configuration(configuration_name)
-    if 'previous_stage' in plans_manager.available_configurations:
-        prev_stage = configuration_manager.previous_stage_name
-        predict_command += generate_inference_command(dataset_name_or_id, prev_stage, plans_identifier, trainer_name,
-                                                      folds, None, output_folder='OUTPUT_FOLDER_PREV_STAGE') + '\n'
-        folder_with_segs_from_prev_stage = 'OUTPUT_FOLDER_PREV_STAGE'
+    # if 'previous_stage' in plans_manager.available_configurations:
+    #     prev_stage = configuration_manager.previous_stage_name
+    #     predict_command += generate_inference_command(dataset_name_or_id, prev_stage, plans_identifier, trainer_name,
+    #                                                   folds, None, output_folder='OUTPUT_FOLDER_PREV_STAGE') + '\n'
+    #     folder_with_segs_from_prev_stage = 'OUTPUT_FOLDER_PREV_STAGE'
 
     predict_command = f'nnDoseNet_predict -d {dataset_name_or_id} -i {input_folder} -o {output_folder} -f {fold_str} ' \
                       f'-tr {trainer_name} -c {configuration_name} -p {plans_identifier}'
-    if folder_with_segs_from_prev_stage is not None:
-        predict_command += f' -prev_stage_predictions {folder_with_segs_from_prev_stage}'
+    # if folder_with_segs_from_prev_stage is not None:
+    #     predict_command += f' -prev_stage_predictions {folder_with_segs_from_prev_stage}'
     if save_npz:
         predict_command += ' --npz'
     return predict_command
@@ -253,6 +282,17 @@ def print_inference_instructions(inference_info_dict: dict, instructions_file: s
         _print_and_maybe_write_to_file(generate_inference_command(dataset_name_or_id, c, pl, tr, inference_info_dict['folds'],
                                          save_npz=is_ensemble, output_folder=output_folder_name))
 
+    _print_and_maybe_write_to_file('or Run the following commands to run predictions on Ts data:\n')   
+    for j, i in enumerate(inference_info_dict['best_model_or_ensemble']['selected_model_or_models']):
+        tr, c, pl = i['trainer'], i['configuration'], i['plans_identifier']
+        if is_ensemble:
+            output_folder_name = f"OUTPUT_FOLDER_MODEL_{j+1}"
+        else:
+            output_folder_name = f"OUTPUT_FOLDER"
+        output_folders.append(output_folder_name)
+
+        _print_and_maybe_write_to_file(generate_inference_command_on_Ts(dataset_name_or_id, c, pl, tr, inference_info_dict['folds'],
+                                        save_npz=is_ensemble, output_folder=output_folder_name))
     if is_ensemble:
         output_folder_str = output_folders[0]
         for o in output_folders[1:]:
@@ -260,14 +300,7 @@ def print_inference_instructions(inference_info_dict: dict, instructions_file: s
         output_ensemble = f"OUTPUT_FOLDER"
         _print_and_maybe_write_to_file('\nThe run ensembling with:\n')
         _print_and_maybe_write_to_file(f"nnDoseNet_ensemble -i {output_folder_str} -o {output_ensemble} -np {default_num_processes}")
-
-    #todo: chnage to our post pocess
-    # _print_and_maybe_write_to_file("\n***Once inference is completed, run postprocessing like this:***\n")
-    # _print_and_maybe_write_to_file(f"nnDoseNet_apply_postprocessing -i OUTPUT_FOLDER -o OUTPUT_FOLDER_PP "
-    #       f"-pp_pkl_file {inference_info_dict['best_model_or_ensemble']['postprocessing_file']} -np {default_num_processes} "
-    #       f"-plans_json {inference_info_dict['best_model_or_ensemble']['some_plans_file']}")
-
-
+        _print_and_maybe_write_to_file(f"nnDoseNet_ensemble -i {output_folder_str} -o {output_ensemble} -np {default_num_processes}")
 def dumb_trainer_config_plans_to_trained_models_dict(trainers: List[str], configs: List[str], plans: List[str]):
     """
     function is called dumb because it's dumb

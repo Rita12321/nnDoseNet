@@ -300,7 +300,7 @@ def print_inference_instructions(inference_info_dict: dict, instructions_file: s
         output_ensemble = f"OUTPUT_FOLDER"
         _print_and_maybe_write_to_file('\nThe run ensembling with:\n')
         _print_and_maybe_write_to_file(f"nnDoseNet_ensemble -i {output_folder_str} -o {output_ensemble} -np {default_num_processes}")
-        _print_and_maybe_write_to_file(f"nnDoseNet_ensemble -i {output_folder_str} -o {output_ensemble} -np {default_num_processes}")
+
 def dumb_trainer_config_plans_to_trained_models_dict(trainers: List[str], configs: List[str], plans: List[str]):
     """
     function is called dumb because it's dumb

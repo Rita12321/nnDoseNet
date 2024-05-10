@@ -649,11 +649,9 @@ def try_to_run_format_onTS(name,id,nps):
             format_dataset_from_nifti(join(raw_dicom_folder,"Ts"), id,name,"Ts",nps,structure )
         except:
             print('Can not find nifti or labeling it')
-            print('1. If you do not have Ts folder for testing dataset  prediction, plese use other prediction method, such as...... ')
-            print('')# TODO: example of other prediction method
-            print('2. If you ahave a Ts folder please convert it as the same way you convert it to Tr.')
-            print('Can not find nifti or labeling it')
-            raise("please check description before running this")
+            print('1. If you do not have Ts folder for testing data for prediction, plese use nnDose_predict -h')
+            print('2. If you do have a Ts folder, please convert it as the same way you convert it to Tr.')
+            raise RuntimeError("please check description before running this")
             
 
 

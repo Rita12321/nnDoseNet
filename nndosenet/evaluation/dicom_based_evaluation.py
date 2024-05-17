@@ -98,13 +98,12 @@ def entry_point_nii2dcm_and_gamma_analysis():
     output_folder=args.out
 
     if args.pred==None:
+        print("didn't in put prediction folder, run default, all configuration and out put folder would be ayto assigned")
         for config in os.listdir(prediction_folder):
-            if config =="2d" or config=="3d_lowres":
-                continue
             if os.path.isdir(join(prediction_folder,config)):
-                print("runnnig: ", config)
-                if output_folder is None:
-                    output_folder=join(prediction_folder,config)
+                print("runnnig: ", config) adgjlkhfs
+                
+                output_folder=join(prediction_folder,config)
                 apply_nii2dcm_and_gamma_to_folder(join(prediction_folder,config), reference_folder, output_folder, patient_csv, args.np)
                 print("all done")
     else:

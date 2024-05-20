@@ -14,6 +14,7 @@ import pandas as pd
 from nndosenet.paths import nnDose_preprocessed, nnDose_raw,nnDose_dicom,nnDose_prediction
 from batchgenerators.utilities.file_and_folder_operations import *
 
+
 def sitk_read_dcm(in_path):
     reader = sitk.ImageSeriesReader()
     dicom_names = reader.GetGDCMSeriesFileNames(in_path)
@@ -176,17 +177,7 @@ def organize_nifti(DATA_FOLDER):
         niftis=glob.glob(join(patient_path,"*.nii.gz"))
         for nifti in niftis:
             shutil.move(nifti,join(patient_path,"Nifti",))        
-
-        ##extra
-        # type="extra"
-        # create_folder(join(patient_path,"Dicom",type))  
-        # dcms=glob.glob(join(patient_path,"*"))      
-        # if len(dcms)>4:
-        #     print("There are ", len(dcms)-4, "extra files, that is not starting with CT,RD or RS. They are moved to folder extra")
-        #     for dcm in dcms:
-        #         if os.path.isdir(dcm):
-        #             continue
-        #         shutil.move(dcm,join(patient_path,"Dicom",type))  
+ 
     print(' finish organizing the the data in dir: '+DATA_FOLDER)  
 def dicom_convert(folder,patient,structure_json=None):
     temp=DicomConverter(folder,patient_folder=patient,structure_name=structure_json).run()
@@ -240,12 +231,12 @@ def format_dataset_from_dicom(folder,tr_ts,num_processes=3,structure_json=None):
     save_json(results_dict,save_sum_name.replace('.csv', '.json'))
     
 def nifti_label(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts,structure_label=None):
-    NiftiLabeler(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts,structure__label=structure_label).run()
+    NiftiLabeler(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts,structure_label=structure_label).run()
                        
 def format_dataset_from_nifti(folder,dataset_id,dataset_name_only=None,tr_ts="Tr",num_processes=8,structure_label=None):
     id_list=[]
     if dataset_name_only==None:
-        dataset_name_only=folder.split("/")[-1]
+        dataset_name_only=folder.split("/")[-2]
         
     dataset_name="Dataset"+dataset_id+"_"+dataset_name_only
     patients=sorted(os.listdir(folder))
@@ -294,7 +285,10 @@ def format_dataset_from_nifti(folder,dataset_id,dataset_name_only=None,tr_ts="Tr
     
     if tr_ts=="Tr":
         write_dataset_json(patient_num=len(patients),dataset_name=dataset_name)
-    shutil.copy2(join(os.path.dirname(folder),'structure.json'),join(save_folder,"structure.json"))
+    if structure_label != None:
+        shutil.copy2(join(structure_label),join(save_folder,"structure.json"))
+    else:
+        shutil.copy2(join(os.path.dirname(folder),'structure.json'),join(save_folder,"structure.json"))
   
             
     print("Finish ! All needed file is in ",join(save_folder),"now.")

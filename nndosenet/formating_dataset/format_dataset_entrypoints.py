@@ -51,7 +51,7 @@ def label_nifti_and_final_formatting_entry():
      raw_dicom_folder = join(nnDose_dicom,args.name)
 
      organize_nifti(join(raw_dicom_folder,args.trts))
-     format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,args.name,args.trts,num_processes=args.nps,structure_label=args.structure)
+     format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,dataset_name_only=args.name,tr_ts=args.trts,num_processes=args.nps,structure_label=args.structure)
 
 def format_dataset_entry():
      import argparse
@@ -79,7 +79,7 @@ def format_dataset_entry():
           organize_dicom(join(raw_dicom_folder,args.trts))
      format_dataset_from_dicom(raw_dicom_folder,args.trts,args.nps,args.structure)
      organize_nifti(join(raw_dicom_folder,args.trts))
-     format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,args.name,args.trts,args.nps,args.structure )
+     format_dataset_from_nifti(join(raw_dicom_folder,args.trts), args.id,dataset_name_only=args.name,tr_ts=args.trts,num_processes=args.nps,structure_label=args.structure )
 
 if __name__ == '__main__':
     format_dataset_entry()

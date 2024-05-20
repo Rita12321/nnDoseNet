@@ -19,6 +19,7 @@ def find_dose_spacing(reference):
 
 def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
                    evaluation: typing.Union[pydicom.dataset.FileDataset, str],
+                   mask_path,
                    save_path=None,
                    percent=3,mm=2,cutoff=20,max_gamma=1,ram=2**32): 
     
@@ -64,8 +65,14 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
     image.SetSpacing(spacing)
     image.SetOrigin(reference.ImagePositionPatient)
     sitk.WriteImage(image,save_path)
-    return gamma
+    pass_gamma,mask_num=pass_rate(gamma_options,gamma,mask_path)
+    return gamma_options,pass_gamma,mask_num
     
+def pass_rate(max_gamma, gamma,mask_path):
+    mask=sitk.GetArrayFromImage(sitk.ReadImage(mask_path))
+    mask_num=len(np.where(mask>0))
+    pass_gamma=len(np.where((gamma<max_gamma)and(mask>0)))
+    return pass_gamma,mask_num
 if __name__ == '__main__':
 
     import os

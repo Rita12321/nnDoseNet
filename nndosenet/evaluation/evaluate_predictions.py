@@ -291,7 +291,7 @@ def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_inp
 
     #lm = PlansManager(plans_file).get_label_manager(dataset_json)
     compute_dose_metrics_on_folder(folder_ref, folder_pred, folder_input, output_file, rw, file_ending,
-                              structure_json,num_processes, chill=chill,
+                              structure_json,num_processes, chill=chill,dose_label=True,
                               raw_folder=raw_folder,patient_csv=patient_csv)
     
     
@@ -361,7 +361,7 @@ def compute_seg_metrics(reference_file: str, prediction_file: str, image_reader_
         results['metrics'][r]['n_ref'] = fn + tp
     return results
     
-def evaluate_folder_by_label_entry_point():
+def evaluate_folder_entry_point():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('gt_folder', type=str, help='folder with ground truth label')

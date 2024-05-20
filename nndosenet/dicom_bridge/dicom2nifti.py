@@ -37,7 +37,7 @@ class DicomConverter():#patient wise
                 self.structure_name = structure_name        
         elif isinstance(structure_name,str):
             if structure_name.endswith(".json") and isfile(structure_name):
-                self.structure_name = load_json()["structure_name"]
+                self.structure_name = load_json(structure_name)["structure_name"]
             else:
                 raise ValueError('the structure.json does not exist or it is not end wih json, please check the input again! ')
 
@@ -189,8 +189,8 @@ class DicomConverter():#patient wise
 
 class NiftiLabeler(DicomConverter):
     
-    def __init__(self,folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts="Tr"):  
-           
+    def __init__(self,folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts="Tr",structure_label=None):  
+
         self.dataset_name=dataset_name 
         self.patient_folder=patient_folder
         self.patient_id=str(patient_id).zfill(4)
@@ -214,13 +214,27 @@ class NiftiLabeler(DicomConverter):
         if not os.path.isdir(self.raw_dataset_folder):
             os.makedirs(self.raw_dataset_folder)
             print("Create folder in : ",self.raw_dataset_folder)
-       # print(self.raw_dataset_folder)
-        self.structure_label = load_json(join(os.path.dirname(folder),'structure.json'))["structure_label"]  
+
+        if structure_label is None:
+            self.structure_label  = load_json(join(os.path.dirname(folder),'structure.json'))["structure_label"]
+        elif isinstance(structure_label,dict):
+            if "structure_label" in structure_label:
+                self.structure_label = structure_label["structure_label"]
+            else:
+                self.structure_label = structure_label        
+        elif isinstance(structure_label,str):
+            if structure_label.endswith(".json") and isfile(structure_label):
+                self.structure_label = load_json(structure_label)["structure_label"]
+            else:
+                raise ValueError('the structure.json does not exist or it is not end wih json, please check the input again! ')
+
+
         
+        
+        #print(structure_label)
         self.nii_folder=join(self.raw_dicom_folder,"Nifti")
 
     def run(self):
-        #print("runing",self.patient_folder)
         self.confirm_and_label()   
     def check_label_sanity():
         #TODO: check label sanity
@@ -281,7 +295,6 @@ class NiftiLabeler(DicomConverter):
         #Copy dose and ct
         shutil.copy2(join(self.nii_folder,"ct.nii.gz"),join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0000.nii.gz")) 
         shutil.copy2(join(self.nii_folder,"dose.nii.gz"),join(self.raw_dataset_folder,"labels"+self.tr_ts,self.patient_id+".nii.gz")) 
-#            shutil.copy2(join(source_path,"ct.nii.gz"),join("Dataset504","images"+str(dist_str),"0"+patient_num+"_0000.nii.gz"))    
-
+#           
 
                 

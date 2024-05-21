@@ -65,14 +65,30 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
     image.SetSpacing(spacing)
     image.SetOrigin(reference.ImagePositionPatient)
     sitk.WriteImage(image,save_path)
-    pass_gamma,mask_num=pass_rate(gamma_options,gamma,mask_path)
+    pass_gamma,mask_num=pass_rate(max_gamma,gamma_np,image,mask_path)
     return gamma_options,pass_gamma,mask_num
     
-def pass_rate(max_gamma, gamma,mask_path):
-    mask=sitk.GetArrayFromImage(sitk.ReadImage(mask_path))
-    mask_num=len(np.where(mask>0))
-    pass_gamma=len(np.where((gamma<max_gamma)and(mask>0)))
-    return pass_gamma,mask_num
+def pass_rate(max_gamma, gamma, gamma_image, mask_path):
+    #mask=np.nonzero(sitk.GetArrayFromImage(sitk.ReadImage(mask_path)).flatten())
+    mask=sitk.ReadImage(mask_path)
+    mask=resample2ref(gamma_image,mask)
+    mask=np.nonzero(sitk.GetArrayFromImage(mask).flatten())
+    gamma=np.take(gamma.flatten(),mask)
+    pass_gamma=len(gamma<max_gamma)
+    return pass_gamma,len(mask)
+
+def resample2ref(ref:sitk.Image,new:sitk.Image):
+
+    
+    new.SetOrigin(ref.GetOrigin())
+    new.SetSpacing(ref.GetSpacing())
+   
+
+    resample = sitk.ResampleImageFilter()
+    resample.SetReferenceImage(ref)
+    resample.SetInterpolator(sitk.sitkNearestNeighbor)
+
+    return resample.Execute(new)
 if __name__ == '__main__':
 
     import os

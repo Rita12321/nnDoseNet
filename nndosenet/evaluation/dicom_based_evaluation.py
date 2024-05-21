@@ -9,7 +9,7 @@ from nndosenet.paths import nnDose_prediction,nnDose_dicom
 from nndosenet.dicom_bridge.nifti2dicom import dose_to_dicom
 from nndosenet.evaluation.gamma_analysis import gamma_analysis
 from nndosenet.utilities.dataset_name_id_conversion import convert_id_to_dataset_name, maybe_convert_to_dataset_name
-import tqdm
+from tqdm import tqdm
 from time import sleep
 def nii2dcm_and_gamma(ref_path,pred_path,mask_path,save_folder,gamma=True) -> np.ndarray:
     
@@ -34,10 +34,8 @@ def nii2dcm_and_gamma(ref_path,pred_path,mask_path,save_folder,gamma=True) -> np
 
 def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
                                    reference_folder:str,
-                                   image_folder:str,
                                    output_folder: str,
                                    patient_csv:str,
-                                   body_channel:str="3",
                                    num_processes=8,gamma=True) -> None:
      
 
@@ -61,22 +59,22 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
     #                       [gamma] * len(pred_list))
     #                   )
     #     #TODO: apply evaluation or read and write _evaluation 
-    
+    #TODO: change Body.nii.gz by using structure.json
     r=[]
     results_dict ={}# open exist one
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
         for i,pred in enumerate(pred_list):
             r.append(p.starmap_async(nii2dcm_and_gamma,
-                                     ((join(reference_folder, ref_list[i],"Dicom","RD",os.listdir(join(reference_folder, i,"Dicom","RD"))[0]),
+                                     ((join(reference_folder, ref_list[i],"Dicom","RD",os.listdir(join(reference_folder, ref_list[i],"Dicom","RD"))[0]),
                                        join(prediction_folder, str(pred).zfill(4)),
-                                       join(image_folder, str(pred).zfill(4)+"_000"+body_channel+".nii.gz"),
+                                       join(reference_folder, ref_list[i],"Nifti","Body.nii.gz"),
                                        output_folder,gamma),)))
             
         remaining = list(range(len(pred_list)))
             # p is pretty nifti. If we kill workers they just respawn but don't do any work.
             # So we need to store the original pool of workers.
         workers = [j for j in p._pool]
-        with tqdm(desc="2dicom&gamma", total=len(pred_list) )as pbar:
+        with tqdm(desc="", total=len(pred_list) )as pbar:
             while len(remaining) > 0:
                 all_alive = all([j.is_alive() for j in workers])
                 if not all_alive:
@@ -102,7 +100,6 @@ def entry_point_nii2dcm_and_gamma_analysis():
     parser.add_argument('-out', type=str, required=False, default=None, help='Output folder')
     parser.add_argument('-csv', type=str, required=False, default=None, help='csv convertion list of petient_num nifti folder and patient folder name in dicom folder, default use the \
                         "[nndose_prediction]/[-name]/Dataset+[-id]}/GroundTruth/patientTs.csv" that is created format and creat when formatting datset Ts')
-    
     parser.add_argument('-np', type=int, required=False, default=3,
                         help=f"Number of processes used for dicom convertion and gamma analysis. !! Pease set this nps less than \
                             nps in other process. Gamma analysis required LOTS of Ram so it may crash if you have too many nps , Default: 3")

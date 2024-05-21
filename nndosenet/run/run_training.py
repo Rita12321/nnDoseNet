@@ -221,8 +221,7 @@ def run_training_entry():
                              "data is much more CPU and (potentially) RAM intensive and should only be used if you "
                              "know what you are doing")
     parser.add_argument('--npz', action='store_true', required=False,
-                        help='[OPTIONAL] Save softmax predictions from final validation as npz files (in addition to predicted '
-                             'segmentations). Needed for finding the best ensemble.')
+                        help='[OPTIONAL] Save predictions from final validation in npz files. Needed for finding the best ensemble.')
     parser.add_argument('--c', action='store_true', required=False,
                         help='[OPTIONAL] Continue training from latest checkpoint')
     parser.add_argument('--val', action='store_true', required=False,

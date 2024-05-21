@@ -82,6 +82,8 @@ class nnUNetTrainer(object):
         # next day impossible: complexity demon spirit has entered code and very dangerous situation!
 
         # OK OK I am guilty. But I tried. http://tiny.cc/gzgwuz
+        
+        # A bit mean but ... :)
 
         self.is_ddp = dist.is_available() and dist.is_initialized() 
         self.local_rank = 0 if not self.is_ddp else dist.get_rank()
@@ -333,8 +335,6 @@ class nnUNetTrainer(object):
 
             self.print_to_log_file("worker", my_rank, "oversample", oversample_percents[my_rank])
             self.print_to_log_file("worker", my_rank, "batch_size", batch_sizes[my_rank])
-            # self.print_to_log_file("worker", my_rank, "oversample", oversample_percents[my_rank])
-            # self.print_to_log_file("worker", my_rank, "batch_size", batch_sizes[my_rank])
 
             self.batch_size = batch_sizes[my_rank]
             self.oversample_foreground_percent = oversample_percents[my_rank]

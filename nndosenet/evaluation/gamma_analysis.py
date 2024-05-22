@@ -72,16 +72,21 @@ def pass_rate(max_gamma, gamma, gamma_image, mask_path):
     #mask=np.nonzero(sitk.GetArrayFromImage(sitk.ReadImage(mask_path)).flatten())
     mask=sitk.ReadImage(mask_path)
     mask=resample2ref(gamma_image,mask)
-    mask=np.nonzero(sitk.GetArrayFromImage(mask).flatten())
+    mask=sitk.GetArrayFromImage(mask).flatten()
+    mask=np.nonzero(mask)[0]
+    # print(np.nonzero(ori_mask.flatten()))
+    # print(np.nonzero(mask.flatten()))
+    # mask=np.nonzero(.flatten())
+    
     gamma=np.take(gamma.flatten(),mask)
-    pass_gamma=len(gamma<max_gamma)
+    pass_gamma=len(np.nonzero(gamma<max_gamma)[0])
     return pass_gamma,len(mask)
 
 def resample2ref(ref:sitk.Image,new:sitk.Image):
 
     
-    new.SetOrigin(ref.GetOrigin())
-    new.SetSpacing(ref.GetSpacing())
+    # new.SetOrigin(ref.GetOrigin())
+    # new.SetSpacing(ref.GetSpacing())
    
 
     resample = sitk.ResampleImageFilter()
@@ -90,68 +95,9 @@ def resample2ref(ref:sitk.Image,new:sitk.Image):
 
     return resample.Execute(new)
 if __name__ == '__main__':
-
-    import os
-    import glob
-    ref_folder="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom/prostate_data/Ts/"
-    pred_folder="/home/changh/Documents/2023_DosePredcition/nndosev1/nnUNet_prediction/pre_dcm_520"
-    save_folder="/home/changh/Documents/2023_DosePredcition/nndosev1/nnUNet_prediction/gamma_520"
-    run_list=sorted(os.listdir(pred_folder))
-    
-    import threading
-
-    # run_list=[]
-    core=3
-    def job(start,end):
-        for i in range(start,end):
-            print(i)
-            try:
-                path=run_list[i]
-                name=path.split(".")[0][1:]
-                print(path)
-                print(name)
-                print(os.path.join(ref_folder,"PROS_TEST_"+name+"_PROS_TEST_"+name+"*","Dicom","RD","*"))
-                ref_path=glob.glob(os.path.join(ref_folder,"PROS_TEST_"+name+"_PROS_TEST_"+name+"*","Dicom","RD","*"))           
-                gamma_analysis(reference=ref_path[0],evaluation=os.path.join(pred_folder,path),save_path=os.path.join(save_folder,"gamma_0"+name+".nii.gz"))
-
-            except:
-                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",i)
-                continue
-
-
-
-
-    threads=[]
-
-    order=np.arange(0,len(run_list)+1,len(run_list)//core)
-    order=np.append(order,len(run_list)+1//core)
-
-    k=0
-    for n in range(len(order)-1):
-        
-        threads.append(threading.Thread(target=job,args=(order[n],order[n+1])))
-        
-        threads[n].start()
-        k+=1
-
-
-    for b in range(len(order)-1):
-        
-        print("\nthread "+str(b)+" finish")
-        
-        threads[b].join()
-
-    print("complete")
-    # for i in run_list:
-    #     path=run_list[i]
-    #     name=path.split(".")[0][1:]
-    #     print(path)
-    #     print(name)
-    #     print(os.path.join(ref_folder,"PROS_TEST_"+name+"_PROS_TEST_"+name+"*","Dicom","RD","*"))
-    #     ref_path=glob.glob(os.path.join(ref_folder,"PROS_TEST_"+name+"_PROS_TEST_"+name+"*","Dicom","RD","*"))
-        
-    #     gamma_analysis(reference=ref_path[0],evaluation=os.path.join(pred_folder,path),save_path=os.path.join(save_folder,"gamma_0"+name+".nii.gz"))
-        
-    # reference_path  = "/home/changh/Documents/2023_DosePredcition/Data/ProsateData_harms/prostate_data/Ts/PROS_TEST_001_PROS_TEST_001_20240213_122216679/Dicom/RD/RD.2.25.215607266051682408066889968235317919247"
-    # predict_path = "/home/changh/Documents/2023_DosePredcition/nndosev1/nnUNet_prediction/pre_dcm_510"
-    # gamma=gamma_analysis(reference=reference_path,evaluation=predict_path,save_path="/home/changh/Documents/2023_DosePredcition/temp/img_gamma.nii.gz")
+    max_gamma=1
+    gamma_image=sitk.ReadImage("/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/prostate_UAB/Dataset099_prostate_UAB/Prediction/2d/Gamma/0035.nii.gz")
+    gamma=sitk.GetArrayFromImage(gamma_image)
+    mask_path="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom/prostate_UAB/Ts/PROS_TEST_035_PROS_TEST_035_20240213_122201744/Nifti/Body.nii.gz"
+    print(pass_rate(max_gamma, gamma, gamma_image, mask_path))
+ 

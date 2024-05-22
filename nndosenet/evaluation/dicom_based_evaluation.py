@@ -85,7 +85,7 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
                     results_dict.update(r[i].get()[0])
                 remaining = [i for i in remaining if i not in done]
                 sleep(0.1)
-        save_json(results_dict,join(output_folder,"gamma_summary.json"))
+    save_json(results_dict,join(output_folder,"gamma_summary.json"))
 
 def entry_point_nii2dcm_and_gamma_analysis():
     parser = argparse.ArgumentParser('Convert nifti prediction to dicom if the ground truth is in dicom format. \

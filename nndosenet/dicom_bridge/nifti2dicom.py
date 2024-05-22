@@ -69,8 +69,8 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
     
     pre_np_dose = pre_np_dose.astype(float)
     pre_np_dose=sitk.GetImageFromArray(pre_np_dose)
-    pre_np_dose.SetOrigin(dose_sitk.GetOrigin())
-    pre_np_dose.SetSpacing(dose_sitk.GetSpacing())
+    # pre_np_dose.SetOrigin(dose_sitk.GetOrigin())
+    # pre_np_dose.SetSpacing(dose_sitk.GetSpacing())
     pre_np_dose=sitk.GetArrayFromImage(resample2gt(ori_dose,pre_np_dose))
     
     predict_dicom.DoseGridScaling = float(pre_np_dose.max()) / float(np.iinfo(out_type).max)

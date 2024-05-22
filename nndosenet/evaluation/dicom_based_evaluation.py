@@ -49,16 +49,7 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
     patient_csv=pd.read_csv(patient_csv)
     ref_list=list(patient_csv['patient'])
     pred_list=list(patient_csv['id'])
-    # with multiprocessing.get_context("spawn").Pool(num_processes) as p:
 
-    #     _ = p.starmap(nii2dcm_and_gamma,zip(
-    #                       [join(reference_folder, i,"Dicom","RD",os.listdir(join(reference_folder, i,"Dicom","RD"))[0]) for i in ref_list],
-    #                       [join(prediction_folder, str(i).zfill(4)) for i in pred_list],
-    #                       [join(image_folder, str(i).zfill(4)+"_000"+body_channel+".nii.gz") for i in pred_list],
-    #                       [output_folder] * len(pred_list),
-    #                       [gamma] * len(pred_list))
-    #                   )
-    #     #TODO: apply evaluation or read and write _evaluation 
     #TODO: change Body.nii.gz by using structure.json
     r=[]
     results_dict ={}# open exist one
@@ -85,6 +76,8 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
                     results_dict.update(r[i].get()[0])
                 remaining = [i for i in remaining if i not in done]
                 sleep(0.1)
+    #TODO: combine summaries
+    print(results_dict)
     save_json(results_dict,join(output_folder,"gamma_summary.json"))
 
 def entry_point_nii2dcm_and_gamma_analysis():
@@ -145,7 +138,7 @@ def entry_point_nii2dcm_and_gamma_analysis():
                 print("output_folder: ", output_folder)
                 apply_nii2dcm_and_gamma_to_folder(join(prediction_folder,config), reference_folder, output_folder, patient_csv, args.np)
                 print("all done")
-            break
+            
     else:
         if isfile(os.listdir(prediction_folder)[0]): #input folder with file 
             apply_nii2dcm_and_gamma_to_folder(prediction_folder, reference_folder, output_folder, patient_csv, args.np)

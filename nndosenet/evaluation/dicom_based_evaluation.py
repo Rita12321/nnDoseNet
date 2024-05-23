@@ -23,6 +23,7 @@ def nii2dcm_and_gamma(ref_path,pred_path,mask_path,save_folder,gamma=True) -> np
         gamma_save_path=join(save_folder,"Gamma",name+".nii.gz")
         gamma_options,pass_gamma_num,mask_num=gamma_analysis(reference=ref_dcm,evaluation=pred_dcm,mask_path=mask_path,save_path=gamma_save_path)
         dict={"gamma_setting":gamma_options,
+              "passing_rate":pass_gamma_num*100/mask_num,
               "pass_gamma_num":pass_gamma_num,
               "mask_num":mask_num,
               "prediction_file":pred_path,
@@ -77,8 +78,16 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
                 remaining = [i for i in remaining if i not in done]
                 sleep(0.1)
     #TODO: combine summaries
-    print(results_dict)
-    save_json(results_dict,join(output_folder,"gamma_summary.json"))
+    pass_list=[]
+    for case in results_dict:
+        pass_list.append(case["passing_rate"])
+    mean_dict={"gamma_option":results_dict[0]["gamma_setting"],
+               "mean_gamma_passing_rate":np.mean(pass_list),
+               "std_gamma_passing_rate":np.std(pass_list),
+               "total_case":len(results_dict)
+    }
+    results_dict = mean_dict+dict(sorted(results_dict.items()))
+    save_json(results_dict,join(output_folder,"gamma_summary.json"),sort_keys=False)
 
 def entry_point_nii2dcm_and_gamma_analysis():
     parser = argparse.ArgumentParser('Convert nifti prediction to dicom if the ground truth is in dicom format. \
@@ -130,7 +139,7 @@ def entry_point_nii2dcm_and_gamma_analysis():
     output_folder=args.out
 
     if args.pred==None:
-        print("didn't in put prediction folder, run default, all configuration and out put folder would be ayto assigned")
+        print("didn't in put prediction folder, run default, all configuration and out put folder would be auto assigned")
         for config in os.listdir(prediction_folder):
             if os.path.isdir(join(prediction_folder,config)):
                 print("runnnig: ", config)

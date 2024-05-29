@@ -10,7 +10,7 @@ class DoseEvaluator:
         self.label_df = label_df
         self.voxel_size = voxel_size
         self.roi_list = self.get_roi_dict(seperate_label)
-        self.metrics = ["mean","min","max","D_0.1_cc","D_99","D_95","D_1"]
+        self.metrics = ["mean","min","max","D_0.1_cc","D_99","D_95","D_1","homogeneity"]
         self.calculate_dvh_metrics(seperate_label)
         
 
@@ -80,6 +80,8 @@ class DoseEvaluator:
                         metric_value = np.min(roi_dose)
                     elif metric == "max":
                         metric_value = np.max(roi_dose)
+                    elif metric == "homogeneity":
+                        metric_value == (np.percentile(roi_dose, 98)-np.percentile(roi_dose, 98))/np.percentile(roi_dose, 50)
                     else:
                         raise ValueError(f"Metrics {metric} is not supported.")
                     temp_dict.update({metric+"_"+pred_ref:metric_value})

@@ -23,7 +23,7 @@ def nii2dcm_and_gamma(ref_path,pred_path,mask_path,save_folder,gamma=True) -> np
         gamma_save_path=join(save_folder,"Gamma",name+".nii.gz")
         gamma_options,pass_gamma_num,mask_num=gamma_analysis(reference=ref_dcm,evaluation=pred_dcm,mask_path=mask_path,save_path=gamma_save_path)
         gamma_dict={pred_path.split("/")[-1]:{"gamma_setting":gamma_options,
-                                                "passing_rate":pass_gamma_num*100/mask_num,
+                                                "passing_rate(%)":pass_gamma_num*100/mask_num,
                                                 "pass_gamma_num":pass_gamma_num,
                                                 "mask_num":mask_num,
                                                 "prediction_file":pred_path,

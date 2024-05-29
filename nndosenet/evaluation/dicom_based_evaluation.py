@@ -22,16 +22,15 @@ def nii2dcm_and_gamma(ref_path,pred_path,mask_path,save_folder,gamma=True) -> np
     if gamma:
         gamma_save_path=join(save_folder,"Gamma",name+".nii.gz")
         gamma_options,pass_gamma_num,mask_num=gamma_analysis(reference=ref_dcm,evaluation=pred_dcm,mask_path=mask_path,save_path=gamma_save_path)
-        dict={"gamma_setting":gamma_options,
-              "passing_rate":pass_gamma_num*100/mask_num,
-              "pass_gamma_num":pass_gamma_num,
-              "mask_num":mask_num,
-              "prediction_file":pred_path,
-              "reference_file":ref_path,
-              "Body/dose mask_file":mask_path
-        }
+        gamma_dict={pred_path.split("/")[-1]:{"gamma_setting":gamma_options,
+                                                "passing_rate":pass_gamma_num*100/mask_num,
+                                                "pass_gamma_num":pass_gamma_num,
+                                                "mask_num":mask_num,
+                                                "prediction_file":pred_path,
+                                                "reference_file":ref_path,
+                                                "Body/dose mask_file":mask_path}}
         
-        return dict
+        return gamma_dict
 
 def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
                                    reference_folder:str,
@@ -55,11 +54,11 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
     r=[]
     results_dict ={}# open exist one
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
-        for i,pred in enumerate(pred_list):
+        for k,pred in enumerate(pred_list):
             r.append(p.starmap_async(nii2dcm_and_gamma,
-                                     ((join(reference_folder, ref_list[i],"Dicom","RD",os.listdir(join(reference_folder, ref_list[i],"Dicom","RD"))[0]),
+                                     ((join(reference_folder, ref_list[k],"Dicom","RD",os.listdir(join(reference_folder, ref_list[k],"Dicom","RD"))[0]),
                                        join(prediction_folder, str(pred).zfill(4)),
-                                       join(reference_folder, ref_list[i],"Nifti","Body.nii.gz"),
+                                       join(reference_folder, ref_list[k],"Nifti","Body.nii.gz"),
                                        output_folder,gamma),)))
             
         remaining = list(range(len(pred_list)))
@@ -74,20 +73,26 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
                 done = [i for i in remaining if r[i].ready()]
                 for i in done:
                     pbar.update()
+                    # print(r[i].get())
                     results_dict.update(r[i].get()[0])
                 remaining = [i for i in remaining if i not in done]
                 sleep(0.1)
     #TODO: combine summaries
     pass_list=[]
+    gamma_setting={}
+    #print(results_dict)
     for case in results_dict:
-        pass_list.append(case["passing_rate"])
-    mean_dict={"gamma_option":results_dict[0]["gamma_setting"],
+        #print(case)
+        
+        # print(case.keys())
+        gamma_setting=results_dict[str(case)]['gamma_setting']
+        pass_list.append(results_dict[str(case)]['passing_rate'])
+    mean_dict={"gamma_setting":gamma_setting,
                "mean_gamma_passing_rate":np.mean(pass_list),
                "std_gamma_passing_rate":np.std(pass_list),
-               "total_case":len(results_dict)
-    }
-    results_dict = mean_dict+dict(sorted(results_dict.items()))
-    save_json(results_dict,join(output_folder,"gamma_summary.json"),sort_keys=False)
+               "total_case":len(results_dict)}
+    mean_dict.update(dict(sorted(results_dict.items())))
+    save_json(mean_dict,join(output_folder,"gamma_summary.json"),sort_keys=False)
 
 def entry_point_nii2dcm_and_gamma_analysis():
     parser = argparse.ArgumentParser('Convert nifti prediction to dicom if the ground truth is in dicom format. \
@@ -141,12 +146,16 @@ def entry_point_nii2dcm_and_gamma_analysis():
     if args.pred==None:
         print("didn't in put prediction folder, run default, all configuration and out put folder would be auto assigned")
         for config in os.listdir(prediction_folder):
+            if config=="2d":
+                continue
             if os.path.isdir(join(prediction_folder,config)):
                 print("runnnig: ", config)
                 output_folder=join(prediction_folder,config)
                 print("output_folder: ", output_folder)
                 apply_nii2dcm_and_gamma_to_folder(join(prediction_folder,config), reference_folder, output_folder, patient_csv, args.np)
                 print("all done")
+            
+            
             
     else:
         if isfile(os.listdir(prediction_folder)[0]): #input folder with file 

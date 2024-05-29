@@ -21,19 +21,45 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
                    evaluation: typing.Union[pydicom.dataset.FileDataset, str],
                    mask_path,
                    save_path=None,
-                   percent=3,mm=2,cutoff=20,max_gamma=1,ram=2**32): 
+                   percent=3,mm=2,cutoff=20,max_gamma=1,ram=2**35):#2**32): 
     
-    # if isinstance(reference, str):
-    #     reference = pydicom.read_file(reference, force=True)
-    # if isinstance(evaluation, str):
-    #     evaluation = pydicom.read_file(evaluation, force=True)        
+    # just checking
+    # # if isinstance(reference, str):
+    # #     reference = pydicom.read_file(reference, force=True)
+    # # if isinstance(evaluation, str):
+    # #     evaluation = pydicom.read_file(evaluation, force=True)        
     
-    # if not isinstance(reference, pydicom.dataset.FileDataset):
-    #     raise ValueError('Cannot get ground truth/reference dose dicom file, wrong file type.')
+    # # if not isinstance(reference, pydicom.dataset.FileDataset):
+    # #     raise ValueError('Cannot get ground truth/reference dose dicom file, wrong file type.')
     
-    # if not isinstance(evaluation, pydicom.dataset.FileDataset):
-    #     raise ValueError('Cannot get predict/evaluation dose dicom file, wrong file type.') 
-       
+    # # if not isinstance(evaluation, pydicom.dataset.FileDataset):
+    # #     raise ValueError('Cannot get predict/evaluation dose dicom file, wrong file type.') 
+    
+    
+    shape=reference.pixel_array.shape
+    # mask=sitk.ReadImage(mask_path)
+    # gamma_image=sitk.GetImageFromArray(reference.pixel_array)
+    # spacing=find_dose_spacing(reference=reference) 
+
+    # gamma_image.SetSpacing(spacing)
+    # gamma_image.SetOrigin(reference.ImagePositionPatient)
+    # mask=resample2ref(gamma_image,mask)
+    # mask=sitk.GetArrayFromImage(mask)
+    # print("body",get_bounding_box(mask))
+    
+    # ref_pix,eva_pix,bb_cor=get_bounding_box_of_ref_and_prediction(reference.pixel_array,evaluation.pixel_array) 
+    # new_shape=ref_pix.shape
+    # print(bb_cor)
+    # print(shape,ref_pix.shape)
+    # reference.Rows=new_shape[1]
+    # reference.Columns=new_shape[2]
+    # reference.NumberOfFrames=new_shape[0]
+
+    # reference=rewrite_dcm(reference,ref_pix)
+    # evaluation=rewrite_dcm(evaluation,eva_pix)
+    # axes_reference, dose_reference = pymedphys.dicom.zyx_and_dose_from_dataset(ref_bb_dcm)
+    # axes_evaluation, dose_evaluation = pymedphys.dicom.zyx_and_dose_from_dataset(eva_bb_dcm)
+    
     axes_reference, dose_reference = pymedphys.dicom.zyx_and_dose_from_dataset(reference)
     axes_evaluation, dose_evaluation = pymedphys.dicom.zyx_and_dose_from_dataset(evaluation)
 
@@ -57,7 +83,8 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
         return gamma
     gamma_np=np.nan_to_num(gamma,-1)
     # image=sitk.GetImageFromArray(gamma_np)  
-
+    # empty=np.zeros(shape)
+    # empty[bb_cor['xmin']:bb_cor['xmax'],bb_cor['ymin']:bb_cor['ymax'],bb_cor['zmin']:bb_cor['zmax']]=gamma
     image=sitk.GetImageFromArray(gamma_np)
     
     spacing=find_dose_spacing(reference=reference) 
@@ -94,6 +121,61 @@ def resample2ref(ref:sitk.Image,new:sitk.Image):
     resample.SetInterpolator(sitk.sitkNearestNeighbor)
 
     return resample.Execute(new)
+
+
+
+def get_bounding_box(mask_arr):
+
+    # assumption is that array is (x, y, z)
+
+    x_min, x_max = np.min(np.where(np.any(mask_arr, axis=(1, 2)))), \
+                   np.max(np.where(np.any(mask_arr, axis=(1, 2))))
+
+    y_min, y_max = np.min(np.where(np.any(mask_arr, axis=(0, 2)))), \
+                   np.max(np.where(np.any(mask_arr, axis=(0, 2))))
+
+    z_min, z_max = np.min(np.where(np.any(mask_arr, axis=(0, 1)))), \
+                   np.max(np.where(np.any(mask_arr, axis=(0, 1))))
+
+    coords = {'xmin': x_min, 'xmax': x_max, 'ymin': y_min, 'ymax': y_max, 'zmin': z_min, 'zmax': z_max}
+
+    return coords
+def get_bounding_box_of_ref_and_prediction(ref,pred):
+    ref=ref>1
+    pred=pred>1
+    mask=ref | pred
+    bb_cor=get_bounding_box(mask)
+    ref=ref[bb_cor['xmin']:bb_cor['xmax'],bb_cor['ymin']:bb_cor['ymax'],bb_cor['zmin']:bb_cor['zmax']]
+    pred=pred[bb_cor['xmin']:bb_cor['xmax'],bb_cor['ymin']:bb_cor['ymax'],bb_cor['zmin']:bb_cor['zmax']]
+    return ref, pred, bb_cor
+def rewrite_dcm(reference_dicom, new_array):
+
+
+    new_dicom=reference_dicom.copy()
+    if reference_dicom.BitsAllocated == 16:
+        out_type = 'uint16'
+    elif reference_dicom.BitsAllocated == 32:
+        out_type = 'uint32'
+    else:
+        raise ValueError(
+            'Must be 16-bit or 32-bit unsigned integer data in `dicom_path` dicom'
+        )
+        
+    # ori_dose=ori_dose.astype(float)
+    ori_dose=sitk.GetImageFromArray(reference_dicom.pixel_array)
+    ori_dose.SetOrigin(reference_dicom.ImagePositionPatient)
+    ori_dose.SetSpacing([reference_dicom.PixelSpacing[0],reference_dicom.PixelSpacing[1],reference_dicom.PixelSpacing[0]])
+    
+    
+    new_dicom.DoseGridScaling = float(new_array.max()) / float(np.iinfo(out_type).max)
+    dose_map_scaled = new_array / new_dicom.DoseGridScaling
+ 
+
+    #print(dose_map_scaled.dtype,out_type,np.min(dose_map_scaled),np.max(dose_map_scaled),dose_map_scaled.shape)
+    dose_map_scaled = dose_map_scaled.astype(out_type)
+    new_dicom.PixelData = dose_map_scaled.tobytes()
+    return new_dicom
+    
 if __name__ == '__main__':
     max_gamma=1
     gamma_image=sitk.ReadImage("/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/prostate_UAB/Dataset099_prostate_UAB/Prediction/2d/Gamma/0035.nii.gz")

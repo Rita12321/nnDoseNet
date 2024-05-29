@@ -19,6 +19,10 @@ from nndosenet.utilities.json_export import recursive_fix_for_json_export
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 from nndosenet.evaluation.basic_DVH_metrics import DoseEvaluator
 from nndosenet.paths import nnDose_dicom
+
+PTV_METRICS=["mean","min","max","D_0.1_cc","D_99","D_95","D_1","homogeneity","conformity"]
+OAR_METRICS=["mean","min","max","D_0.1_cc"]
+
 def label_or_region_to_key(label_or_region: Union[int, Tuple[int]]):
     return str(label_or_region)
 
@@ -109,12 +113,12 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
                 else:
                     seg_ptv.append(np.zeros(shape)) 
         results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv, 
-                                structure_label['Target'],voxel_size,seperate_label=True).calculate_dvh_metrics()
+                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,seperate_label=True)
     else:
         seg_ptv, _ = image_reader_writer.read_seg(ptv_file)
         seg_ptv = seg_ptv.squeeze().flatten()
         results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv, 
-                                structure_label['Target'],voxel_size,seperate_label=False).calculate_dvh_metrics()    
+                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,seperate_label=False)  
     if os.path.isdir(oar_file) :
         seg_oar=[]
         for i in structure_label['OAR'].values():
@@ -126,12 +130,12 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
                 else:
                     seg_oar.append(np.zeros(shape)) 
         results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar, 
-                                structure_label['OAR'],voxel_size,seperate_label=True).calculate_dvh_metrics()
+                                structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,seperate_label=True)
     else:
         seg_oar, _ = image_reader_writer.read_seg(oar_file)
         seg_oar = seg_oar.squeeze().flatten()
         results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar, 
-                                structure_label['OAR'],voxel_size,seperate_label=False).calculate_dvh_metrics()
+                                structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,seperate_label=False)
 
 
     return results

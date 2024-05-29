@@ -17,8 +17,8 @@ Avalible metrics in each contour:
  - `D_99`: The min dose received by the hottest 99% of voxel of each contour
  - `D_95`: The min dose received by the hottest 95% of voxel of each contour
  - `D_1`: The min dose received by the hottest 1% of voxel of each contour
- - `homogeneity`: The homogeneity of the dose in contour. Calculate by (D_2-D_98)/D_50
-
+ - `homogeneity`: The homogeneity of the contour. Calculate by (D_2-D_98)/D_50
+ - `conformity`: The conformity of the contour. Calculate by ()/(V_PTV*V_prescription)
 
 
 ## 2. Evaluation Map

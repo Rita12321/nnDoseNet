@@ -66,4 +66,4 @@ Please use this code for prediction
 
 
 #
-> Please check **[evaluation methods](evaluation_methods.md)** for next step :)
+> Please check **[evaluation methods](evaluation_methods.md)** for next step :) 

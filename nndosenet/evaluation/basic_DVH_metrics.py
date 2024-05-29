@@ -3,7 +3,7 @@ import numpy as np
 class DoseEvaluator:
     """Evaluate a full dose distribution against the reference dose on the OpenKBP competition metrics"""
 
-    def __init__(self, dose_ref, dose_pred, seg, label_df,metrics_list=None,voxel_size=1,seperate_label=False):
+    def __init__(self, dose_ref, dose_pred, seg, label_df,voxel_size=1,metrics_list=None,seperate_label=False):
         self.dose_ref = dose_ref
         self.dose_pred = dose_pred
         self.seg = seg
@@ -63,8 +63,10 @@ class DoseEvaluator:
                 for pred_ref in ['Pred','Ref']:
                     if pred_ref =='Pred':
                         roi_dose=masked_pred
+                        dose=self.dose_pred
                     else:
                         roi_dose=masked_ref
+                        dose=self.dose_ref
                     roi_size = len(roi_dose)
                     if roi_size<=0:
                         continue
@@ -85,8 +87,10 @@ class DoseEvaluator:
                         metric_value = np.max(roi_dose)
                     elif metric == "homogeneity":
                         metric_value == (np.percentile(roi_dose, 98)-np.percentile(roi_dose, 2))/np.percentile(roi_dose, 50)
-                    elif metric == "homogeneity":
-                        metric_value == 0#(np.percentile(roi_dose, 98)-np.percentile(roi_dose, 2))/np.percentile(roi_dose, 50)      
+                    elif metric == "conformity":
+                        V_iso = len(np.where(self.seg==int(label)) )
+                        V_ptv_and = len(np.where(roi_dose==int(label)) )
+                        metric_value == (V_ptv_and**2)/(V_iso*roi_size)
                     else:
                         raise ValueError(f"Metrics {metric} is not supported.")
                     temp_dict.update({metric+"_"+pred_ref:metric_value})

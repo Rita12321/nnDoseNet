@@ -76,6 +76,7 @@ Then we can use prediction command and get prediction of Ts(testing files), then
 - `mean`, `min`, `max` of each ROI in ground truth and prediction
 - `D_0.1cc`:  The minimum dose received by the hottest sub volume of 0.1cc of each ROI in ground truth and prediction
 - `D_99`, `D_95`, `D_1`: The minimum dose received by the hottest 99%, 95% and 1%  of  volume of each ROI in ground truth and prediction
+ - `homogeneity`: The homogeneity of the dose in contour.
 
 All above metrices are calculated case-by-case and also calculate average of metrices among all cases.
 

@@ -22,10 +22,12 @@ classifiers = [
 ]
 keywords = [
     'deep learning',
+    'deep learning framework',
     'radiation oncology',
     'radiotherapy',
     'treatment planning',
     'dose prediction',
+    'RT dose prediction',
     'medical image analysis',
     'nnDoseNet',
 ]
@@ -69,7 +71,6 @@ nnDoseNet_extract_fingerprint = "nndosenet.experiment_planning.plan_and_preproce
 nnDoseNet_plan_experiment = "nndosenet.experiment_planning.plan_and_preprocess_entrypoints:plan_experiment_entry"
 nnDoseNet_preprocess = "nndosenet.experiment_planning.plan_and_preprocess_entrypoints:preprocess_entry"
 nnDoseNet_train = "nndosenet.run.run_training:run_training_entry"
-nnDoseNet_predict_from_modelfolder = "nndosenet.inference.predict_from_raw_data:predict_entry_point_modelfolder"
 nnDoseNet_predict = "nndosenet.inference.predict_from_raw_data:predict_entry_point"
 nnDoseNet_predict_Ts = "nndosenet.inference.predict_from_raw_data:predict_Ts_entry_point"
 nnDoseNet_find_best_configuration = "nndosenet.evaluation.find_best_configuration:find_best_configuration_entry_point"

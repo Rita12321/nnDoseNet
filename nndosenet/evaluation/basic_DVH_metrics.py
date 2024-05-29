@@ -81,7 +81,7 @@ class DoseEvaluator:
                     elif metric == "max":
                         metric_value = np.max(roi_dose)
                     elif metric == "homogeneity":
-                        metric_value == (np.percentile(roi_dose, 98)-np.percentile(roi_dose, 98))/np.percentile(roi_dose, 50)
+                        metric_value == (np.percentile(roi_dose, 98)-np.percentile(roi_dose, 2))/np.percentile(roi_dose, 50)
                     else:
                         raise ValueError(f"Metrics {metric} is not supported.")
                     temp_dict.update({metric+"_"+pred_ref:metric_value})

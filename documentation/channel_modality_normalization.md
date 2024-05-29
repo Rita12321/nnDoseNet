@@ -13,7 +13,7 @@ The `channel_names` typically looks like this in nnDoseNet:
         },
 
 Here is the avaliable normalization method and corrrespond names.
-If you enter a channel name that is not in the following list, the default (`zscore`) will be used.
+If you enter a channel name that is not in the following list, the default (`zscore`) will be applied.
 
 
 - `CT`: Perform CT normalization. Specifically, collect intensity values from the foreground (where intensity in dose map is <=0) in all training cases, compute the mean, standard deviation as well as the 0.5 and 

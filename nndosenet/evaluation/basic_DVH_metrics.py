@@ -1,7 +1,7 @@
 import numpy as np 
 
 class DoseEvaluator:
-    """Evaluate a full dose distribution against the reference dose on the OpenKBP competition metrics"""
+    """Evaluate a full dose distribution against the reference dose on the OpenKBP competition metrics and some extension metrices we add up """
 
     def __init__(self, dose_ref, dose_pred, seg, label_df,voxel_size=1,metrics_list=None,seperate_label=False):
         self.dose_ref = dose_ref
@@ -52,6 +52,7 @@ class DoseEvaluator:
                 if len(masked_ref)<=0: 
                     continue
                 masked_pred=np.take(self.dose_pred,np.where(self.seg==int(label))).flatten()
+            # #identical method
             # if self.seperate_label or (self.seg is list):
                 
             #     masked_ref=np.where(self.seg[i]>0,self.dose_ref,np.nan)

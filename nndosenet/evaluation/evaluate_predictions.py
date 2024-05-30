@@ -20,8 +20,7 @@ from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 from nndosenet.evaluation.basic_DVH_metrics import DoseEvaluator
 from nndosenet.paths import nnDose_dicom
 
-PTV_METRICS=["mean","min","max","D_0.1_cc","D_99","D_95","D_1","homogeneity","conformity"]
-OAR_METRICS=["mean","min","max","D_0.1_cc"]
+
 
 def label_or_region_to_key(label_or_region: Union[int, Tuple[int]]):
     return str(label_or_region)
@@ -82,6 +81,8 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
                          image_reader_writer: BaseReaderWriter,
                         structure_label: Union[List[int], List[Union[int, Tuple[int, ...]]]]) -> dict:
     
+    PTV_METRICS=["mean","min","max","D_0.1_cc","D_99","D_95","D_1","homogeneity","conformity"]#
+    OAR_METRICS=["mean","min","max","D_0.1_cc"]
     # metrics: full image evaluation, only need ref and pred
     dose_ref, dose_dict = image_reader_writer.read_seg(reference_file)
     dose_pred, _ = image_reader_writer.read_seg(prediction_file)
@@ -113,12 +114,12 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
                 else:
                     seg_ptv.append(np.zeros(shape)) 
         results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv, 
-                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,seperate_label=True)
+                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,seperate_label=True).calculate_dvh_metrics()
     else:
         seg_ptv, _ = image_reader_writer.read_seg(ptv_file)
         seg_ptv = seg_ptv.squeeze().flatten()
         results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv, 
-                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,seperate_label=False)  
+                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,seperate_label=False).calculate_dvh_metrics() 
     if os.path.isdir(oar_file) :
         seg_oar=[]
         for i in structure_label['OAR'].values():
@@ -130,12 +131,12 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
                 else:
                     seg_oar.append(np.zeros(shape)) 
         results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar, 
-                                structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,seperate_label=True)
+                                structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,seperate_label=True).calculate_dvh_metrics()
     else:
         seg_oar, _ = image_reader_writer.read_seg(oar_file)
         seg_oar = seg_oar.squeeze().flatten()
         results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar, 
-                                structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,seperate_label=False)
+                                structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,seperate_label=False).calculate_dvh_metrics()
 
 
     return results
@@ -148,8 +149,8 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
                                    file_ending: str,
                                    structure_df: Union[List[int], List[Union[int, Tuple[int, ...]]]],
                                    ignore_label: int = None,
-                                   dose_label:bool=False,
-                                   num_processes: int = default_num_processes,
+                                   dose_label:bool=True,
+                                   num_processes: int = 8,
                                    chill: bool = True,ptv_oar=[1,2],raw_folder=False,patient_csv=None) -> dict:
     """
     output_file must end with .json; can be None
@@ -180,6 +181,12 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
     
     files_ref = [join(folder_ref, i) for i in files_pred]
     files_pred = [join(folder_pred, i) for i in files_pred]
+    # print(files_ref)
+    # print(files_pred)
+    # print(files_ptv)
+    # print(files_oar)
+    # print(structure_df)
+    # print("Using",num_processes, "CPU")
     with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
         # for i in list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred), [ignore_label] * len(files_pred))):
         #     compute_metrics(*i)
@@ -195,11 +202,12 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
                         ))
             )
         else:
-            results = pool.starmap(
-                compute_seg_metrics,
-                list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [structure_df] * len(files_pred),
-                        [ignore_label] * len(files_pred)))
-            )
+            print("non-dose? you should check out nnUNet if you want to do segmentation!")
+            # results = pool.starmap(
+            #     compute_seg_metrics,
+            #     list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [structure_df] * len(files_pred),
+            #             [ignore_label] * len(files_pred)))
+            # )
 
     if dose_label:
         #mean metric per class
@@ -293,77 +301,77 @@ def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_inp
     if output_file is None:
         output_file = join(folder_pred, 'summary.json')
 
-    #lm = PlansManager(plans_file).get_label_manager(dataset_json)
-    compute_dose_metrics_on_folder(folder_ref, folder_pred, folder_input, output_file, rw, file_ending,
-                              structure_json,num_processes, chill=chill,dose_label=True,
+
+    compute_dose_metrics_on_folder(folder_ref, folder_pred, folder_input, output_file, 
+                                   rw, file_ending,structure_json,
+                                   num_processes=num_processes,ignore_label=None,dose_label=True, chill=chill,
                               raw_folder=raw_folder,patient_csv=patient_csv)
-    
-    
+
 # This function is for sementation with region input
-def labels_to_list_of_regions(labels: List[int]):
-    return [(i,) for i in labels]
+# def labels_to_list_of_regions(labels: List[int]):
+#     return [(i,) for i in labels]
 
 # This function is for sementation
-def region_or_label_to_mask(segmentation: np.ndarray, region_or_label: Union[int, Tuple[int, ...]]) -> np.ndarray:
-    if np.isscalar(region_or_label):
-        return segmentation == region_or_label
-    else:
-        mask = np.zeros_like(segmentation, dtype=bool)
-        for r in region_or_label:
-            mask[segmentation == r] = True
-    return mask
+# def region_or_label_to_mask(segmentation: np.ndarray, region_or_label: Union[int, Tuple[int, ...]]) -> np.ndarray:
+#     if np.isscalar(region_or_label):
+#         return segmentation == region_or_label
+#     else:
+#         mask = np.zeros_like(segmentation, dtype=bool)
+#         for r in region_or_label:
+#             mask[segmentation == r] = True
+#     return mask
 
 # This function is for sementation
-def compute_tp_fp_fn_tn(mask_ref: np.ndarray, mask_pred: np.ndarray, ignore_mask: np.ndarray = None):
-    if ignore_mask is None:
-        use_mask = np.ones_like(mask_ref, dtype=bool)
-    else:
-        use_mask = ~ignore_mask
-    tp = np.sum((mask_ref & mask_pred) & use_mask)
-    fp = np.sum(((~mask_ref) & mask_pred) & use_mask)
-    fn = np.sum((mask_ref & (~mask_pred)) & use_mask)
-    tn = np.sum(((~mask_ref) & (~mask_pred)) & use_mask)
-    return tp, fp, fn, tn
+# def compute_tp_fp_fn_tn(mask_ref: np.ndarray, mask_pred: np.ndarray, ignore_mask: np.ndarray = None):
+#     if ignore_mask is None:
+#         use_mask = np.ones_like(mask_ref, dtype=bool)
+#     else:
+#         use_mask = ~ignore_mask
+#     tp = np.sum((mask_ref & mask_pred) & use_mask)
+#     fp = np.sum(((~mask_ref) & mask_pred) & use_mask)
+#     fn = np.sum((mask_ref & (~mask_pred)) & use_mask)
+#     tn = np.sum(((~mask_ref) & (~mask_pred)) & use_mask)
+#     return tp, fp, fn, tn
 
 # This function is for segmentation
-def compute_seg_metrics(reference_file: str, prediction_file: str, image_reader_writer: BaseReaderWriter,
-                    labels_or_regions: Union[List[int], List[Union[int, Tuple[int, ...]]]],
-                    ignore_label: int = None) -> dict:
-    # load images
-    seg_ref, seg_ref_dict = image_reader_writer.read_seg(reference_file)
-    seg_pred, seg_pred_dict = image_reader_writer.read_seg(prediction_file)
-    # spacing = seg_ref_dict['spacing']
+# def compute_seg_metrics(reference_file: str, prediction_file: str, image_reader_writer: BaseReaderWriter,
+#                     labels_or_regions: Union[List[int], List[Union[int, Tuple[int, ...]]]],
+#                     ignore_label: int = None) -> dict:
+#     # load images
+#     seg_ref, seg_ref_dict = image_reader_writer.read_seg(reference_file)
+#     seg_pred, seg_pred_dict = image_reader_writer.read_seg(prediction_file)
+#     # spacing = seg_ref_dict['spacing']
 
-    ignore_mask = seg_ref == ignore_label if ignore_label is not None else None
-    print("computing seg metrics")
+#     ignore_mask = seg_ref == ignore_label if ignore_label is not None else None
+#     print("computing seg metrics")
 
-    results = {}
-    results['reference_file'] = reference_file
-    results['prediction_file'] = prediction_file
-    results['dose']='False'
-    results['metrics'] = {}
+#     results = {}
+#     results['reference_file'] = reference_file
+#     results['prediction_file'] = prediction_file
+#     results['dose']='False'
+#     results['metrics'] = {}
     
-    for r in labels_or_regions:
-        results['metrics'][r] = {}
-        mask_ref = region_or_label_to_mask(seg_ref, r)
-        mask_pred = region_or_label_to_mask(seg_pred, r)
+#     for r in labels_or_regions:
+#         results['metrics'][r] = {}
+#         mask_ref = region_or_label_to_mask(seg_ref, r)
+#         mask_pred = region_or_label_to_mask(seg_pred, r)
 
-        mask_ref = region_or_label_to_mask(seg_ref, r)
-        mask_pred = region_or_label_to_mask(seg_pred, r)
-        tp, fp, fn, tn = compute_tp_fp_fn_tn(mask_ref, mask_pred, ignore_mask)
-        if tp + fp + fn == 0:
-            results['metrics'][r]['Dice'] = np.nan
-            results['metrics'][r]['IoU'] = np.nan
-        else:
-            results['metrics'][r]['Dice'] = 2 * tp / (2 * tp + fp + fn)
-            results['metrics'][r]['IoU'] = tp / (tp + fp + fn)
-        results['metrics'][r]['FP'] = fp
-        results['metrics'][r]['TP'] = tp
-        results['metrics'][r]['FN'] = fn
-        results['metrics'][r]['TN'] = tn
-        results['metrics'][r]['n_pred'] = fp + tp
-        results['metrics'][r]['n_ref'] = fn + tp
-    return results
+#         mask_ref = region_or_label_to_mask(seg_ref, r)
+#         mask_pred = region_or_label_to_mask(seg_pred, r)
+#         tp, fp, fn, tn = compute_tp_fp_fn_tn(mask_ref, mask_pred, ignore_mask)
+#         if tp + fp + fn == 0:
+#             results['metrics'][r]['Dice'] = np.nan
+#             results['metrics'][r]['IoU'] = np.nan
+#         else:
+#             results['metrics'][r]['Dice'] = 2 * tp / (2 * tp + fp + fn)
+#             results['metrics'][r]['IoU'] = tp / (tp + fp + fn)
+#         results['metrics'][r]['FP'] = fp
+#         results['metrics'][r]['TP'] = tp
+#         results['metrics'][r]['FN'] = fn
+#         results['metrics'][r]['TN'] = tn
+#         results['metrics'][r]['n_pred'] = fp + tp
+#         results['metrics'][r]['n_ref'] = fn + tp
+#     return results
     
 def evaluate_folder_entry_point():
     import argparse
@@ -389,7 +397,7 @@ def evaluate_folder_entry_point():
             that should be [image_folder]/[Nifti]/oar1.nii.gz, oar2.nii.gz, ptv1.nii.gz....continue ")
     compute_dose_metrics_on_folder2(args.gt_folder, args.pred_folder, args.image_folder, args.djfile, args.sjfile, args.o, 
                                     args.np, chill=args.chill,raw_folder=args.by_roi,patient_csv=args.id_patient_csv)
-
+    
 
 if __name__ == '__main__':
     folder_ref = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/GroundTruth/labelsTs'

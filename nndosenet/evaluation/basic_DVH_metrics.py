@@ -9,12 +9,12 @@ class DoseEvaluator:
         self.seg = seg
         self.label_df = label_df
         self.voxel_size = voxel_size
+        self.seperate_label=seperate_label
         self.roi_list = self.get_roi_dict(seperate_label)
         if metrics_list is None:
             self.metrics = ["mean","min","max","D_0.1_cc","D_99","D_95","D_1","homogeneity","conformity"]
         else:
             self.metrics=metrics_list
-        self.calculate_dvh_metrics(seperate_label)
         
 
     def get_roi_dict(self,seperate_label):
@@ -30,7 +30,7 @@ class DoseEvaluator:
                 roi.update({temp_str[1:]:{"input_label":label}})
         return roi   
 
-    def calculate_dvh_metrics(self,seperate_label=False):
+    def calculate_dvh_metrics(self):
         """
         Calculate the DVH values that were used to evaluate submissions in the competition.
         :param metric_df: A DataFrame with columns indexed by the metric name and the structure name
@@ -41,21 +41,32 @@ class DoseEvaluator:
         for i,structure in enumerate(self.roi_list):
             temp_dict=self.roi_list[structure]
             label=self.roi_list[structure]["input_label"]
-            if seperate_label or (self.seg is list):
+            if self.seperate_label or (self.seg is list):
                 
-                masked_ref=np.where(self.seg[i]>0,self.dose_ref,np.nan)
-                masked_ref = masked_ref[np.logical_not(np.isnan(masked_ref))]
+                masked_ref=np.take(self.dose_ref,np.where(self.seg[i]>0)).flatten()
                 if len(masked_ref)<=0: 
                     continue
-                masked_pred=np.where(self.seg[i]>0,self.dose_pred,np.nan) 
-                masked_pred = masked_pred[np.logical_not(np.isnan(masked_pred))]
+                masked_pred=np.take(self.dose_pred,np.where(self.seg[i]>0)).flatten() 
             else:
-                masked_ref=np.where(self.seg==int(label),self.dose_ref,np.nan)
-                masked_ref = masked_ref[np.logical_not(np.isnan(masked_ref))]
+                masked_ref=np.take(self.dose_ref,np.where(self.seg==int(label))).flatten()
                 if len(masked_ref)<=0: 
                     continue
-                masked_pred=np.where(self.seg==int(label),self.dose_pred,np.nan) 
-                masked_pred = masked_pred[np.logical_not(np.isnan(masked_pred))]
+                masked_pred=np.take(self.dose_pred,np.where(self.seg==int(label))).flatten()
+            # if self.seperate_label or (self.seg is list):
+                
+            #     masked_ref=np.where(self.seg[i]>0,self.dose_ref,np.nan)
+            #     masked_ref = masked_ref[np.logical_not(np.isnan(masked_ref))]
+            #     if len(masked_ref)<=0: 
+            #         continue
+            #     masked_pred=np.where(self.seg[i]>0,self.dose_pred,np.nan) 
+            #     masked_pred = masked_pred[np.logical_not(np.isnan(masked_pred))]
+            # else:
+            #     masked_ref=np.where(self.seg==int(label),self.dose_ref,np.nan)
+            #     masked_ref = masked_ref[np.logical_not(np.isnan(masked_ref))]
+            #     if len(masked_ref)<=0: 
+            #         continue
+            #     masked_pred=np.where(self.seg==int(label),self.dose_pred,np.nan) 
+            #     masked_pred = masked_pred[np.logical_not(np.isnan(masked_pred))]
                 
             
             for metric in self.metrics:
@@ -70,7 +81,7 @@ class DoseEvaluator:
                     roi_size = len(roi_dose)
                     if roi_size<=0:
                         continue
-                    if metric == "D_0.1_cc":                        
+                    if metric == "D_0.1_cc": 
                         fractional_volume_to_evaluate = 100 - voxels_within_tenths_cc / roi_size * 100
                         metric_value = np.percentile(roi_dose, fractional_volume_to_evaluate)
                     elif metric == "mean":
@@ -86,11 +97,11 @@ class DoseEvaluator:
                     elif metric == "max":
                         metric_value = np.max(roi_dose)
                     elif metric == "homogeneity":
-                        metric_value == (np.percentile(roi_dose, 98)-np.percentile(roi_dose, 2))/np.percentile(roi_dose, 50)
+                        metric_value = (np.percentile(roi_dose, 98)-np.percentile(roi_dose, 2))/float(label)
                     elif metric == "conformity":
-                        V_iso = len(np.where(self.seg==int(label)) )
-                        V_ptv_and = len(np.where(roi_dose==int(label)) )
-                        metric_value == (V_ptv_and**2)/(V_iso*roi_size)
+                        V_iso = np.count_nonzero(dose>=int(label))
+                        V_ptv_and = np.count_nonzero(roi_dose>=int(label))
+                        metric_value = (V_ptv_and**2)/(V_iso*roi_size)
                     else:
                         raise ValueError(f"Metrics {metric} is not supported.")
                     temp_dict.update({metric+"_"+pred_ref:metric_value})

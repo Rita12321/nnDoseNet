@@ -40,10 +40,20 @@ Please use this command for metrics calculation
     With `--by_roi` on we evaluate the metrices based on the contour in image folder and structure.json. 
 
 ## 2. Evaluation Map
-
+ Evaluation map are consist of Nifti based and DIOCM based. For [Nifti based dataset](dataset_format(nnDose_dicom).md) nnDoseNet only provide difference map for visualized evaluation. For [Dicom based dataset](dataset_format(nnDose_dicom).md), nnDoseNet provide a function to convert the prediction Nifti files into a dcm for  further investigation. With dcm format of prediction we use gamma analysis function from [pymedphys](https://github.com/pymedphys/pymedphys). 
 
 ### 2.1 Difference Map
+    Please use this command to generate difference map
 
-### 2.2.1 Convert Back to DICOM
+        nnDoseNet_diff_map_evaluation -gt_folder [groundtruth folder(labelsTs)] -pred_folder [predcition folder(config)] -np [num of processor]
 
-### 2.2.2 Gamma Analysis
+### 2.2.1 Convert Back to DICOM and Gamma Analysis
+    Please use this command to convert prediction to DICOM format and proceed gamma analysis.
+
+        nnDoseNet_dicom_based_evaluation -gt_folder [groundtruth folder(labelsTs)] -pred_folder [predcition folder(config)] -np [num of processor]
+
+    Please use this command to convert prediction to DICOM format and DON'T want proceed gamma analysis.\
+    *Strongly suggest to put `--no_gamma` tag if you don't need  gamma analysis.
+
+        nnDoseNet_dicom_based_evaluation 
+

@@ -86,7 +86,7 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
         
         # print(case.keys())
         gamma_setting=results_dict[str(case)]['gamma_setting']
-        pass_list.append(results_dict[str(case)]['passing_rate'])
+        pass_list.append(results_dict[str(case)]['passing_rate(%)'])
     mean_dict={"gamma_setting":gamma_setting,
                "mean_gamma_passing_rate":np.mean(pass_list),
                "std_gamma_passing_rate":np.std(pass_list),
@@ -146,7 +146,7 @@ def entry_point_nii2dcm_and_gamma_analysis():
     if args.pred==None:
         print("didn't in put prediction folder, run default, all configuration and out put folder would be auto assigned")
         for config in os.listdir(prediction_folder):
-            if config=="2d":
+            if config=="2d" or config=="3d_lowres" or config=="3d_lowres" or config =="ensemble_3d_fullres_lowres":
                 continue
             if os.path.isdir(join(prediction_folder,config)):
                 print("runnnig: ", config)

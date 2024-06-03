@@ -21,7 +21,7 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
                    evaluation: typing.Union[pydicom.dataset.FileDataset, str],
                    mask_path,
                    save_path=None,
-                   percent=3,mm=2,cutoff=20,max_gamma=1,ram=2**35):#2**32): 
+                   percent=3,mm=2,cutoff=20,max_gamma=1,ram=2**32):#2**32): 
     
     # just checking
     # # if isinstance(reference, str):

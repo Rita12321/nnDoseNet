@@ -688,7 +688,7 @@ def predict_entry_point():
                              'but less accurate inference. Not recommended.')
     parser.add_argument('--verbose', action='store_true', help="Set this if you like being talked to. You will have "
                                                                "to be a good listener/reader.")
-    parser.add_argument('--save_probabilities', action='store_true',
+    parser.add_argument('--dont_save_probabilities', action='store_false',
                         help='Set this to export predicted class "probabilities". Required if you want to ensemble '
                              'multiple configurations.')
     parser.add_argument('--continue_prediction', action='store_true',
@@ -792,7 +792,7 @@ def predict_Ts_entry_point():
                              'but less accurate inference. Not recommended.')
     parser.add_argument('--verbose', action='store_true', help="Set this if you like being talked to. You will have "
                                                                "to be a good listener/reader.")
-    parser.add_argument('--save_probabilities', action='store_true',
+    parser.add_argument('--dont_save_probabilities', action='store_false',
                         help='Set this to export predicted class "probabilities". Required if you want to ensemble '
                              'multiple configurations.')
     parser.add_argument('--continue_prediction', action='store_true',

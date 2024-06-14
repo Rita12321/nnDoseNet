@@ -102,6 +102,8 @@ class DoseEvaluator:
                     elif metric == "conformity":
                         V_iso = np.count_nonzero(dose>=int(label))
                         V_ptv_and = np.count_nonzero(roi_dose>=int(label))
+                        if V_iso<=0:
+                            continue
                         metric_value = (V_ptv_and**2)/(V_iso*roi_size)
                     else:
                         raise ValueError(f"Metrics {metric} is not supported.")

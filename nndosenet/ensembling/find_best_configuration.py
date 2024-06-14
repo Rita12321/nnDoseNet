@@ -72,8 +72,8 @@ def generate_inference_command_on_Ts(dataset_name_or_id: Union[int, str], config
                       f'-tr {trainer_name} -c {configuration_name} -p {plans_identifier}'
     # if folder_with_segs_from_prev_stage is not None:
     #     predict_command += f' -prev_stage_predictions {folder_with_segs_from_prev_stage}'
-    if save_npz:
-        predict_command += ' --npz'
+    # if save_npz:
+    #     predict_command += ' --npz'
     return predict_command
 
 def generate_inference_command(dataset_name_or_id: Union[int, str], configuration_name: str,
@@ -102,8 +102,8 @@ def generate_inference_command(dataset_name_or_id: Union[int, str], configuratio
                       f'-tr {trainer_name} -c {configuration_name} -p {plans_identifier}'
     # if folder_with_segs_from_prev_stage is not None:
     #     predict_command += f' -prev_stage_predictions {folder_with_segs_from_prev_stage}'
-    if save_npz:
-        predict_command += ' --npz'
+    # if save_npz:
+    #     predict_command += ' --npz'
     return predict_command
 
 

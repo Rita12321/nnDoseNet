@@ -9,7 +9,7 @@ from batchgenerators.utilities.file_and_folder_operations import subfiles, join,
     isfile
 import tqdm
 
-def difference_map(label_np,pred_np,dose_mask=None,MSE=False,MAE=False): 
+def difference_map(label_np,pred_np,dose_mask=None,do_MSE=False,do_MAE=False): 
     diff_map=label_np-pred_np
     num_dose=None
     MSE=None
@@ -18,10 +18,11 @@ def difference_map(label_np,pred_np,dose_mask=None,MSE=False,MAE=False):
     if dose_mask != None:
         diff_map=diff_map*dose_mask
         num_dose=np.count_nonzero(dose_mask.flatten())
-    if MSE:
+    if do_MSE:
         MSE=MSE_from_diff(diff_map=diff_map,num_dose=num_dose)
-    if MAE:
+    if do_MAE:
         MAE=MAE_from_diff(diff_map=diff_map,num_dose=num_dose)
+    #print(np.max(diff_map),np.max(pred_np),np.max(label_np))
     return diff_map,MAE,MSE
 
 def MSE_from_diff(diff_map,num_dose=None):
@@ -38,13 +39,18 @@ def MAE_from_diff(diff_map,num_dose=None):
     
     return np.mean(np.sum(np.abs(diff_map.flatten())))    
 #TODO: difference map api
-def write_diffmap(label,pred,file_ending,out_folder,dose_mask=None,MSE=False,MAE=False):
+def write_diffmap(label,pred,file_ending,out_folder,dose_mask=None,do_MSE=False,do_MAE=False):
        #todo imageio file ending
     #print(label,pred)
     label_img=sitk.ReadImage (label)
     label_np=sitk.GetArrayFromImage(label_img)
     pred_np=sitk.GetArrayFromImage(sitk.ReadImage (pred))
-    diffmap,_,_=difference_map(label_np,pred_np,dose_mask,MSE,MAE)
+    diffmap,_,_=difference_map(label_np,pred_np,dose_mask,do_MSE,do_MAE)
+    if dose_mask is None:
+        dose_mask=label_np>0
+  
+    diffmap = np.where(dose_mask >=1, diffmap, 160) #0. set 160 becuse slice is anoying, 
+
     diff_img=sitk.GetImageFromArray(diffmap)
     diff_img.CopyInformation(label_img)
     sitk.WriteImage(diff_img,join(out_folder,label.split("/")[-1]))
@@ -55,7 +61,7 @@ def diff_map_api(label_folder,pred_folder,file_ending,out_folder,num_processes):
         
     labels=sorted(subfiles(label_folder,suffix=file_ending))
     preds=sorted(subfiles(pred_folder,suffix=file_ending))
-
+     #todo add progress bar
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
         _ = p.starmap(write_diffmap,zip(
                           labels,
@@ -68,12 +74,12 @@ def diff_map_api(label_folder,pred_folder,file_ending,out_folder,num_processes):
 def entrypoint_diff_map():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('gt_folder', type=str, help='folder with ground truth label')
-    parser.add_argument('pred_folder', type=str, help='folder with predicted label')
+    parser.add_argument('-gt_folder', type=str, help='folder with ground truth label')
+    parser.add_argument('-pred_folder', type=str, help='folder with predicted label')
     parser.add_argument('-djfile', type=str, required=False,default=None,
                         help='dataset.json file')
     parser.add_argument('-o', type=str, required=False, default=None,
-                        help='Output file. Optional. Default: pred_folder/summary.json')
+                        help='Output file. Optional. Default: [pred_folder]/DiffMap')
     parser.add_argument('-np', type=int, required=False, default=8,
                         help=f'number of processes used. Optional. Default: 8')
     args = parser.parse_args()

@@ -870,7 +870,7 @@ def predict_Ts_entry_point():
         args.f,
         checkpoint_name=args.chk
     )
-    predictor.predict_from_files(input_folder, output_folder, save_probabilities=args.save_probabilities,
+    predictor.predict_from_files(input_folder, output_folder, save_probabilities=not args.dont_save_probabilities,
                                  overwrite=not args.continue_prediction,
                                  num_processes_preprocessing=args.npp,
                                  num_processes_segmentation_export=args.nps,

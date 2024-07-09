@@ -81,7 +81,8 @@ nnDoseNet_download_pretrained_model_by_url = "nndosenet.model_sharing.entry_poin
 nnDoseNet_install_pretrained_model_from_zip = "nndosenet.model_sharing.entry_points:install_from_zip_entry_point"
 nnDoseNet_export_model_to_zip = "nndosenet.model_sharing.entry_points:export_pretrained_model_entry"
 nnDoseNet_evaluate_folder = "nndosenet.evaluation.evaluate_predictions:evaluate_folder_entry_point"
-nnDoseNet_dicom_based_evaluation= "nndosenet.evaluation.dicom_based_evaluation:entry_point_nii2dcm_and_gamma_analysis"
+nnDoseNet_dicom_based_evaluation= "nndosenet.evaluation.dicom_based_evaluation:nii2dcm_and_gamma_analysis_entry_point"
+nnDoseNet_dicom_based_evaluation_Ts= "nndosenet.evaluation.dicom_based_evaluation:nii2dcm_and_gamma_analysis_Ts_entry_point"
 nnDoseNet_diff_map_evaluation="nndosenet.evaluation.difference_map:entrypoint_diff_map"
 [project.optional-dependencies]
 dev = [

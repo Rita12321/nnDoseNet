@@ -84,8 +84,7 @@ def preprocess_entry():
                         help='[OPTIONAL] You can use this to specify a custom plans file that you may have generated')
     parser.add_argument('-c', required=False, default=['2d', '3d_fullres', '3d_lowres'], nargs='+',
                         help='[OPTIONAL] Configurations for which the preprocessing should be run. Default: 2d 3f_fullres '
-                             '3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data '
-                             'from 3f_fullres. Configurations that do not exist for some dataset will be skipped.')
+                             '3d_lowres. Configurations that do not exist for some dataset will be skipped.')
     parser.add_argument('-np', type=int, nargs='+', default=[8, 18, 8], required=False,
                         help="[OPTIONAL] Use this to define how many processes are to be used. If this is just one number then "
                              "this number of processes is used for all configurations specified with -c. If it's a "

@@ -24,19 +24,19 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
                    percent=3,mm=2,cutoff=20,max_gamma=1,ram=2**32):#2**32): 
     
     # just checking
-    # # if isinstance(reference, str):
-    # #     reference = pydicom.read_file(reference, force=True)
-    # # if isinstance(evaluation, str):
-    # #     evaluation = pydicom.read_file(evaluation, force=True)        
+    if isinstance(reference, str):
+        reference = pydicom.read_file(reference, force=True)
+    if isinstance(evaluation, str):
+        evaluation = pydicom.read_file(evaluation, force=True)        
     
-    # # if not isinstance(reference, pydicom.dataset.FileDataset):
-    # #     raise ValueError('Cannot get ground truth/reference dose dicom file, wrong file type.')
+    if not isinstance(reference, pydicom.dataset.FileDataset):
+        raise ValueError('Cannot get ground truth/reference dose dicom file, wrong file type.')
     
-    # # if not isinstance(evaluation, pydicom.dataset.FileDataset):
-    # #     raise ValueError('Cannot get predict/evaluation dose dicom file, wrong file type.') 
+    if not isinstance(evaluation, pydicom.dataset.FileDataset):
+        raise ValueError('Cannot get predict/evaluation dose dicom file, wrong file type.') 
     
     
-    shape=reference.pixel_array.shape
+    # shape=reference.pixel_array.shape
     # mask=sitk.ReadImage(mask_path)
     # gamma_image=sitk.GetImageFromArray(reference.pixel_array)
     # spacing=find_dose_spacing(reference=reference) 

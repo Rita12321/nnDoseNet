@@ -715,6 +715,7 @@ def predict_entry_point():
                         help="Use this to set the device the inference should run with. Available options are 'cuda' "
                              "(GPU), 'cpu' (CPU) and 'mps' (Apple M1/M2). Do NOT use this to set which GPU ID! "
                              "Use CUDA_VISIBLE_DEVICES=X nnDoseNet_predict [...] instead!")
+                            # never tested on other device than cuda, buy me an Apple then I would try
 
 
     args = parser.parse_args()

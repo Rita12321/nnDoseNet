@@ -90,9 +90,11 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
             # print(case.keys())
             gamma_setting=results_dict[str(case)]['gamma_setting']
             pass_list.append(results_dict[str(case)]['passing_rate(%)'])
+        
         mean_dict={"gamma_setting":gamma_setting,
                 "mean_gamma_passing_rate":np.mean(pass_list),
                 "std_gamma_passing_rate":np.std(pass_list),
+                "# of case has GPR > 90%": len([i for i in pass_list if float(i) > 90.0]),
                 "total_case":len(results_dict)}
         mean_dict.update(dict(sorted(results_dict.items())))
         save_json(mean_dict,join(output_folder,"gamma_summary.json"),sort_keys=False)

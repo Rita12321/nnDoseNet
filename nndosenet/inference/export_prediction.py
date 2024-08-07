@@ -103,8 +103,8 @@ def export_prediction_from_logits(predicted_array_or_file: Union[np.ndarray, tor
     # save
     if save_probabilities:
         segmentation_final, probabilities_final = ret
-        np.savez_compressed(output_file_truncated + '.npz', probabilities=probabilities_final)
-        save_pickle(properties_dict, output_file_truncated + '.pkl')
+        # np.savez_compressed(output_file_truncated + '.npz', probabilities=probabilities_final)
+        # save_pickle(properties_dict, output_file_truncated + '.pkl')
         segmentation_final=probabilities_final.squeeze()
         del probabilities_final, ret
     else:

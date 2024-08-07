@@ -70,7 +70,7 @@ def format_dataset_entry():
      parser.add_argument('--organized_dicom', default=False, action="store_true", required=False,
                     help="if the dicom file is already organized or put tnto correspond folder,\
                          you will get warning about not finding dcm in folder while dcms are already moved.\
-                         it's very noisy :(")
+                         it's very annoying :(")
      
      args, unrecognized_args = parser.parse_known_args()
      raw_dicom_folder = join(nnDose_dicom,args.name)

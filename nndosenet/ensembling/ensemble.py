@@ -14,17 +14,19 @@ from nndosenet.utilities.label_handling.label_handling import LabelManager
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 
 
-def average_probabilities(list_of_files: List[str]) -> np.ndarray:
+def average_probabilities(list_of_files: List[str],image_reader_writer: BaseReaderWriter) -> np.ndarray:
     assert len(list_of_files), 'At least one file must be given in list_of_files'
     avg = None
     for f in list_of_files:
+        img,_=image_reader_writer.read_images()
         if avg is None:
-            avg = np.load(f)['probabilities']
+            avg = img
+            # avg = np.load(f)['probabilities']#TODO:read img
             # maybe increase precision to prevent rounding errors
             if avg.dtype != np.float32:
                 avg = avg.astype(np.float32)
         else:
-            avg += np.load(f)['probabilities']
+            avg += img#np.load(f)['probabilities']#TODO:read img
     avg /= len(list_of_files)
     return avg
 
@@ -36,15 +38,15 @@ def merge_files(list_of_files,
                 label_manager: LabelManager,
                 save_probabilities: bool = False):
     # load the pkl file associated with the first file in list_of_files
-    properties = load_pickle(list_of_files[0][:-4] + '.pkl')
+    properties = load_pickle(list_of_files[0][:-7] + '.pkl')#.npz -4
     # load and average predictions
-    probabilities = average_probabilities(list_of_files)
-    segmentation=label_manager.probability_squeeze_channel(probabilities)
+    probabilities = average_probabilities(list_of_files,image_reader_writer)
+    segmentation = label_manager.probability_squeeze_channel(probabilities)
         
     image_reader_writer.write_seg(segmentation, output_filename_truncated + output_file_ending, properties)
-    if save_probabilities:
-        np.savez_compressed(output_filename_truncated + '.npz', probabilities=probabilities)
-        save_pickle(probabilities, output_filename_truncated + '.pkl')
+    # if save_probabilities:
+    #     np.savez_compressed(output_filename_truncated + '.npz', probabilities=probabilities)
+    #     save_pickle(probabilities, output_filename_truncated + '.pkl')
 
 
 def ensemble_folders(list_of_input_folders: List[str],
@@ -77,7 +79,7 @@ def ensemble_folders(list_of_input_folders: List[str],
     plans_manager = PlansManager(plans)
 
     # now collect the files in each of the folders and enforce that all files are present in all folders
-    files_per_folder = [set(subfiles(i, suffix='.npz', join=False)) for i in list_of_input_folders]
+    files_per_folder = [set(subfiles(i, suffix='.nii.gz', join=False)) for i in list_of_input_folders]
     # first build a set with all files
     s = deepcopy(files_per_folder[0])
     for f in files_per_folder[1:]:
@@ -86,7 +88,7 @@ def ensemble_folders(list_of_input_folders: List[str],
         assert len(s.difference(f)) == 0, "Not all folders contain the same files for ensembling. Please only " \
                                           "provide folders that contain the predictions"
     lists_of_lists_of_files = [[join(fl, fi) for fl in list_of_input_folders] for fi in s]
-    output_files_truncated = [join(output_folder, fi[:-4]) for fi in s]
+    output_files_truncated = [join(output_folder, fi[:-7]) for fi in s]
 
     image_reader_writer = plans_manager.image_reader_writer_class()
     label_manager = plans_manager.get_label_manager(dataset_json)
@@ -146,11 +148,11 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
             if not isdir(join(tr, f'fold_{fold}', 'validation')):
                 raise RuntimeError(f'Expected model output directory does not exist. You must train all requested '
                                    f'folds of the speficied model.\nModel: {tr}\nFold: {fold}')
-            files_here = subfiles(join(tr, f'fold_{fold}', 'validation'), suffix='.npz', join=False)
+            files_here = subfiles(join(tr, f'fold_{fold}', 'validation'), suffix='.nii.gz', join=False)#.npz
             if len(files_here) == 0:
                 raise RuntimeError(f"No .npz files found in folder {join(tr, f'fold_{fold}', 'validation')}. Rerun your "
-                                   f"validation with the --npz flag. Use nnDoseNet_train [...] --val --npz.")
-            files_per_folder[tr][fold] = subfiles(join(tr, f'fold_{fold}', 'validation'), suffix='.npz', join=False)
+                                   f"validation with the --npz flag. Use nnDoseNet_train [...] --val --npz.")#TODO change errro message
+            files_per_folder[tr][fold] = subfiles(join(tr, f'fold_{fold}', 'validation'), suffix='.nii.gz', join=False)#.npz
             unique_filenames.update(files_per_folder[tr][fold])
 
     # verify that all trained_model_folders have all predictions
@@ -178,7 +180,7 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
                 file_mapping[-1][fi] = join(tr, f'fold_{fold}', 'validation', fi)
 
     lists_of_lists_of_files = [[fm[i] for fm in file_mapping] for i in unique_filenames]
-    output_files_truncated = [join(output_folder, fi[:-4]) for fi in unique_filenames]
+    output_files_truncated = [join(output_folder, fi[:-7]) for fi in unique_filenames]#.npz -4
 
     image_reader_writer = plans_manager.image_reader_writer_class()
     maybe_mkdir_p(output_folder)

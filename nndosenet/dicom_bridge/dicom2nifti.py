@@ -12,19 +12,28 @@ from rt_utils import RTStructBuilder
 from nndosenet.paths import nnDose_raw,nnDose_dicom,nnDose_prediction
 from batchgenerators.utilities.file_and_folder_operations import *
 
-def sitk_read_dcm(in_path):
+def sitk_read_dcm(in_path,get_patient_id=True):
     reader = sitk.ImageSeriesReader()
     dicom_names = reader.GetGDCMSeriesFileNames(in_path)
     reader.SetFileNames(dicom_names)
     dicom = reader.Execute()
-    return dicom 
+    if not get_patient_id:
+        return dicom, None
+    
+    first_file_reader = sitk.ImageFileReader()
+    first_file_reader.SetFileName(dicom_names[0])
+    first_file_reader.LoadPrivateTagsOn()
+    first_file_reader.ReadImageInformation()
+    patient_id = first_file_reader.GetMetaData('0010|0020')
+
+    return dicom, patient_id
 
            
 class DicomConverter():#patient wise
     def __init__(self,folder,patient_folder,structure_name=None):      
         
-        self.patient_folder=patient_folder
-        
+        self.patient_folder = patient_folder
+        self.patient_id = None
         
         self.raw_dicom_folder = join(folder,patient_folder)
         
@@ -43,32 +52,34 @@ class DicomConverter():#patient wise
 
 
         
-        self.ct_folder=join(self.raw_dicom_folder,"Dicom","CT")
-        self.dose_folder=join(self.raw_dicom_folder,"Dicom","RD")
-        self.struct_folder=join(self.raw_dicom_folder,"Dicom","RS")
-        self.nii_folder=join(self.raw_dicom_folder,"Nifti")
+        self.ct_folder = join(self.raw_dicom_folder,"Dicom","CT")
+        self.dose_folder = join(self.raw_dicom_folder,"Dicom","RD")
+        self.struct_folder = join(self.raw_dicom_folder,"Dicom","RS")
+        self.nii_folder = join(self.raw_dicom_folder,"Nifti")
 
         
     def run(self):
         #print("Converting Nifti for case ",self.patient_folder)
         # print("Getting CT ")
-        self.get_ct()
+        _, self.patient_id = self.get_ct(save=True, patient_id_dicom=True)
+        
         # print("Getting Dose map ")
         self.get_dose()
+        
         # print("Getting structure")
         return self.confirm_structure_and_2nii()    
   
-    def get_ct(self,save=True):
-        ct_path=join(self.nii_folder,"ct.nii.gz")
+    def get_ct(self,save=False,patient_id_dicom=False):
+        ct_path = join(self.nii_folder,"ct.nii.gz")
         if os.path.isfile(ct_path):
             return sitk.ReadImage(ct_path)
         
         # from dicom
         if len (os.listdir(self.ct_folder))>0:
-            ct=sitk_read_dcm(self.ct_folder)
+            ct, patient_id = sitk_read_dcm(self.ct_folder,get_patient_id=patient_id_dicom)
             if save:
                 sitk.WriteImage(ct,ct_path)
-            return ct
+            return ct, patient_id
         
         #form nifti img.nii.gz        
         if os.path.isfile(join(self.nii_folder,"img.nii.gz")):
@@ -86,16 +97,16 @@ class DicomConverter():#patient wise
                             "Please read the instruction, thank u")
     
     def get_dose(self):
-        dose_path=join(self.nii_folder,"dose.nii.gz")
+        dose_path = join(self.nii_folder,"dose.nii.gz")
         if os.path.isfile(dose_path):
             return sitk.ReadImage(dose_path)
        
-        if len(os.listdir(self.dose_folder))==1:
+        if len(os.listdir(self.dose_folder)) == 1:
             for i,dose_path in enumerate(os.listdir(self.dose_folder)):
-                dose=pydicom.dcmread(join(self.dose_folder,dose_path))
+                dose = pydicom.dcmread(join(self.dose_folder,dose_path))
                 return self.convert_dose2nii(dose,out_path=join(self.nii_folder,"dose.nii.gz"))
             
-        if(len(os.listdir(self.dose_folder))>1):
+        if(len(os.listdir(self.dose_folder)) > 1):
             for i,dose_path in enumerate(os.listdir(self.dose_folder)):
                 dose=pydicom.dcmread(join(self.dose_folder,dose_path))
                 print("WARNING! Multi Dose Plan Detected: only converting dose: ",dose_path," in",self.raw_dicom_folder, )
@@ -104,19 +115,19 @@ class DicomConverter():#patient wise
         raise RuntimeError("can't even find the dicom for dose, please organize everything as instruction")
 
     def convert_dose2nii(self,dose_data,out_path=None):
-        if out_path==None:
-            out_path=join(self.nii_folder,"dose.nii.gz")
+        if out_path == None:
+            out_path = join(self.nii_folder,"dose.nii.gz")
             
-        ct=self.get_ct()
+        ct = self.get_ct()
         
         #Todo:try except using PixelData frombuffer
         
         
         
-        dose=dose_data.pixel_array.astype(float)
-        dose=dose*float(dose_data.DoseGridScaling)
+        dose = dose_data.pixel_array.astype(float)
+        dose = dose*float(dose_data.DoseGridScaling)
         
-        dose=sitk.GetImageFromArray(dose)
+        dose = sitk.GetImageFromArray(dose)
         dose.SetOrigin(dose_data.ImagePositionPatient)
         dose.SetSpacing([dose_data.PixelSpacing[0],dose_data.PixelSpacing[1],ct.GetSpacing()[2]])
 
@@ -124,12 +135,12 @@ class DicomConverter():#patient wise
         resample.SetReferenceImage(ct)
         resample.SetInterpolator(sitk.sitkNearestNeighbor)
 
-        dose_out=resample.Execute(dose)
+        dose_out = resample.Execute(dose)
         sitk.WriteImage(dose_out,out_path)
 
     def resample_to_ct(self,image: sitk.Image,transform=sitk.Euler3DTransform(),
                  interpolator = sitk.sitkNearestNeighbor,default_value=0):
-        reference_image=self.get_ct()
+        reference_image = self.get_ct()
         return sitk.Resample(image, reference_image, transform,
                                 interpolator, default_value) 
                     
@@ -146,9 +157,10 @@ class DicomConverter():#patient wise
             And if want them to combine as 1 structure, you can label them as same value, like this
             structure_label:{"OAR": {"50":["Femur_Head_L","Femur_Head_R"]}
         '''        
-        ct=self.get_ct()
-        structure_list= list(self.structure_name.keys())
-        structure_found_dict={}
+        ct = self.get_ct()
+        structure_list = list(self.structure_name.keys())
+        structure_found_dict = {}
+        structure_found_dict.update({'patient_id':self.patient_id})
         for structure in structure_list:
             structure_found_dict.update({structure:""})
         structure_found_dict.update({'not_matched':[]})
@@ -160,7 +172,7 @@ class DicomConverter():#patient wise
             rtstruct = RTStructBuilder.create_from(
                                         dicom_series_path=self.ct_folder,
                                         rt_struct_path=join(self.struct_folder,struct_file))
-            roi_list=rtstruct.get_roi_names()
+            roi_list = rtstruct.get_roi_names()
             structure_found_dict['not_matched']=structure_found_dict['not_matched']+list(roi_list)
             
             for structure in structure_list:
@@ -189,11 +201,11 @@ class DicomConverter():#patient wise
 
 class NiftiLabeler(DicomConverter):
     
-    def __init__(self,folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts="Tr",structure_label=None):  
+    def __init__(self, folder, patient_folder, patient_id, dataset_name, dataset_id, tr_ts = "Tr", structure_label=None):  
 
-        self.dataset_name=dataset_name 
-        self.patient_folder=patient_folder
-        self.patient_id=str(patient_id).zfill(4)
+        self.dataset_name = dataset_name 
+        self.patient_folder = patient_folder
+        self.patient_id = str(patient_id).zfill(4)
         #print(self.patient_id)
         self.tr_ts=tr_ts
 
@@ -243,7 +255,7 @@ class NiftiLabeler(DicomConverter):
     def confirm_and_label(self):
         ct=self.get_ct()
         shape=sitk.GetArrayFromImage(ct).shape
-        type_list=["Target","OAR","Body"]
+        type_list = ["Target","OAR","Body"]
         for type in type_list:
             #mask=np.zeros(shape)
             # if type=="Body":

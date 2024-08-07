@@ -109,7 +109,7 @@ def nii2dcm_and_gamma_analysis_entry_point():
     parser.add_argument('-csv', type=str, required=True, help='csv convertion list of petient_num nifti folder \
                             and patient folder name in dicom folder')
     parser.add_argument('-np', type=int, required=False, default=3,
-                        help=f"Number of processes used for dicom convertion and gamma analysis. !! Pease set this nps less than \
+                        help="Number of processes used for dicom convertion and gamma analysis. !! Pease set this nps less than \
                             nps in other process. Gamma analysis required LOTS of RAM so it may crash if you have too many nps , \
                             Default: 3")
     parser.add_argument('--no_gamma', action='store_false',

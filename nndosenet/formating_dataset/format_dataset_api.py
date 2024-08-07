@@ -37,7 +37,6 @@ def create_folderlist(path,folder_list=[],overwrite=False):
             
 def sanity_check_match_roi():
     #TODO: load match roi summary if none check if structure set is all good
-    
     pass
 def sanity_check_dcm_find():
     pass          
@@ -235,11 +234,21 @@ def nifti_label(folder,patient_folder,patient_id,dataset_name,dataset_id,tr_ts,s
                        
 def format_dataset_from_nifti(folder,dataset_id,dataset_name_only=None,tr_ts="Tr",num_processes=8,structure_label=None):
     id_list=[]
-    if dataset_name_only==None:
-        dataset_name_only=folder.split("/")[-2]
+    if dataset_name_only == None:
+        dataset_name_only = folder.split("/")[-2]
         
     dataset_name="Dataset"+dataset_id+"_"+dataset_name_only
-    patients=sorted(os.listdir(folder))
+    
+    patients = sorted(os.listdir(folder))
+    id_list = [*range(1,len(patients)+1, 1)] 
+    
+    if os.path.isfile(os.path.join(os.path.dirname(folder),tr_ts+'_roi_summary.csv')):
+        file = pd.read_csv(os.path.join(os.path.dirname(folder),tr_ts+'_roi_summary.csv'), usecols=[0,1],index_col=False)
+        if "patient_id" in file.keys():
+            patients = file[file.keys()[0]].tolist()
+            id_list = file["patient_id"].tolist()
+
+    
     if tr_ts=="Tr":
         save_folder=join(nnDose_raw,dataset_name)
     else: 
@@ -254,11 +263,6 @@ def format_dataset_from_nifti(folder,dataset_id,dataset_name_only=None,tr_ts="Tr
         os.makedirs(join(save_folder,"labels"+tr_ts))
 
     print("Labeling the contours")
-    id_list=[*range(1,len(patients)+1,1)]
-    # for id,patinet in enumerate(patients):
-    #     id_list.append(id+1)
-    #     NiftiLabeler(folder,patient_folder=patinet,patient_id=id+1,dataset_name=dataset_name,dataset_id=dataset_id,tr_ts=tr_ts)
-
     r=[]
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
         for patient,id in zip(patients,id_list):

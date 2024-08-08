@@ -95,9 +95,11 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
     results['target_file/folder'] = ptv_file
     results['OAR_file/folder'] = oar_file
     results['dose'] = 'True'
+    results['prescription']= -1
     results['metrics']={}
     results['metrics']['MSE'] = MSE(dose_ref,dose_pred)
-    
+    results['metrics']['max_Ref'] = np.max(dose_ref)
+    results['metrics']['max_Pred'] = np.max(dose_pred)
     # DVH: ROI/contour/seg evaluation, need ref, pred and cotour  
     shape=dose_ref.shape
     voxel_size = np.prod(dose_dict['sitk_stuff']['spacing']) 
@@ -187,6 +189,7 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
     # print(files_oar)
     # print(structure_df)
     # print("Using",num_processes, "CPU")
+    
     with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
         # for i in list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred), [ignore_label] * len(files_pred))):
         #     compute_metrics(*i)
@@ -210,30 +213,58 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
             # )
 
     if dose_label:
-        #mean metric per class
-        #print("mertics list",results[0]['metrics'].keys())
+
+        image_prescription_compare_list=['max_Ref','max_Pred']
+        target_prescription_compare_list=['D_99_Pred','D_99_Ref','D_95_Pred','D_95_Ref']
         means={}
+        # find max prescription per case 
+        for i in results:
+            for c in i['Target'].keys():
+                if i['prescription'] < float(i['Target'][c]["input_label"]):
+                    i['prescription'] = float(i['Target'][c]["input_label"])
+        
+        # mean image metrices 
         metric_list = results[0]['metrics'].keys()
         for m in metric_list:
+            count_107 = 0
+            count_105 = 0
             for i in results:
                 means[m] = np.nanmean(i['metrics'][m] )
-        #key:{}
+                if m in image_prescription_compare_list:
+                    means[m]
+                    if i['metrics'][m] < i['prescription']*1.07:
+                        count_107 += 1
+                        count_105 += 1
+            if m in image_prescription_compare_list:
+                means["# < 105% prescription of "+m] = count_105
+                means["# < 107% prescription of "+m] = count_107
+                
+        # mean contour metrices 
         for typ in ["Target","OAR"]:
             means[typ]={} 
             contour_list = list(results[0][typ].keys())      
             metric_list = results[0][typ][contour_list[0]].keys()#
             for c in contour_list:
                 means[typ][c]={}
+                means[typ][c]["input_label"]=results[0][typ][c]["input_label"]
+                
                 for m in metric_list:
+                    count=0
                     if m =="input_label":
                         continue
                     temp_list=[]
                     for i in results:
+                        if m in target_prescription_compare_list:
+                            if i[typ][c][m] > float(means[typ][c]["input_label"]):
+                                count += 1
                         try:
                             temp_list.append(i[typ][c][m])
                         except:
                             pass
                     means[typ][c][m]=np.mean(temp_list)
+                    
+                    if m in target_prescription_compare_list:
+                        means[typ][c]["# > target prescription of "+m] = count
                     
         [recursive_fix_for_json_export(i) for i in results]
         recursive_fix_for_json_export(means)

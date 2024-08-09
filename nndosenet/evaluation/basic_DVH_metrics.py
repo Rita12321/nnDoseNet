@@ -49,10 +49,10 @@ class DoseEvaluator:
                 masked_pred = np.take(self.dose_pred,np.where(self.seg[i]>0)).flatten() 
             else:
                 
-                masked_ref = np.take(self.dose_ref,np.where(self.seg==int(label))).flatten()
+                masked_ref = np.take(self.dose_ref,np.where(self.seg == int(label))).flatten()
                 if len(masked_ref) <= 0: 
                     continue
-                masked_pred = np.take(self.dose_pred,np.where(self.seg==int(label))).flatten()
+                masked_pred = np.take(self.dose_pred,np.where(self.seg == int(label))).flatten()
             
             # identical method
             # if self.seperate_label or (self.seg is list):

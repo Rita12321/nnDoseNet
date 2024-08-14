@@ -100,7 +100,7 @@ class DoseEvaluator:
                     elif metric == "max":
                         metric_value = np.max(roi_dose)
                     elif metric == "homogeneity":
-                        metric_value = (np.percentile(roi_dose, 98)-np.percentile(roi_dose, 2))/float(label)
+                        metric_value = (np.percentile(roi_dose, 98)-np.percentile(roi_dose, 2))*100/float(label)
                     elif metric == "conformity":
                         V_iso = np.count_nonzero(dose >= int(label))
                         V_ptv_and = np.count_nonzero(roi_dose >= int(label))

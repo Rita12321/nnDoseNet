@@ -18,7 +18,9 @@ def average_probabilities(list_of_files: List[str],image_reader_writer: BaseRead
     assert len(list_of_files), 'At least one file must be given in list_of_files'
     avg = None
     for f in list_of_files:
-        img,_=image_reader_writer.read_images()
+            
+        img,properties=image_reader_writer.read_seg(f)
+ 
         if avg is None:
             avg = img
             # avg = np.load(f)['probabilities']#TODO:read img
@@ -26,24 +28,32 @@ def average_probabilities(list_of_files: List[str],image_reader_writer: BaseRead
             if avg.dtype != np.float32:
                 avg = avg.astype(np.float32)
         else:
-            avg += img#np.load(f)['probabilities']#TODO:read img
+            avg += img # np.load(f)['probabilities']#TODO:read img
+ 
     avg /= len(list_of_files)
-    return avg
+    return avg,properties
 
 
 def merge_files(list_of_files,
                 output_filename_truncated: str,
                 output_file_ending: str,
                 image_reader_writer: BaseReaderWriter,
-                label_manager: LabelManager,
-                save_probabilities: bool = False):
+                label_manager: LabelManager#,
+                # save_probabilities: bool = False
+                ):
     # load the pkl file associated with the first file in list_of_files
-    properties = load_pickle(list_of_files[0][:-7] + '.pkl')#.npz -4
+    # properties = load_pickle(list_of_files[0][:-7] + '.pkl')#.npz -4
     # load and average predictions
-    probabilities = average_probabilities(list_of_files,image_reader_writer)
+    
+    probabilities,properties = average_probabilities(list_of_files,image_reader_writer)
+
     segmentation = label_manager.probability_squeeze_channel(probabilities)
         
     image_reader_writer.write_seg(segmentation, output_filename_truncated + output_file_ending, properties)
+    
+    
+    
+    
     # if save_probabilities:
     #     np.savez_compressed(output_filename_truncated + '.npz', probabilities=probabilities)
     #     save_pickle(probabilities, output_filename_truncated + '.pkl')
@@ -51,7 +61,7 @@ def merge_files(list_of_files,
 
 def ensemble_folders(list_of_input_folders: List[str],
                      output_folder: str,
-                     save_merged_probabilities: bool = False,
+                    #  save_merged_probabilities: bool = False,
                      num_processes: int = default_num_processes,
                      dataset_json_file_or_dict: str = None,
                      plans_json_file_or_dict: str = None):
@@ -80,6 +90,7 @@ def ensemble_folders(list_of_input_folders: List[str],
 
     # now collect the files in each of the folders and enforce that all files are present in all folders
     files_per_folder = [set(subfiles(i, suffix='.nii.gz', join=False)) for i in list_of_input_folders]
+    # print(files_per_folder )
     # first build a set with all files
     s = deepcopy(files_per_folder[0])
     for f in files_per_folder[1:]:
@@ -88,6 +99,7 @@ def ensemble_folders(list_of_input_folders: List[str],
         assert len(s.difference(f)) == 0, "Not all folders contain the same files for ensembling. Please only " \
                                           "provide folders that contain the predictions"
     lists_of_lists_of_files = [[join(fl, fi) for fl in list_of_input_folders] for fi in s]
+    #print(lists_of_lists_of_files )
     output_files_truncated = [join(output_folder, fi[:-7]) for fi in s]
 
     image_reader_writer = plans_manager.image_reader_writer_class()
@@ -108,8 +120,8 @@ def ensemble_folders(list_of_input_folders: List[str],
                 output_files_truncated,
                 [dataset_json['file_ending']] * num_preds,
                 [image_reader_writer] * num_preds,
-                [label_manager] * num_preds,
-                [save_merged_probabilities] * num_preds
+                [label_manager] * num_preds #,
+                # [save_merged_probabilities] * num_preds
             )
         )
 
@@ -121,11 +133,11 @@ def entry_point_ensemble_folders():
     parser.add_argument('-o', type=str, required=True, help='output folder')
     parser.add_argument('-np', type=int, required=False, default=default_num_processes,
                         help=f"Numbers of processes used for ensembling. Default: {default_num_processes}")
-    parser.add_argument('--save_npz', action='store_true', required=False, help='Set this flag to store output '
-                                                                                'probabilities in separate .npz files')
+    # parser.add_argument('--save_npz', action='store_true', required=False, help='Set this flag to store output '
+    #                                                                             'probabilities in separate .npz files')
 
     args = parser.parse_args()
-    ensemble_folders(args.i, args.o, args.save_npz, args.np)
+    ensemble_folders(args.i, args.o, args.np)
 
 
 def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
@@ -166,6 +178,7 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
             print(f'model {tr} does not seem to contain all predictions. Missing: {diff}')
             raise RuntimeError('There were missing files, see print statements above this one')
 
+    
     # now we need to collect where these files are
     file_mapping = []
     for tr in list_of_trained_model_folders:
@@ -179,9 +192,10 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
                                                           f"one fold of model {tr}."
                 file_mapping[-1][fi] = join(tr, f'fold_{fold}', 'validation', fi)
 
+
     lists_of_lists_of_files = [[fm[i] for fm in file_mapping] for i in unique_filenames]
     output_files_truncated = [join(output_folder, fi[:-7]) for fi in unique_filenames]#.npz -4
-
+ 
     image_reader_writer = plans_manager.image_reader_writer_class()
     maybe_mkdir_p(output_folder)
     label_manager = plans_manager.get_label_manager(dataset_json)

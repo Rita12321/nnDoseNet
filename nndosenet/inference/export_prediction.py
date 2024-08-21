@@ -94,22 +94,22 @@ def export_prediction_from_logits(predicted_array_or_file: Union[np.ndarray, tor
         dataset_json_dict_or_file = load_json(dataset_json_dict_or_file)
 
     label_manager = plans_manager.get_label_manager(dataset_json_dict_or_file)
-    ret = convert_predicted_logits_to_segmentation_with_correct_shape(
+    segmentation_final = convert_predicted_logits_to_segmentation_with_correct_shape(
         predicted_array_or_file, plans_manager, configuration_manager, label_manager, properties_dict,
         return_probabilities=save_probabilities
     )
     del predicted_array_or_file
 
     # save
-    if save_probabilities:
-        segmentation_final, probabilities_final = ret
-        # np.savez_compressed(output_file_truncated + '.npz', probabilities=probabilities_final)
-        # save_pickle(properties_dict, output_file_truncated + '.pkl')
-        segmentation_final=probabilities_final.squeeze()
-        del probabilities_final, ret
-    else:
-        segmentation_final = ret
-        del ret
+    # if save_probabilities:
+    #     segmentation_final, probabilities_final = ret
+    #     # np.savez_compressed(output_file_truncated + '.npz', probabilities=probabilities_final)
+    #     # save_pickle(properties_dict, output_file_truncated + '.pkl')
+    #     segmentation_final=probabilities_final.squeeze()
+    #     del probabilities_final, ret
+    # else:
+    # segmentation_final = ret
+    # del ret
 
     rw = plans_manager.image_reader_writer_class()
 

@@ -22,7 +22,14 @@ def resample2gt(ref_dicom:sitk.Image,prediction:sitk.Image):
     resample.SetInterpolator(sitk.sitkNearestNeighbor)
 
     return resample.Execute(prediction)
-
+def open_kbp_trouble(nifti_img):
+    nifti_data = sitk.GetArrayFromImage(nifti_img)
+    nifti_data = np.transpose(nifti_data, (2, 0, 1))
+    nifti_data = np.flip(nifti_data, axis=0)
+    newimage=sitk.GetImageFromArray(nifti_data)
+    newimage.CopyInformation(nifti_img)
+    newimage.SetDirection([1, 0, 0, 0, 1, 0, 0, 0, -1])
+    return newimage, sitk.GetArrayFromImage(newimage)
 def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: str,for_gamma=True):
     """
     Copyright (C) 2020-2024 M. Gronberg and S. Gay
@@ -44,7 +51,7 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
     reference_dicom = pydicom.dcmread(reference_dicom_path)
     predict_dicom = reference_dicom.copy()
 
-    dose_sitk=sitk.ReadImage(predict_nifti_path)
+    dose_sitk,_=open_kbp_trouble(sitk.ReadImage(predict_nifti_path))
     spacing_z=dose_sitk.GetSpacing()[2]
     pre_np_dose = sitk.GetArrayFromImage(dose_sitk)
 

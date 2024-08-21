@@ -247,24 +247,28 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
             for c in contour_list:
                 means[typ][c]={}
                 means[typ][c]["input_label"]=results[0][typ][c]["input_label"]
-                
+
                 for m in metric_list:
                     count=0
                     if m =="input_label":
                         continue
                     temp_list=[]
-                    for i in results:
-                        if m in target_prescription_compare_list:
-                            if i[typ][c][m] > float(means[typ][c]["input_label"]):
-                                count += 1
+                    
+                    for r in results:
                         try:
-                            temp_list.append(i[typ][c][m])
+                            if m in target_prescription_compare_list:
+                                if r[typ][c][m] > float(means[typ][c]["input_label"]):
+                                    count += 1
+                    
+                            temp_list.append(r[typ][c][m])
                         except:
                             pass
+           
                     means[typ][c][m]=np.mean(temp_list)
                     
                     if m in target_prescription_compare_list:
                         means[typ][c]["# > target prescription of "+m] = count
+                        
                     
         [recursive_fix_for_json_export(i) for i in results]
         recursive_fix_for_json_export(means)

@@ -290,23 +290,23 @@ class nnUNetPredictor(object):
 
         return pp
 
-    def predict_from_list_of_npy_arrays(self,
-                                        image_or_list_of_images: Union[np.ndarray, List[np.ndarray]],
-                                        segs_from_prev_stage_or_list_of_segs_from_prev_stage: Union[None,
-                                                                                                    np.ndarray,
-                                                                                                    List[
-                                                                                                        np.ndarray]],
-                                        properties_or_list_of_properties: Union[dict, List[dict]],
-                                        truncated_ofname: Union[str, List[str], None],
-                                        num_processes: int = 3,
-                                        save_probabilities: bool = False,
-                                        num_processes_segmentation_export: int = default_num_processes):
-        iterator = self.get_data_iterator_from_raw_npy_data(image_or_list_of_images,
-                                                            segs_from_prev_stage_or_list_of_segs_from_prev_stage,
-                                                            properties_or_list_of_properties,
-                                                            truncated_ofname,
-                                                            num_processes)
-        return self.predict_from_data_iterator(iterator, save_probabilities, num_processes_segmentation_export)
+    # def predict_from_list_of_npy_arrays(self,
+    #                                     image_or_list_of_images: Union[np.ndarray, List[np.ndarray]],
+    #                                     segs_from_prev_stage_or_list_of_segs_from_prev_stage: Union[None,
+    #                                                                                                 np.ndarray,
+    #                                                                                                 List[
+    #                                                                                                     np.ndarray]],
+    #                                     properties_or_list_of_properties: Union[dict, List[dict]],
+    #                                     truncated_ofname: Union[str, List[str], None],
+    #                                     num_processes: int = 3,
+    #                                     save_probabilities: bool = False,
+    #                                     num_processes_segmentation_export: int = default_num_processes):
+    #     iterator = self.get_data_iterator_from_raw_npy_data(image_or_list_of_images,
+    #                                                         segs_from_prev_stage_or_list_of_segs_from_prev_stage,
+    #                                                         properties_or_list_of_properties,
+    #                                                         truncated_ofname,
+    #                                                         num_processes)
+    #     return self.predict_from_data_iterator(iterator, save_probabilities, num_processes_segmentation_export)
 
     def predict_from_data_iterator(self,
                                    data_iterator,
@@ -325,7 +325,7 @@ class nnUNetPredictor(object):
                     delfile = data
                     data = torch.from_numpy(np.load(data))
                     os.remove(delfile)
-
+                    
                 ofile = preprocessed['ofile']
                 if ofile is not None:
                     print(f'\nPredicting {os.path.basename(ofile)}:')
@@ -389,43 +389,43 @@ class nnUNetPredictor(object):
         empty_cache(self.device)
         return ret
 
-    def predict_single_npy_array(self, input_image: np.ndarray, image_properties: dict,
-                                 segmentation_previous_stage: np.ndarray = None,
-                                 output_file_truncated: str = None,
-                                 save_or_return_probabilities: bool = False):
-        """
-        image_properties must only have a 'spacing' key!
-        """
-        ppa = PreprocessAdapterFromNpy([input_image], [segmentation_previous_stage], [image_properties],
-                                       [output_file_truncated],
-                                       self.plans_manager, self.dataset_json, self.configuration_manager,
-                                       num_threads_in_multithreaded=1, verbose=self.verbose)
-        if self.verbose:
-            print('preprocessing')
-        dct = next(ppa)
+    # def predict_single_npy_array(self, input_image: np.ndarray, image_properties: dict,
+    #                              segmentation_previous_stage: np.ndarray = None,
+    #                              output_file_truncated: str = None,
+    #                              save_or_return_probabilities: bool = False):
+    #     """
+    #     image_properties must only have a 'spacing' key!
+    #     """
+    #     ppa = PreprocessAdapterFromNpy([input_image], [segmentation_previous_stage], [image_properties],
+    #                                    [output_file_truncated],
+    #                                    self.plans_manager, self.dataset_json, self.configuration_manager,
+    #                                    num_threads_in_multithreaded=1, verbose=self.verbose)
+    #     if self.verbose:
+    #         print('preprocessing')
+    #     dct = next(ppa)
 
-        if self.verbose:
-            print('predicting')
+    #     if self.verbose:
+    #         print('predicting')
             
-        predicted_logits = self.predict_logits_from_preprocessed_data(dct['data']).cpu()
+    #     predicted_logits = self.predict_logits_from_preprocessed_data(dct['data']).cpu()
 
-        if self.verbose:
-            print('resampling to original shape')
-        if output_file_truncated is not None:
-            export_prediction_from_logits(predicted_logits, dct['data_properites'], self.configuration_manager,
-                                          self.plans_manager, self.dataset_json, output_file_truncated,
-                                          save_or_return_probabilities)
-        else:
-            ret = convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits, self.plans_manager,
-                                                                              self.configuration_manager,
-                                                                              self.label_manager,
-                                                                              dct['data_properites'],
-                                                                              return_probabilities=
-                                                                              save_or_return_probabilities)
-            if save_or_return_probabilities:
-                return ret[0], ret[1]
-            else:
-                return ret
+    #     if self.verbose:
+    #         print('resampling to original shape')
+    #     if output_file_truncated is not None:
+    #         export_prediction_from_logits(predicted_logits, dct['data_properites'], self.configuration_manager,
+    #                                       self.plans_manager, self.dataset_json, output_file_truncated,
+    #                                       save_or_return_probabilities)
+    #     else:
+    #         ret = convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits, self.plans_manager,
+    #                                                                           self.configuration_manager,
+    #                                                                           self.label_manager,
+    #                                                                           dct['data_properites'],
+    #                                                                           return_probabilities=
+    #                                                                           save_or_return_probabilities)
+    #         if save_or_return_probabilities:
+    #             return ret[0], ret[1]
+    #         else:
+    #             return ret
 
     def predict_logits_from_preprocessed_data(self, data: torch.Tensor, dose_mask_channel=3) -> torch.Tensor:
         """
@@ -485,8 +485,8 @@ class nnUNetPredictor(object):
             print('Prediction done, transferring to CPU if needed')
             prediction = prediction.to('cpu')
             self.perform_everything_on_gpu = original_perform_everything_on_gpu
-        
-        prediction = np.clip(prediction*data[dose_mask_channel,...],0,None)
+        #print(type(data[dose_mask_channel,...]),type(prediction))
+        prediction = torch.clamp(prediction*data[dose_mask_channel,...],min=0)
         return prediction
 
     def _internal_get_sliding_window_slicers(self, image_size: Tuple[int, ...]):

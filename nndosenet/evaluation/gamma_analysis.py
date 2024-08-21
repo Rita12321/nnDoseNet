@@ -9,9 +9,10 @@ def find_dose_spacing(reference):
         spaceing[2]=spaceing[0]
         return spaceing
     
-    if int(reference.SliceThickness).isnumeric():
-        spaceing[2]=reference.SliceThickness
-        return spaceing
+    if reference.SliceThickness is not None:
+        if str(reference.SliceThickness).isnumeric():
+            spaceing[2] = int(reference.SliceThickness)
+            return spaceing
     
     spaceing[2]=spaceing[0]
 

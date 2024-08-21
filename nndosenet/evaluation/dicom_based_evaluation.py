@@ -19,11 +19,11 @@ def nii2dcm_and_gamma(ref_path,pred_path,mask_path,save_folder,gamma=True) -> np
     dicom_save_path=join(save_folder,"PredDicom",name+".dcm")
     
     
-    ref_dcm,pred_dcm=dose_to_dicom(predict_nifti_path=pred_path,reference_dicom_path=ref_path,save_path=dicom_save_path,for_gamma=True)
+    ref_dcm,pred_dcm = dose_to_dicom(predict_nifti_path=pred_path,reference_dicom_path=ref_path,save_path=dicom_save_path,for_gamma=True)
     # D2N=Dicom2Nifti_RT(output_diocm_folder = dicom_save_path , img_nii_path = nifti_file,struct_nii_folder = contour_nii_dir, dose_nii_path = dose_nii, patient_id=patient_id, patient_name=patient_name, openkbp=True)
     if gamma:
         gamma_save_path=join(save_folder,"Gamma",name+".nii.gz")
-        gamma_options,pass_gamma_num,mask_num=gamma_analysis(reference=ref_dcm,evaluation=pred_dcm,mask_path=mask_path,save_path=gamma_save_path)
+        gamma_options,pass_gamma_num,mask_num = gamma_analysis(reference=ref_dcm,evaluation=pred_dcm,mask_path=mask_path,save_path=gamma_save_path)
         gamma_dict={pred_path.split("/")[-1]:{"gamma_setting":gamma_options,
                                                 "passing_rate(%)":pass_gamma_num*100/mask_num,
                                                 "pass_gamma_num":pass_gamma_num,
@@ -62,7 +62,7 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
             r.append(p.starmap_async(nii2dcm_and_gamma,
                                      ((join(reference_folder, ref_list[k],"Dicom","RD",os.listdir(join(reference_folder, ref_list[k],"Dicom","RD"))[0]),
                                        join(prediction_folder, str(pred).zfill(4)),
-                                       join(reference_folder, ref_list[k],"Nifti","Body.nii.gz"),
+                                       join(reference_folder, ref_list[k],"Nifti","possible_dose_mask.nii.gz"),#"Body.nii.gz"
                                        output_folder,gamma),)))
             
         remaining = list(range(len(pred_list)))

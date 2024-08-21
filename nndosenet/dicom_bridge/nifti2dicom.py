@@ -29,6 +29,8 @@ def open_kbp_trouble(nifti_img):
     newimage=sitk.GetImageFromArray(nifti_data)
     newimage.CopyInformation(nifti_img)
     newimage.SetDirection([1, 0, 0, 0, 1, 0, 0, 0, -1])
+    newimage.SetOrigin([newimage.GetOrigin()[0],newimage.GetOrigin()[1],newimage.GetOrigin()[2]+(nifti_data.shape[2]-1)*newimage.GetSpacing()[2] ])
+    # nifti_data = np.flip(nifti_data, axis=0)
     return newimage, sitk.GetArrayFromImage(newimage)
 def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: str,for_gamma=True):
     """
@@ -51,10 +53,11 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
     reference_dicom = pydicom.dcmread(reference_dicom_path)
     predict_dicom = reference_dicom.copy()
 
-    dose_sitk,_=open_kbp_trouble(sitk.ReadImage(predict_nifti_path))
-    spacing_z=dose_sitk.GetSpacing()[2]
-    pre_np_dose = sitk.GetArrayFromImage(dose_sitk)
-
+    # dose_sitk,_ = open_kbp_trouble(sitk.ReadImage(predict_nifti_path))
+    # # spacing_z=dose_sitk.GetSpacing()[2]
+    # pre_np_dose = sitk.GetArrayFromImage(dose_sitk)
+    dose_sitk,pre_np_dose = open_kbp_trouble(sitk.ReadImage(predict_nifti_path))
+    
     # elif isinstance(dose, sitk.Image):
     #     spacing_z=dose.GetSpacing()[2]
     #     dose = sitk.GetArrayFromImage(dose)
@@ -70,15 +73,16 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
         )
         
     # ori_dose=ori_dose.astype(float)
-    ori_dose=sitk.GetImageFromArray(reference_dicom.pixel_array)
+    ori_dose = sitk.GetImageFromArray(reference_dicom.pixel_array)
     ori_dose.SetOrigin(reference_dicom.ImagePositionPatient)
     ori_dose.SetSpacing([reference_dicom.PixelSpacing[0],reference_dicom.PixelSpacing[1],reference_dicom.PixelSpacing[0]])
     
     pre_np_dose = pre_np_dose.astype(float)
-    pre_np_dose=sitk.GetImageFromArray(pre_np_dose)
+    pre_np_dose = sitk.GetImageFromArray(pre_np_dose)
     pre_np_dose.SetOrigin(dose_sitk.GetOrigin())
     pre_np_dose.SetSpacing(dose_sitk.GetSpacing())
-    pre_np_dose=sitk.GetArrayFromImage(resample2gt(ori_dose,pre_np_dose))
+    #pre_np_dose=resample2gt(ori_dose,pre_np_dose)
+    pre_np_dose = sitk.GetArrayFromImage(pre_np_dose)
     
     predict_dicom.DoseGridScaling = float(pre_np_dose.max()) / float(np.iinfo(out_type).max)
     dose_map_scaled = pre_np_dose / predict_dicom.DoseGridScaling

@@ -62,7 +62,7 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
             r.append(p.starmap_async(nii2dcm_and_gamma,
                                      ((join(reference_folder, ref_list[k],"Dicom","RD",os.listdir(join(reference_folder, ref_list[k],"Dicom","RD"))[0]),
                                        join(prediction_folder, str(pred).zfill(4)),
-                                       join(reference_folder, ref_list[k],"Nifti","possible_dose_mask.nii.gz"),#"Body.nii.gz"
+                                       join(reference_folder, ref_list[k],"Nifti","Body.nii.gz"),#"possible_dose_mask.nii.gz"
                                        output_folder,gamma),)))
             
         remaining = list(range(len(pred_list)))

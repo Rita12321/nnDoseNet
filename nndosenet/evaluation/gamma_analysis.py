@@ -10,7 +10,7 @@ def find_dose_spacing(reference):
         return spaceing
     
     if reference.SliceThickness is not None:
-        if str(reference.SliceThickness).isnumeric():
+        # if str(reference.SliceThickness).isnumeric():
             spaceing[2] = int(reference.SliceThickness)
             return spaceing
     
@@ -88,10 +88,12 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
     # empty[bb_cor['xmin']:bb_cor['xmax'],bb_cor['ymin']:bb_cor['ymax'],bb_cor['zmin']:bb_cor['zmax']]=gamma
     image=sitk.GetImageFromArray(gamma_np)
     
-    spacing=find_dose_spacing(reference=reference) 
+    spacing=find_dose_spacing(reference=evaluation) 
 
     image.SetSpacing(spacing)
-    image.SetOrigin(reference.ImagePositionPatient)
+    image.SetDirection(list(evaluation.ImageOrientationPatient)+[0,0,1])
+    image.SetOrigin(evaluation.ImagePositionPatient)
+    
     sitk.WriteImage(image,save_path)
     pass_gamma,mask_num=pass_rate(max_gamma,gamma_np,image,mask_path)
     return gamma_options,pass_gamma,mask_num

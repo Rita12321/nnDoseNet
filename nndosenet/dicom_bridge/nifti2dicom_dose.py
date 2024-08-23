@@ -47,12 +47,16 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
         for_gamma: Return  pydicom.dataset.FileDataset format of reference and predict dose or not
 
     """
+    openkbp = True
     reference_dicom = pydicom.dcmread(reference_dicom_path)
     predict_dicom = reference_dicom.copy()
 
-    dose_sitk = sitk.ReadImage(predict_nifti_path)
-    # spacing_z=dose_sitk.GetSpacing()[2]
-    pre_np_dose = sitk.GetArrayFromImage(dose_sitk)
+    if openkbp:
+        dose_sitk,pre_np_dose = open_kbp_trouble(sitk.ReadImage(predict_nifti_path))
+    else:
+        dose_sitk = sitk.ReadImage(predict_nifti_path)
+        # spacing_z=dose_sitk.GetSpacing()[2]
+        pre_np_dose = sitk.GetArrayFromImage(dose_sitk)
     # dose_sitk,pre_np_dose = open_kbp_trouble(sitk.ReadImage(predict_nifti_path))
     
     # elif isinstance(dose, sitk.Image):
@@ -78,7 +82,8 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
     pre_np_dose = sitk.GetImageFromArray(pre_np_dose)
     pre_np_dose.SetOrigin(dose_sitk.GetOrigin())
     pre_np_dose.SetSpacing(dose_sitk.GetSpacing())
-    pre_np_dose = resample2gt(ori_dose,pre_np_dose)
+    if not openkbp:
+        pre_np_dose = resample2gt(ori_dose,pre_np_dose)
     pre_np_dose = sitk.GetArrayFromImage(pre_np_dose)
     
     predict_dicom.DoseGridScaling = float(pre_np_dose.max()) / float(np.iinfo(out_type).max)

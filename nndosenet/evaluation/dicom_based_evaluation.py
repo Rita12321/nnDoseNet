@@ -6,7 +6,7 @@ import glob
 import os
 from batchgenerators.utilities.file_and_folder_operations import join,isdir,isfile,save_json
 from nndosenet.paths import nnDose_prediction,nnDose_dicom
-from nndosenet.dicom_bridge.nifti2dicom import dose_to_dicom
+from nndosenet.dicom_bridge.nifti2dicom_dose import dose_to_dicom
 from nndosenet.dicom_bridge.nifti2dicom_no_ref import Dicom2Nifti_RT
 from nndosenet.evaluation.gamma_analysis import gamma_analysis
 from nndosenet.utilities.dataset_name_id_conversion import convert_id_to_dataset_name, maybe_convert_to_dataset_name
@@ -62,7 +62,7 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
             r.append(p.starmap_async(nii2dcm_and_gamma,
                                      ((join(reference_folder, ref_list[k],"Dicom","RD",os.listdir(join(reference_folder, ref_list[k],"Dicom","RD"))[0]),
                                        join(prediction_folder, str(pred).zfill(4)),
-                                       join(reference_folder, ref_list[k],"Nifti","Body.nii.gz"),#"possible_dose_mask.nii.gz"
+                                       join(reference_folder, ref_list[k],"Nifti","possible_dose_mask.nii.gz"),#"Body.nii.gz"),#"possible_dose_mask.nii.gz"
                                        output_folder,gamma),)))
             
         remaining = list(range(len(pred_list)))
@@ -91,7 +91,7 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
             
             # print(case.keys())
             gamma_setting=results_dict[str(case)]['gamma_setting']
-            pass_list.append(results_dict[str(case)]['passing_rate(%)'])
+            # pass_list.append(results_dict[str(case)]['passing_rate(%)'])
         
         mean_dict={"gamma_setting":gamma_setting,
                 "mean_gamma_passing_rate":np.mean(pass_list),

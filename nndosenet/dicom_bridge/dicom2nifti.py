@@ -55,6 +55,7 @@ class DicomConverter():#patient wise
         self.ct_folder = join(self.raw_dicom_folder,"Dicom","CT")
         self.dose_folder = join(self.raw_dicom_folder,"Dicom","RD")
         self.struct_folder = join(self.raw_dicom_folder,"Dicom","RS")
+        self.plan_folder = join(self.raw_dicom_folder,"Dicom","RP")
         self.nii_folder = join(self.raw_dicom_folder,"Nifti")
 
         

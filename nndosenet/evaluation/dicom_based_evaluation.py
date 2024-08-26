@@ -12,7 +12,7 @@ from nndosenet.evaluation.gamma_analysis import gamma_analysis
 from nndosenet.utilities.dataset_name_id_conversion import convert_id_to_dataset_name, maybe_convert_to_dataset_name
 from tqdm import tqdm
 from time import sleep
-def nii2dcm_and_gamma(ref_path,pred_path,mask_path,save_folder,gamma=True) -> np.ndarray:
+def nii2dcm_and_gamma(ref_path, pred_path, mask_path, save_folder, gamma = True) -> np.ndarray:
     
     #TODO: find the save path based on nnDoseNet_predict path? 
     name=pred_path.split("/")[-1]
@@ -91,7 +91,7 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
             
             # print(case.keys())
             gamma_setting=results_dict[str(case)]['gamma_setting']
-            # pass_list.append(results_dict[str(case)]['passing_rate(%)'])
+            pass_list.append(results_dict[str(case)]['passing_rate(%)'])
         
         mean_dict={"gamma_setting":gamma_setting,
                 "mean_gamma_passing_rate":np.mean(pass_list),
@@ -111,8 +111,7 @@ def nii2dcm_and_gamma_analysis_entry_point():
     parser.add_argument('-csv', type=str, required=True, help='csv convertion list of petient_num nifti folder \
                             and patient folder name in dicom folder')
     parser.add_argument('-np', type=int, required=False, default=3,
-                        help="Number of processes used for dicom convertion and gamma analysis. !! Pease set this nps less than \
-                            nps in other process. Gamma analysis required LOTS of RAM so it may crash if you have too many nps , \
+                        help="Number of processes used for dicom convertion and gamma analysis.  \
                             Default: 3")
     parser.add_argument('--no_gamma', action='store_false',
                         help='Only convert prediction of nifti back to dicom without doing gamma analysis. \
@@ -154,7 +153,7 @@ def nii2dcm_and_gamma_analysis_Ts_entry_point():
     parser.add_argument('-c', required=False, default=['2d', '3d_fullres', '3d_lowres'], nargs='+',
                         help='[OPTIONAL] Configurations for which the evaluation should be run. Default: 2d 3f_fullres '
                             '3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data '
-                            'from 3f_fullres. Configurations that do not exist for some dataset will be skipped.')    
+                            'from 3d_fullres. Configurations that do not exist for some dataset will be skipped.')    
     parser.add_argument('-csv', type=str, required=False, default=None, help='csv convertion list of petient_num nifti folder \
                             and patient folder name in dicom folder, default use the \
                             "[nndose_prediction]/[-name]/Dataset+[-id]}/GroundTruth/patientTs.csv" that is created format and \

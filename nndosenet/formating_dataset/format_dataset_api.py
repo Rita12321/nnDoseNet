@@ -13,6 +13,7 @@ import pandas as pd
 # from rt_utils import RTStructBuilder
 from nndosenet.paths import nnDose_preprocessed, nnDose_raw,nnDose_dicom,nnDose_prediction
 from batchgenerators.utilities.file_and_folder_operations import *
+import pydicom
 
 
 def sitk_read_dcm(in_path):
@@ -21,7 +22,15 @@ def sitk_read_dcm(in_path):
     reader.SetFileNames(dicom_names)
     dicom = reader.Execute()
     return dicom 
-
+def pydicom_get_modality(in_path):
+    try: 
+        ds = pydicom.dcmread(in_path)
+        return ds.Modality
+    
+    except:
+        print("cannot read file ",in_path, "with pydicom. please check if it;s dicom file.")
+        return "Extras"
+    
 def create_folder(path):
     if not os.path.isdir(path):
         os.makedirs(path)
@@ -108,26 +117,37 @@ def organize_dicom(DATA_FOLDER):
     """
     #print(sorted(os.listdir(DATA_FOLDER)))
     for patient_folder in sorted(os.listdir(DATA_FOLDER)):
-        if not os.path.isdir(join(DATA_FOLDER,patient_folder)):
+        if not os.path.isdir(join(DATA_FOLDER, patient_folder)):
             continue
-        patient_path=join(DATA_FOLDER,patient_folder)
-        create_folderlist(patient_path,folder_list=["Nifti","Dicom"])
-        type_list=["CT","RD","RS"]
-        create_folderlist(join(patient_path,"Dicom"),folder_list=type_list)
-        for type in type_list:
-            dcms=glob.glob(join(patient_path,type+"*.dcm"))
-            if len(dcms)<=0:
-                # print('WARNING: cannot find any file start with" '+type+'".dcm'\
-                #         'trying to find files not ending with .dcm')
-                dcms=glob.glob(join(patient_path,type+"*"))
-                if len(dcms)<=0:
-                    print('WARNING: cannot find any file start with" '+type+'" '\
-                            'please check the if the folder directory is correct or it has" '+type+' " in file name.') 
-                else:
-                    print('find',len(dcms),'file start with " ',type,
-                        'please make sure it end with .dcm next time, otherwise there might have error cause by it') 
-            for dcm in dcms:
-                shutil.move(dcm,join(patient_path,"Dicom",type))        
+        patient_path = join(DATA_FOLDER, patient_folder)
+        create_folderlist(patient_path, folder_list=["Nifti","Dicom"])
+
+        type_list = {"CT":"CT", "RTDOSE":"RD", "RTSTRUCT":"RS", "RTPLAN":"RP","Extras":"Extras"}
+        create_folderlist(join(patient_path,"Dicom"), folder_list = list(type_list.values()))
+        
+        for file in sorted(os.listdir(os.path.join(DATA_FOLDER,patient_folder))):
+            path = os.path.join(DATA_FOLDER,patient_folder,file)
+            if os.path.isfile(path):
+                modality = pydicom_get_modality(path)
+                shutil.move(path,join(DATA_FOLDER,patient_path,"Dicom",type_list[modality]))
+            
+                    
+        
+        
+        # for type in type_list:
+        #     dcms=glob.glob(join(patient_path,type+"*.dcm"))
+        #     if len(dcms)<=0:
+        #         # print('WARNING: cannot find any file start with" '+type+'".dcm'\
+        #         #         'trying to find files not ending with .dcm')
+        #         dcms=glob.glob(join(patient_path,type+"*"))
+        #         if len(dcms)<=0:
+        #             print('WARNING: cannot find any file start with" '+type+'" '\
+        #                     'please check the if the folder directory is correct or it has" '+type+' " in file name.') 
+        #         else:
+        #             print('find',len(dcms),'file start with " ',type,
+        #                 'please make sure it end with .dcm next time, otherwise there might have error cause by it') 
+        #     for dcm in dcms:
+        #         shutil.move(dcm,join(patient_path,"Dicom",type))        
         
         
         

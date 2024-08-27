@@ -32,14 +32,14 @@ Please use this command o run inference of Ts files:
 
     nnDoseNet_predict_Ts -id [id in nnDose_raw] -c [configuration for prediction]
 
-*There are other augument like fold or step size you can play with, please use `nnDoseNet_predict_Ts -h `for details
+*There are other arguments like fold or step size you can play with, please use `nnDoseNet_predict_Ts -h `for details
 # Outsider inference (not the Ts folder origin from nndose_dicom)
 The data format for inference must match the one used in nnDose_raw (**specifically, the images must be in exactly 
 the same format as in the imagesTr folder**). As before, the filenames must start with a unique identifier, followed by a 4-digit modality identifier. Here is an example for two different datasets:
 
 In current version of nnDoseNet, there is always 4 modality of images:
 
-- **_0000** `CT` : a full image(you can use MR or other instead, just rememeber to change it in dataset.json).
+- **_0000** `CT` : a full image(you can use MR or other instead, just remember to change it in dataset.json).
 - **_0001** `Targets` : labeled targets.
 - **_0002** `OARs` : labeled OARs.
 - **_0003** `Body` : binary mask of body contour or dose range.
@@ -62,7 +62,7 @@ Please use this code for prediction
 
     nnDoseNet_predict -i [input_folder] -o [output_folder] -d [dataset id or full name] -c [configuration for prediction]
 
-*There are other augument like fold or step size you can play with, please use `nnDoseNet_predict -h `for details
+*There are other arguments like fold or step size you can play with, please use `nnDoseNet_predict -h `for details
 
 
 #

@@ -14,8 +14,8 @@ Each labeled dataset is stored as a separate 'Dataset'. Datasets are associated 
     ├── Dataset004_openkbp
     ├── ...
     ├── Dataset005_UAB_prostate
-        ├── structure.json  # generate by previous process, not required
-        ├── patientTr.csv   # generate by previous process, not required
+        ├── structure.json  # used in previous process, not required for training or predicting
+        ├── patientTr.csv   # generate by previous process, not required for training or predicting
         ├── dataset.json
         ├── imagesTr
         └── labelsTr
@@ -72,7 +72,7 @@ Inside dataset.json should look like this. "CT" in "channel_name" should be chan
         "mask_channel": [ 1, 2, 3 ]
     }
 
-We tend to keep the way [nnU-Net](https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/dataset_format.md) does so it might be a little strange that we keep labels, since dose prediction would only have one background and dose in label. 
+We tend to keep the way [nnU-Net](https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/dataset_format.md) does so it might be a little awkward that we keep labels, since dose prediction would only have one background and dose in label. 
 
 # Related command
  - `nnDoseNet_plan_and_preprocess`

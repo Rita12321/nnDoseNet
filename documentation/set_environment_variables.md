@@ -10,11 +10,11 @@ Variables can either be set permanently (recommended!) or you can decide to set 
 Locate the `.bashrc` file in your home folder and add the following lines to the bottom:
 
 ```bash
-export nnDose_dicom="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom"
-export nnDose_raw="/home/changh/Documents/2023_DosePredcition/nnDose_2_raw"
-export nnDose_preprocessed="/home/changh/Documents/2023_DosePredcition/nnDose_3_preprocess"
-export nnDose_results="/home/changh/Documents/2023_DosePredcition/nnDose_4_result"
-export nnDose_prediction="/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction"
+export nnDose_dicom="/home/changh/Documents/nnDose_1_dicom"
+export nnDose_raw="/home/changh/Documents/nnDose_2_raw"
+export nnDose_preprocessed="/home/changh/Documents/nnDose_3_preprocess"
+export nnDose_results="/home/changh/Documents/nnDose_4_result"
+export nnDose_prediction="/home/changh/Documents/nnDose_5_prediction"
 ```
 
 (of course you need to adapt the paths to the actual folders you intend to use).
@@ -23,11 +23,11 @@ If you are using a different shell, such as zsh, you will need to find the corre
 ## Temporary
 Just execute the following lines whenever you run nnU-Net:
 ```bash
-export nnDose_dicom="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom"
-export nnDose_raw="/home/changh/Documents/2023_DosePredcition/nnDose_2_raw"
-export nnDose_preprocessed="/home/changh/Documents/2023_DosePredcition/nnDose_3_preprocess"
-export nnDose_results="/home/changh/Documents/2023_DosePredcition/nnDose_4_result"
-export nnDose_prediction="/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction"
+export nnDose_dicom="/home/changh/Documents/nnDose_1_dicom"
+export nnDose_raw="/home/changh/Documents/nnDose_2_raw"
+export nnDose_preprocessed="/home/changh/Documents/nnDose_3_preprocess"
+export nnDose_results="/home/changh/Documents/nnDose_4_result"
+export nnDose_prediction="/home/changh/Documents/nnDose_5_prediction"
 ```
 (of course you need to adapt the paths to the actual folders you intend to use).
 
@@ -36,7 +36,7 @@ terminal window and DO NOT transfer to other terminals!
 
 Alternatively you can also just prefix them to your nnU-Net commands:
 
-`nnDose_dicom="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom" nnDose_raw="/home/changh/Documents/2023_DosePredcition/nnDose_2_raw" nnDoseNet_train[...]`
+`nnDose_dicom="/home/changh/Documents/nnDose_1_dicom" nnDose_raw="/home/changh/Documents/nnDose_2_raw" nnDoseNet_train[...]`
 
 ## Verify that environment parameters are set
 You can always execute `echo ${nnDose_raw}` etc to print the environment variables. This will return an empty string if 
@@ -56,20 +56,20 @@ Just execute the following before you run nnDoseNet:
 
 (powershell)
 ```powershell
-$Env:nnDose_dicom="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom"
-$Env:nnDose_raw="/home/changh/Documents/2023_DosePredcition/nnDose_2_raw"
-$Env:nnDose_preprocessed="/home/changh/Documents/2023_DosePredcition/nnDose_3_preprocess"
-$Env:nnDose_results="/home/changh/Documents/2023_DosePredcition/nnDose_4_result"
-$Env:nnDose_prediction="/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction"
+$Env:nnDose_dicom="/home/changh/Documents/nnDose_1_dicom"
+$Env:nnDose_raw="/home/changh/Documents/nnDose_2_raw"
+$Env:nnDose_preprocessed="/home/changh/Documents/nnDose_3_preprocess"
+$Env:nnDose_results="/home/changh/Documents/nnDose_4_result"
+$Env:nnDose_prediction="/home/changh/Documents/nnDose_5_prediction"
 ```
 
 (command prompt)
 ```commandline
-set nnDose_dicom="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom"
-set nnDose_raw="/home/changh/Documents/2023_DosePredcition/nnDose_2_raw"
-set nnDose_preprocessed="/home/changh/Documents/2023_DosePredcition/nnDose_3_preprocess"
-set nnDose_results="/home/changh/Documents/2023_DosePredcition/nnDose_4_result"
-set nnDose_prediction="/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction"
+set nnDose_dicom="/home/changh/Documents/nnDose_1_dicom"
+set nnDose_raw="/home/changh/Documents/nnDose_2_raw"
+set nnDose_preprocessed="/home/changh/Documents/nnDose_3_preprocess"
+set nnDose_results="/home/changh/Documents/nnDose_4_result"
+set nnDose_prediction="/home/changh/Documents/nnDose_5_prediction"
 ```
 
 (of course you need to adapt the paths to the actual folders you intend to use).

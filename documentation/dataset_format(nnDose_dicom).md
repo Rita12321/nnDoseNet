@@ -10,41 +10,44 @@ Welcome to dataset_format in `nnDose_diom`! Here are the section in this page:)
 
 
 # Dicom dataset format 1 (unorganized) in nnDose_dicom
-If the Datatset is in Dicom format 1, please make sure 
- - structure.json is in Dataset's folder
- - data is divided to Tr for training and Ts for testing .
- - CT or full image dcms start with CT.
- - structure dcms start with RS.
- - dose map start with RD, and should only has **ONE** RD file, otherwise would only use first one. 
+If the Datatset is in `Dicom format 1`, please make sure 
+ - `structure.json` is in Dataset's folder, like example below.
+ - Data is divided to `Tr` for training and `Ts` for testing .
+ - nnDoseNet would auto-organized CT, RTSTRUCT and RTDOSE into correspond folders and all the other folders go to RP or Extras.
+    - CT is the dcms having modality of "CT" in header.
+    - RS is the dcms having modality of "RTSTRUCT" in header
+    - RD is the dcms having modality of "RTDOSE" in header. There should only has 
+    **ONE** dose file, otherwise nndosenet would only use first one. 
 
-        nnDose_dicom
-        ├──openkbp
-        ├──UAB_headNneck
-        ├──...
-        ├──UAB_prostate       
-            ├──structure.json
-            ├──Ts
-            ├──Tr
-                ├──patient 1
-                    ├──CT.12345678.91011112.dcm
-                    ├──CT.12345678.91011113.dcm
-                    ├──CT.12345678.91011114.dcm
-                    ...
-                    ├──RS.12345678.91011117.dcm
-                    ├──RS.12345678.91011118.dcm
-                    ...
-                    └──RD.12345678.91011119.dcm
-                ├──patient 2
-                    ├──CT.22345678.91011112.dcm
-                    ├──CT.22345678.91011113.dcm
-                    ├──CT.22345678.91011114.dcm
-                    ...
-                    ├──RS.22345678.91011117.dcm
-                    ├──RS.22345678.91011118.dcm
-                    ...
-                    └──RD.22345678.91011119.dcm
-                ├──patient 3 
-            ...
+
+            nnDose_dicom
+            ├──openkbp
+            ├──UAB_headNneck
+            ├──...
+            ├──UAB_prostate       
+                ├──structure.json
+                ├──Ts
+                ├──Tr
+                    ├──patient 1
+                        ├──CT.12345678.91011112.dcm
+                        ├──CT.12345678.91011113.dcm
+                        ├──CT.12345678.91011114.dcm
+                        ...
+                        ├──RS.12345678.91011117.dcm
+                        ├──RS.12345678.91011118.dcm
+                        ...
+                        └──RD.12345678.91011119.dcm
+                    ├──patient 2
+                        ├──CT.22345678.91011112.dcm
+                        ├──CT.22345678.91011113.dcm
+                        ├──CT.22345678.91011114.dcm
+                        ...
+                        ├──RS.22345678.91011117.dcm
+                        ├──RS.22345678.91011118.dcm
+                        ...
+                        └──RD.22345678.91011119.dcm
+                    ├──patient 3 
+                ...
 Please use this code to format dataset
 
     nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor]
@@ -52,7 +55,8 @@ Please use this code to format dataset
 # Dicom dataset format 2 (organized) in nnDose_dicom
 If the Datatset is in Dicom format 2, please make sure 
  - structure.json is in Dataset's folder
- - data is divided to Tr for training and Ts for testing .
+ - Data is divided to Tr for training and Ts for testing .
+ - All the dcms goes to their correspond folder, since nnDoseNet won't reorganize files.
 
         nnDose_dicom
         ├──openkbp
@@ -86,8 +90,8 @@ Please use this code to format dataset
 # Nifti dataset in nnDose_dicom
 If the Datatset is in Dicom format 2  or changing structure.json for different label, please make sure 
  - structure.json is in Dataset's folder
- - data is divided to Tr for training and Ts for testing .
- - The PTV, OAR and Body need to be the SAME name in structure.json
+ - Data is divided to Tr for training and Ts for testing .
+ - The PTV, OAR and Body need to be the SAME name in structure.json. (If you name ptv 1 in structure label in structure.json but file name is PTV1, the algorithm would fail. Please check the `structure.json` section for a better picture of it.)
 
         nnDose_dicom
         ├──openkbp
@@ -173,7 +177,7 @@ These file summarize which name in potential name list is converted into nifti a
 
 # patinet__.csv
 After running `nnDoseNet_format_dataset` or `nnDoseNet_label_nifti_and_final_formatting`, you should see patinetTr.csv in nnDose_raw/Datasetxxx or patinetTs.csv in nnDose_prediction/Datasetxxx/GroundTruth.\
-nnDoseNet anonymize the cases name to number, and correspond id and orginal name is in the csv.
+nnDoseNet anonymize the cases(folders/ patients) name to patient id, and correspond id and original name is in the csv.
 
 # Related command
 - `nnDoseNet_format_dataset` 

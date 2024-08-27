@@ -1,11 +1,11 @@
 ## How to run nnDoseNet on a new dataset
 Given some dataset, nnDoseNet fully automatically configures an entire RT dose prediction pipeline that matches its properties.
 nnDoseNet covers the entire pipeline: 
-1) dataset convertion from DICOM to NIfTIm, extracting user-asssigned structure and label the structure with user-defined clinical goals
+1) dataset conversion from DICOM to NIfTI, extracting user-assigned structure and label the structure with user-defined clinical goals
 2) preprocessing to model configuration, 
 3) model training, 
 4) ensembling and
-5) calculate RT evaluation metrices on inference data.
+5) calculate RT evaluation metrics on inference data.
 After running, the trained model(s) can be applied to the test cases for inference.
 
 ### Dataset Format
@@ -22,7 +22,7 @@ If converting dataset from NIfTI please use this command:
 ### Experiment planning and preprocessing
 Given a new dataset, nnDoseNet will extract a dataset fingerprint (a set of dataset-specific properties such as
 image sizes, voxel spacings, intensity information etc) just like what nnU-Net does. This information is used to design three default U-Net configurations. 
-Each of these pipelines operates on its own preprocessed version of the dataset. Additional configuration is also allow please read [explanation plan files, secion: Example](explanation_plans_files.md)
+Each of these pipelines operates on its own preprocessed version of the dataset. Additional configuration is also allow please read [explanation plan files, section: Example](explanation_plans_files.md)
 
 The easiest way to run fingerprint extraction, experiment planning and preprocessing is to use:
 
@@ -139,7 +139,7 @@ explicitly tell nnU-Net to use it.
 - checkpoint_final.pth: checkpoint file of the final model (after training has ended). This is what is used for both 
 validation and inference.
 - network_architecture.pdf (only if hiddenlayer is installed!): a pdf document with a figure of the network architecture in it.
-- progress.png: Shows losses, pseudo dice, learning rate and epoch times ofer the course of the training. At the top is 
+- progress.png: Shows losses, pseudo dice, learning rate and epoch times of the course of the training. At the top is 
 a plot of the training (blue) and validation (red) loss during training.
 A proper validation takes way too long to be done each epoch. It is run at the end of the training.
 - validation_raw: in this folder are the predicted validation cases after the training has finished. The summary.json file in here
@@ -191,7 +191,7 @@ In contrast to the old nnU-Net, DDP is now completely hassle free. Enjoy!
 Once the desired configurations were trained (full cross-validation) you can tell nnU-Net to automatically identify 
 the best combination for you:
 
-```commandline
+```command line
 nnDoseNet_find_best_configuration DATASET_NAME_OR_ID -c CONFIGURATIONS 
 ```
 

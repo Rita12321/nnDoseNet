@@ -4,7 +4,7 @@ Plans have global and local settings. Global settings are applied to all configu
 local settings are attached to a specific configuration.
 
 
-nnDoseNet inherit all the feature above in nnU-Net plans, and we add some new setting to loclal setting. 
+nnDoseNet inherit all the feature above in nnU-Net plans, and we add some new setting to local setting. 
 
 ## Global settings
 

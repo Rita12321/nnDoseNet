@@ -77,13 +77,18 @@ Then we can use prediction command and get prediction of Ts(testing files), then
 - `D_0.1cc`:  The minimum dose received by the hottest sub volume of 0.1cc of each ROI in ground truth and prediction
 - `D_99`, `D_95`, `D_1`: The minimum dose received by the hottest 99%, 95% and 1%  of  volume of each ROI in ground truth and prediction
  - `homogeneity`: The homogeneity of the dose in contour.
+ - `conformity`: The conformity of the contour.
+- `# > target prescription of D_99, D_95`: The number of cases in this run of analysis that has D_99 greater than prescription, also D_95.
 
 All above metrics are calculated case-by-case and also calculate average of metrics among all cases.
 
-In addition, if ground truth dicom files are provided, nnDoseNet provide the function of converting prediction(Nifti) into dicom format and do gamma analysis on those cases.
+In addition, if ground truth dicom files are provided, nnDoseNet provide the function of 
+- generate difference map,
+- converting prediction(Nifti) into dicom format 
+- gamma analysis on those cases 
 
 > [!note]
-> Please check **[#########](documentation/evaluation.md)**
+> Please check **[evaluation_methods.md](documentation/evaluation_methods.md)**
 
 ## How to get started?
 Read these:
@@ -100,6 +105,5 @@ Additional information:
 - [Manually editing nnU-Net configurations](documentation/explanation_plans_files.md)
 - [Extending nnU-Net](documentation/extending_nnunet.md)
 
-# Acknowledgements
 
 

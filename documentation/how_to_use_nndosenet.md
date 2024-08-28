@@ -117,7 +117,7 @@ For Dataset002_Heart (from the MSD), for example, this looks like this:
         │    ├── fold_3
         │    ├── fold_4
         │    ├── dataset.json
-        │    ├── sructure.json        
+        │    ├── structure.json        
         │    ├── dataset_fingerprint.json
         │    └── plans.json
         └── nnUNetTrainer__nnDosePlans__3d_fullres
@@ -127,7 +127,7 @@ For Dataset002_Heart (from the MSD), for example, this looks like this:
              ├── fold_3
              ├── fold_4
              ├── dataset.json
-        │    ├── sructure.json 
+        │    ├── structure.json 
              ├── dataset_fingerprint.json
              └── plans.json
 

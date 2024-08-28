@@ -112,7 +112,7 @@ configuration in the `configurations` dict
 No need to change the data_identifier. `3d_fullres_bs40` will just use the preprocessed data from `3d_fullres`.
 No need to rerun `nnUNetv2_preprocess` because we can use already existing data (if available) from `3d_fullres`.
 
-## Using custom preprocessors
+## Using custom configuration (preprocesor)
 If you would like to use a different preprocessor class then this can be specified as follows:
 
     "configurations": {

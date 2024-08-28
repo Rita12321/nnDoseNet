@@ -42,7 +42,7 @@ Alternatively you can also just prefix them to your nnU-Net commands:
 You can always execute `echo ${nnDose_raw}` etc to print the environment variables. This will return an empty string if 
 they were not set.
 
-# Windows
+# Windows (Not tested)
 Useful links:
 - [https://www3.ntu.edu.sg](https://www3.ntu.edu.sg/home/ehchua/programming/howto/Environment_Variables.html#:~:text=To%20set%20(or%20change)%20a,it%20to%20an%20empty%20string.)
 - [https://phoenixnap.com](https://phoenixnap.com/kb/windows-set-environment-variable)

@@ -5,7 +5,7 @@ Welcome to dataset_format in `nnDose_diom`! Here are the section in this page:)
  - [Nifti dataset](#nifti-dataset-in-nndose_dicom)
  - [structure.json](#structurejson)
  - [roi_summary](#roi_summary)
- - [patient__.csv](#patinet__csv)
+ - [patient__.csv](#patient__csv)
  - [related-command](#related-command)
 
 
@@ -61,7 +61,7 @@ If the Datatset is in Dicom format 2, please make sure
         nnDose_dicom
         ├──openkbp
         ├──UAB_prostate
-        ├──UAB_headNneck
+        ├──UAB_headNeck
         ├──...
             ├──structure.json
             ├──Ts
@@ -96,7 +96,7 @@ If the Datatset is in Dicom format 2  or changing structure.json for different l
         nnDose_dicom
         ├──openkbp
         ├──UAB_prostate
-        ├──UAB_headNneck
+        ├──UAB_headNeck
         ├──...
             ├──structure.json
             ├──Ts
@@ -115,18 +115,18 @@ If the Datatset is in Dicom format 2  or changing structure.json for different l
                 ├──patient 2
                 ├──patient 3 
                 ...
-Please use this code to label and final formating the dataset
+Please use this code to label and final formatting the dataset
 
     nnDoseNet_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] 
         
 # structure.json
 
-nnDoseNet use the structure.json for ROI extractiong and labeling.
+nnDoseNet use the structure.json for ROI extracting and labeling.
 There are 2 major part of structure.json, `structure_name` and `structure_label`.
 
 
 **`structure_name`** is used to extract structure from dicom to nifti. The key is **ROI's final name** and value is a **list of potential name** of the ROI in dicom.\
-*If the dataset is in nifti format, you don't need stucture_name.
+*If the dataset is in nifti format, you don't need structure_name.
 
     "structure_name":{
         "Bladder": ["Bladder"], 
@@ -139,9 +139,9 @@ There are 2 major part of structure.json, `structure_name` and `structure_label`
 
 
 > [!note]
-> nnDoseNet search the dicom following the order of potenial name list and once it's found, it won't keep searching.
+> nnDoseNet search the dicom following the order of potential name list and once it's found, it won't keep searching.
 
-**`structure_label`** is used to label the structure nifti and combine it . The key has to be class `Target`, `OAR`, and `Body` which correspond to _0001, _0002, _0003 in Dataset_xxx under nnDoseNet_raw. In each class, the key is the prescription or clical goal of the correspond list of ROI.\
+**`structure_label`** is used to label the structure nifti and combine it . The key has to be class `Target`, `OAR`, and `Body` which correspond to _0001, _0002, _0003 in Dataset_xxx under nnDoseNet_raw. In each class, the key is the prescription or clinical goal of the correspond list of ROI.\
 *Please make sure the ROI name is the same as ROI's final name in structure_name.
 
     "structure_label":{
@@ -150,9 +150,9 @@ There are 2 major part of structure.json, `structure_name` and `structure_label`
         "Body":{"1":["Body"]}}   
 
 > [!note]
->Strongly suggest to put right and left contour in same value.The data augmentaion would mirror the image, so it won't tell the right and left. 
+>Strongly suggest to put right and left contour in same value.The data augmentation would mirror the image, so it won't tell the right and left. 
 
-Final look should be like this, if you have diocm dataset:
+Final look should be like this, if you have dicom dataset:
 
     {
     "structure_name":{
@@ -175,8 +175,8 @@ If using dicom dataset,
 after running `nnDoseNet_format_dataset` or `nnDoseNet_organize_and_convert_dicom` you should see "Tr_roi_summary.csv" or "Ts_roi_summary.csv" and it's correspond json files.\
 These file summarize which name in potential name list is converted into nifti and shows the remaining structure in structure dcms that is not being used. It also, shows which patient has missing contour.
 
-# patinet__.csv
-After running `nnDoseNet_format_dataset` or `nnDoseNet_label_nifti_and_final_formatting`, you should see patinetTr.csv in nnDose_raw/Datasetxxx or patinetTs.csv in nnDose_prediction/Datasetxxx/GroundTruth.\
+# patient__.csv
+After running `nnDoseNet_format_dataset` or `nnDoseNet_label_nifti_and_final_formatting`, you should see patientTr.csv in nnDose_raw/Datasetxxx or patientTs.csv in nnDose_prediction/Datasetxxx/GroundTruth.\
 nnDoseNet anonymize the cases(folders/ patients) name to patient id, and correspond id and original name is in the csv.
 
 # Related command

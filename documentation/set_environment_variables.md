@@ -21,7 +21,7 @@ export nnDose_prediction="/home/changh/Documents/nnDose_5_prediction"
 If you are using a different shell, such as zsh, you will need to find the correct script for it. For zsh this is `.zshrc`.
 
 ## Temporary
-Just execute the following lines whenever you run nnU-Net:
+Just execute the following lines whenever you run nnDoseNet:
 ```bash
 export nnDose_dicom="/home/changh/Documents/nnDose_1_dicom"
 export nnDose_raw="/home/changh/Documents/nnDose_2_raw"

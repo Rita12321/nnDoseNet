@@ -1274,7 +1274,7 @@ class nnUNetTrainer(object):
                 structure_json=load_json(join(self.raw_dataset_folder_base, 'structure.json'))['structure_label']
             except:
                 structure_json=None
-            metrics = compute_dose_metrics_on_folder(join(self.preprocessed_dataset_folder_base, 'gt_segmentations'),
+            metrics = compute_dose_metrics_on_folder(join(self.preprocessed_dataset_folder_base, 'ground_truths'),
                                                 validation_output_folder,
                                                 join(self.raw_dataset_folder_base, 'imagesTr'),
                                                 join(validation_output_folder, 'summary.json'),

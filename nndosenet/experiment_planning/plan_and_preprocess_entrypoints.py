@@ -19,17 +19,17 @@ def extract_fingerprint_entry():
     parser.add_argument("--verify_dataset_integrity", required=False, default=False, action="store_true",
                         help="[RECOMMENDED] set this flag to check the dataset integrity. This is useful and should be done once for "
                              "each dataset!")
-    parser.add_argument('--dose', type=bool, default=False, required=False,
-                        help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
-                             f'Default: {False}')
+#     parser.add_argument('--dose', type=bool, default=False, required=False,
+#                         help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
+#                              f'Default: {False}')
     parser.add_argument("--clean", required=False, default=False, action="store_true",
                         help='[OPTIONAL] Set this flag to overwrite existing fingerprints. If this flag is not set and a '
                              'fingerprint already exists, the fingerprint extractor will not run.')
     parser.add_argument('--verbose', required=False, action='store_true',
-                        help='Set this to print a lot of stuff. Useful for debugging. Will disable progrewss bar! '
+                        help='Set this to print a lot of stuff. Useful for debugging. Will disable progress bar! '
                              'Recommended for cluster environments')
     args, unrecognized_args = parser.parse_known_args()
-    extract_fingerprints(args.d, args.fpe, args.np, args.verify_dataset_integrity, args.dose, args.clean, args.verbose)
+    extract_fingerprints(args.d, args.fpe, args.np, args.verify_dataset_integrity, True, args.clean, args.verbose)
 
 
 def plan_experiment_entry():
@@ -63,15 +63,15 @@ def plan_experiment_entry():
     parser.add_argument('-overwrite_plans_name', default=None, required=False,
                         help='[OPTIONAL] DANGER ZONE! If you used , -preprocessor_name or '
                              '-overwrite_target_spacing it is best practice to use -overwrite_plans_name to generate a '
-                             'differently named plans file such that the nnunet default plans are not '
+                             'differently named plans file such that the nndosenet default plans are not '
                              'overwritten. You will then need to specify your custom plans file with -p whenever '
-                             'running other nnunet commands (training, inference etc)')
-    parser.add_argument('--dose', default=False, required=False, action="store_true",
-                        help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
-                             f'Default: {False}')
+                             'running other nndosenet commands (training, inference etc)')
+#     parser.add_argument('--dose', default=False, required=False, action="store_true",
+#                         help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
+#                              f'Default: {False}')
     args, unrecognized_args = parser.parse_known_args()
     plan_experiments(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing,
-                     args.overwrite_plans_name,args.dose)
+                     args.overwrite_plans_name,True)
 
 
 def preprocess_entry():
@@ -98,7 +98,7 @@ def preprocess_entry():
                              "DECREASE -np IF YOUR RAM FILLS UP TOO MUCH!. Default: 8 processes for 2d, 8 "
                              "for 3d_fullres, 8 for 3d_lowres and 4 for everything else")
     parser.add_argument('--verbose', required=False, action='store_true',
-                        help='Set this to print a lot of stuff. Useful for debugging. Will disable progrewss bar! '
+                        help='Set this to print a lot of stuff. Useful for debugging. Will disable progress bar! '
                              'Recommended for cluster environments')
     args, unrecognized_args = parser.parse_known_args()
     if args.np is None:
@@ -160,12 +160,12 @@ def plan_and_preprocess_entry():
                               '(as a baseline). Changing the target spacing for the other configurations is currently '
                               'not implemented. New target spacing must be a list of three numbers!')
      parser.add_argument('-overwrite_plans_name', default='nnDosePlans', required=False,
-                         help='[OPTIONAL] uSE A CUSTOM PLANS IDENTIFIER. If you used -gpu_memory_target, '
+                         help='[OPTIONAL] USE A CUSTOM PLANS IDENTIFIER. If you used -gpu_memory_target, '
                               '-preprocessor_name or '
                               '-overwrite_target_spacing it is best practice to use -overwrite_plans_name to generate a '
-                              'differently named plans file such that the nnunet default plans are not '
+                              'differently named plans file such that the nndosenet default plans are not '
                               'overwritten. You will then need to specify your custom plans file with -p whenever '
-                              'running other nnunet commands (training, inference etc)')
+                              'running other nndosenet commands (training, inference etc)')
 
      parser.add_argument('-c', required=False, default=['2d', '3d_fullres', '3d_lowres'], nargs='+',
                          help='[OPTIONAL] Configurations for which the preprocessing should be run. Default: 2d 3f_fullres '
@@ -184,7 +184,7 @@ def plan_and_preprocess_entry():
                               "DECREASE -np IF YOUR RAM FILLS UP TOO MUCH!. Default: 8 processes for 2d, 8 "
                               "for 3d_fullres, 8 for 3d_lowres and 4 for everything else")
      parser.add_argument('--verbose', required=False, action='store_true',
-                         help='Set this to print a lot of stuff. Useful for debugging. Will disable progrewss bar! '
+                         help='Set this to print a lot of stuff. Useful for debugging. Will disable progress bar! '
                               'Recommended for cluster environments')
      args = parser.parse_args()
 

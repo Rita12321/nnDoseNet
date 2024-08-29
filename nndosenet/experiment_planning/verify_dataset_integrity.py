@@ -28,22 +28,22 @@ from nndosenet.utilities.label_handling.label_handling import LabelManager
 from nndosenet.utilities.utils import get_identifiers_from_splitted_dataset_folder
 
 
-def verify_labels(label_file: str, readerclass: Type[BaseReaderWriter], expected_labels: List[int]) -> bool:
+# def verify_labels(label_file: str, readerclass: Type[BaseReaderWriter], expected_labels: List[int]) -> bool:
     
 
     
-    rw = readerclass()
-    seg, properties = rw.read_seg(label_file)
-    found_labels = np.sort(pd.unique(seg.ravel()))  # np.unique(seg)
-    unexpected_labels = [i for i in found_labels if i not in expected_labels]
-    if len(found_labels) == 0 and found_labels[0] == 0:
-        print('WARNING: File %s only has label 0 (which should be background). This may be intentional or not, '
-              'up to you.' % label_file)
-    if len(unexpected_labels) > 0:
-        print("Error: Unexpected labels found in file %s.\nExpected: %s\nFound: %s" % (label_file, expected_labels,
-                                                                                       found_labels))
-        return False
-    return True
+#     rw = readerclass()
+#     dose, properties = rw.read_seg(label_file)
+#     found_labels = np.sort(pd.unique(dose.ravel()))  # np.unique(seg)
+#     unexpected_labels = [i for i in found_labels if i not in expected_labels]
+#     if len(found_labels) == 0 and found_labels[0] == 0:
+#         print('WARNING: File %s only has label 0 (which should be background). This may be intentional or not, '
+#               'up to you.' % label_file)
+#     if len(unexpected_labels) > 0:
+#         print("Error: Unexpected labels found in file %s.\nExpected: %s\nFound: %s" % (label_file, expected_labels,
+#                                                                                        found_labels))
+#         return False
+#     return True
 
 
 def check_cases(base_folder: str, case_identifier: str, expected_num_channels: int,
@@ -51,40 +51,40 @@ def check_cases(base_folder: str, case_identifier: str, expected_num_channels: i
     
     rw = readerclass()
     ret = True
-    file_seg = join(base_folder, 'labelsTr', case_identifier + file_ending)
+    file_dose = join(base_folder, 'labelsTr', case_identifier + file_ending)
     pattern = re.compile(re.escape(case_identifier) + r"_\d\d\d\d" + re.escape(file_ending))
     files_image = [join(base_folder, 'imagesTr', i) for i in subfiles(join(base_folder, 'imagesTr'),
                                                                       prefix=case_identifier,
                                                                       suffix=file_ending,
                                                                       join=False) if pattern.fullmatch(i)]
     images, properties_image = rw.read_images(files_image)
-    segmentation, properties_seg = rw.read_seg(file_seg)
+    dose_map, properties_dose = rw.read_seg(file_dose)
 
     # check for nans
     if np.any(np.isnan(images)):
         print(f'Images of case identifier {case_identifier} contain NaN pixel values. You need to fix that by '
               f'replacing NaN values with something that makes sense for your images!')
         ret = False
-    if np.any(np.isnan(segmentation)):
-        print(f'Segmentation of case identifier {case_identifier} contains NaN pixel values. You need to fix that.')
+    if np.any(np.isnan(dose_map)):
+        print(f'Dose map of case identifier {case_identifier} contains NaN pixel values. You need to fix that.')
         ret = False
 
     # check shapes
     shape_image = images.shape[1:]
-    shape_seg = segmentation.shape[1:]
-    if not all([i == j for i, j in zip(shape_image, shape_seg)]):
-        print('Error: Shape mismatch between segmentation and corresponding images. \nShape images: %s. '
-              '\nShape seg: %s. \nImage files: %s. \nSeg file: %s\n' %
-              (shape_image, shape_seg, files_image, file_seg))
+    shape_dose = dose_map.shape[1:]
+    if not all([i == j for i, j in zip(shape_image, shape_dose)]):
+        print('Error: Shape mismatch between dose map and corresponding images. \nShape images: %s. '
+              '\nShape dose: %s. \nImage files: %s. \nDose file: %s\n' %
+              (shape_image, shape_dose, files_image, file_dose))
         ret = False
 
     # check spacings
     spacing_images = properties_image['spacing']
-    spacing_seg = properties_seg['spacing']
-    if not np.allclose(spacing_seg, spacing_images):
-        print('Error: Spacing mismatch between segmentation and corresponding images. \nSpacing images: %s. '
-              '\nSpacing seg: %s. \nImage files: %s. \nSeg file: %s\n' %
-              (shape_image, shape_seg, files_image, file_seg))
+    spacing_dose = properties_dose['spacing']
+    if not np.allclose(spacing_dose, spacing_images):
+        print('Error: Spacing mismatch between dose map and corresponding images. \nSpacing images: %s. '
+              '\nSpacing dose: %s. \nImage files: %s. \nDose file: %s\n' %
+              (shape_image, shape_dose, files_image, file_dose))
         ret = False
 
     # check modalities
@@ -97,29 +97,29 @@ def check_cases(base_folder: str, case_identifier: str, expected_num_channels: i
     if 'nibabel_stuff' in properties_image.keys():
         # this image was read with NibabelIO
         affine_image = properties_image['nibabel_stuff']['original_affine']
-        affine_seg = properties_seg['nibabel_stuff']['original_affine']
-        if not np.allclose(affine_image, affine_seg):
-            print('WARNING: Affine is not the same for image and seg! \nAffine image: %s \nAffine seg: %s\n'
+        affine_dose = properties_dose['nibabel_stuff']['original_affine']
+        if not np.allclose(affine_image, affine_dose):
+            print('WARNING: Affine is not the same for image and dose! \nAffine image: %s \nAffine dose: %s\n'
                   'Image files: %s. \nSeg file: %s.\nThis can be a problem but doesn\'t have to be. Please run '
                   'nnDoseNet_plot_dataset_pngs to verify if everything is OK!\n'
-                  % (affine_image, affine_seg, files_image, file_seg))
+                  % (affine_image, affine_dose, files_image, file_dose))
 
     # sitk checks
     if 'sitk_stuff' in properties_image.keys():
         # this image was read with SimpleITKIO
         # spacing has already been checked, only check direction and origin
         origin_image = properties_image['sitk_stuff']['origin']
-        origin_seg = properties_seg['sitk_stuff']['origin']
-        if not np.allclose(origin_image, origin_seg):
-            print('Warning: Origin mismatch between segmentation and corresponding images. \nOrigin images: %s. '
-                  '\nOrigin seg: %s. \nImage files: %s. \nSeg file: %s\n' %
-                  (origin_image, origin_seg, files_image, file_seg))
+        origin_dose = properties_dose['sitk_stuff']['origin']
+        if not np.allclose(origin_image, origin_dose):
+            print('Warning: Origin mismatch between dose map and corresponding images. \nOrigin images: %s. '
+                  '\nOrigin dose: %s. \nImage files: %s. \nDose file: %s\n' %
+                  (origin_image, origin_dose, files_image, file_dose))
         direction_image = properties_image['sitk_stuff']['direction']
-        direction_seg = properties_seg['sitk_stuff']['direction']
-        if not np.allclose(direction_image, direction_seg):
-            print('Warning: Direction mismatch between segmentation and corresponding images. \nDirection images: %s. '
-                  '\nDirection seg: %s. \nImage files: %s. \nSeg file: %s\n' %
-                  (direction_image, direction_seg, files_image, file_seg))
+        direction_dose = properties_dose['sitk_stuff']['direction']
+        if not np.allclose(direction_image, direction_dose):
+            print('Warning: Direction mismatch between dose map and corresponding images. \nDirection images: %s. '
+                  '\nDirection dose: %s. \nImage files: %s. \nDose file: %s\n' %
+                  (direction_image, direction_dose, files_image, file_dose))
 
     return ret
 
@@ -188,16 +188,16 @@ def verify_dataset_integrity(folder: str, num_processes: int = 8,dose: bool=Fals
     # check whether only the desired labels are present
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
         
-        if label_manager.dose_label!=True:
+        # if label_manager.dose_label!=True:
             
-            result = p.starmap(
-                verify_labels,
-                zip([join(folder, 'labelsTr', i) for i in labelfiles], [reader_writer_class] * len(labelfiles),
-                    [expected_labels] * len(labelfiles))
-            )
-            if not all(result):
-                raise RuntimeError(
-                    'Some segmentation images contained unexpected labels. Please check text output above to see which one(s).')
+        #     result = p.starmap(
+        #         verify_labels,
+        #         zip([join(folder, 'labelsTr', i) for i in labelfiles], [reader_writer_class] * len(labelfiles),
+        #             [expected_labels] * len(labelfiles))
+        #     )
+        #     if not all(result):
+        #         raise RuntimeError(
+        #             'Some segmentation images contained unexpected labels. Please check text output above to see which one(s).')
 
         # check whether shapes and spacings match between images and labels
         result = p.starmap(

@@ -8,7 +8,7 @@ from nndosenet.experiment_planning.dataset_fingerprint.fingerprint_extractor imp
 from nndosenet.experiment_planning.experiment_planners.default_experiment_planner import ExperimentPlanner
 from nndosenet.experiment_planning.verify_dataset_integrity import verify_dataset_integrity
 from nndosenet.paths import nnDose_raw, nnDose_preprocessed
-from nndosenet.utilities.dataset_name_id_conversion import convert_id_to_dataset_name, maybe_convert_to_dataset_name
+from nndosenet.utilities.dataset_name_id_conversion import convert_id_to_dataset_name
 from nndosenet.utilities.find_class_by_name import recursive_find_python_class
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 from nndosenet.configuration import default_num_processes
@@ -75,7 +75,7 @@ def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str 
                      overwrite_target_spacing: Optional[Tuple[float, ...]] = None,
                      overwrite_plans_name: Optional[str] = None, dose=False):
     """
-    overwrite_target_spacing ONLY applies to 3d_fullres and 3d_cascade fullres!
+    overwrite_target_spacing ONLY applies to 3d_fullres and 3d_cascade fullres(not available yet)!
     """
     
  
@@ -117,8 +117,8 @@ def preprocess_dataset(dataset_id: int,
         configuration_manager = plans_manager.get_configuration(c)
         preprocessor = configuration_manager.preprocessor_class(verbose=verbose)
         preprocessor.run(dataset_id, c, plans_identifier, num_processes=n)
-    maybe_mkdir_p(join(nnDose_preprocessed, dataset_name, 'gt_segmentations'))
-    [shutil.copy(i, join(join(nnDose_preprocessed, dataset_name, 'gt_segmentations'))) for i in
+    maybe_mkdir_p(join(nnDose_preprocessed, dataset_name, 'ground_truths'))
+    [shutil.copy(i, join(join(nnDose_preprocessed, dataset_name, 'ground_truths'))) for i in
      subfiles(join(nnDose_raw, dataset_name, 'labelsTr'))]
 #NOTE: changed num_process default
 

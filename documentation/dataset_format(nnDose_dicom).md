@@ -49,9 +49,9 @@ If the Datatset is in `Dicom format 1`, please make sure
                     ├──patient 3 
                 ...
 Please use this code to format dataset
-
+```bash
     nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor]
-
+```
 # Dicom dataset format 2 (organized) in nnDose_dicom
 If the Datatset is in Dicom format 2, please make sure 
  - structure.json is in Dataset's folder
@@ -82,8 +82,9 @@ If the Datatset is in Dicom format 2, please make sure
                 ├──patient 3 
                 ...
 Please use this code to format dataset
-
+```bash
     nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] --organized_dicom
+```
 > [!note]
 > id must be a 3 digit integer
 
@@ -116,9 +117,9 @@ If the Datatset is in Dicom format 2  or changing structure.json for different l
                 ├──patient 3 
                 ...
 Please use this code to label and final formatting the dataset
-
+```bash
     nnDoseNet_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] 
-        
+```        
 # structure.json
 
 nnDoseNet use the structure.json for ROI extracting and labeling.

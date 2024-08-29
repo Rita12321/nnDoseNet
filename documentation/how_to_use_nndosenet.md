@@ -13,12 +13,13 @@ nnDoseNet expects datasets in a structured format. Please read
 [dataset_format(nnDose_dicom)](dataset_format(nnDose_dicom).md) and [dataset_format(nnDose_raw)](dataset_format(nnDose_raw).md) for information on how to set up datasets with DICOM or NIfTI format.
 
 If converting dataset from DICOM please use this command:
-
+```bash
     nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] --organized_dicom
+```
 If converting dataset from NIfTI please use this command:
-
+```bash
     nnDoseNet_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] 
-
+```
 ### Experiment planning and preprocessing
 Given a new dataset, nnDoseNet will extract a dataset fingerprint (a set of dataset-specific properties such as
 image sizes, voxel spacings, intensity information etc) just like what nnU-Net does. This information is used to design three default U-Net configurations. 
@@ -191,7 +192,7 @@ In contrast to the old nnU-Net, DDP is now completely hassle free. Enjoy!
 Once the desired configurations were trained (full cross-validation) you can tell nnU-Net to automatically identify 
 the best combination for you:
 
-```command line
+```bash
 nnDoseNet_find_best_configuration DATASET_NAME_OR_ID -c CONFIGURATIONS 
 ```
 

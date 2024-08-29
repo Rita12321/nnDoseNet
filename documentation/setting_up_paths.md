@@ -76,7 +76,7 @@ throughput.
     ├── dataset.json
     ├── dataset_fingerprint.json
     ├── nnDosePlans.json
-    ├── gt_segmentations
+    ├── ground_truths
         ├── ...
     ├── nnDosePlans_2d
         ├── ...
@@ -91,7 +91,7 @@ throughput.
     - dataset.json: Auto-copied. Please check [here](dataset_format(nnDose_raw).md) for more info.
     - dataset_fingerprint.json: Auto-generated when planning or extracting data fingerprint. This json store the dimensions(shape and spacing) of each training data.
     - `nnDosePlans.json`: Auto-generated when planning. This json store the new dimension info and training parameter of each configuration(2d, 3d, custom).Please check [here](explanation_plans_json_files.md) for more info.
-    - gt_segmentations: Just a folder with ground truths.
+    - ground_truths: Just a folder with ground truths.
     - nnDosePlans_XX: The folder where stores the ready-to-fed data for training. Some configuration share the same folder, please check [here](explanation_plans_json_files.md) for info about custom configuration
 
 4) `nnDose_results`: This specifies where nnDoseNet will save the model weights. If pretrained models are downloaded, this is where it will save them.

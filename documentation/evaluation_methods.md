@@ -32,18 +32,18 @@ Available metrics for only PTV:
 Please use this command for metrics calculation
 
 - If you are using image folder of dataset_format(raw): 
-
+```bash
         nnDoseNet_evaluate_folder [GroundTruth folder(labelsTs)] [Prediction folder(configuration)] [Image folder(imagesTs)] -djfile [dataset.json path]-id_patient_csv [patientTs.csv path] -sjfile [structure.json path] -np [num of processor]
-        
+```        
     Since in dataset_format(raw), all contour is convert to a label, we can't separate the contour if there are 2 contour in same label(e.g. left and right contour). And it's necessary to put same organ in same label, otherwise augmentation in trainer would mirror the left and right. So separate the contour based on it's labeled value.\
     This evaluation method would auto-activate in [find_best_configuration](ensemble_model(best_config).md)
     
     To separate the same labeled contour we need to obtain the image before it's combined, so we need data in nndose_dicom and use below command.
 
  - If you are using image folder of dataset_format(dicom) :
-
+```bash
         nnDoseNet_evaluate_folder [GroundTruth folder(labelsTs)] [Prediction folder(configuration)] [Image folder(Ts)] -djfile [dataset.json path]-id_patient_csv [patientTs.csv path] -sjfile [structure.json path] -np [num of processor] --by_roi
-
+```
     With `--by_roi` on we evaluate the metrics based on the contour in image folder and structure.json. 
 
 ## 2. Evaluation Map
@@ -51,16 +51,16 @@ Please use this command for metrics calculation
 
 ### 2.1 Difference Map
 Please use this command to generate difference map
-    
+```bash    
     nnDoseNet_diff_map_evaluation -gt_folder [groundtruth folder(labelsTs)] -pred_folder [prediction folder(config)] -np [num of processor].
-
+```
 ### 2.2.1 Convert Back to DICOM and Gamma Analysis
 Please use this command to convert prediction to DICOM format and proceed gamma analysis.
-
+```bash
     nnDoseNet_dicom_based_evaluation -gt_folder [groundtruth folder(labelsTs)] -pred_folder [prediction folder(config)] -np [num of processor]
-
+```
 Please use this command to convert prediction to DICOM format and DON'T want proceed gamma analysis.\
 *Strongly suggest to put `--no_gamma` tag if you don't need  gamma analysis.
-
+```bash
     nnDoseNet_dicom_based_evaluation -gt_folder [groundtruth folder(labelsTs)] -pred_folder [prediction folder(config)] -np [num of processor] --no_gamma
-
+```

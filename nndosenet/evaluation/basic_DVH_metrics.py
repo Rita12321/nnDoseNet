@@ -3,39 +3,36 @@ import numpy as np
 class DoseEvaluator:
     """Evaluate a full dose distribution against the reference dose on the OpenKBP competition metrics and some extension metrices we add up """
 
-    def __init__(self, dose_ref, dose_pred, seg, label_df,voxel_size = 1,metrics_list = None,seperate_label = False):
+    def __init__(self, dose_ref, dose_pred, seg, label_df,voxel_size = 1,metrics_list = None,separate_label = False):
         self.dose_ref = dose_ref
         self.dose_pred = dose_pred
         self.seg = seg
         self.label_df = label_df
         self.voxel_size = voxel_size
-        self.seperate_label = seperate_label
-        self.roi_list = self.get_roi_dict(seperate_label)
+        self.separate_label = separate_label
+        self.roi_list = self.get_roi_dict(separate_label)
         if metrics_list is None:
             self.metrics = ["mean","min","max","D_0.1_cc","D_99","D_95","D_1","homogeneity","conformity"]
         else:
             self.metrics = metrics_list
         
 
-    def get_roi_dict(self,seperate_label):
+    def get_roi_dict(self,separate_label):
         roi={}
         for label in self.label_df:
             temp_str=""
             for structure in self.label_df[label]:
-                if seperate_label:
+                if separate_label:
                     roi.update({structure:{"input_label":label}})
                 else:
                     temp_str = temp_str+"+"+structure
-            if not seperate_label:
+            if not separate_label:
                 roi.update({temp_str[1:]:{"input_label":label}})
         return roi   
 
     def calculate_dvh_metrics(self):
         """
-        Calculate the DVH values that were used to evaluate submissions in the competition.
-        :param metric_df: A DataFrame with columns indexed by the metric name and the structure name
-        :param dose: the dose to be evaluated
-        :return: the same metric_df that is input, but now with the metrics for the provided dose
+        Calculate some of common DVH values.
         """
         voxels_within_tenths_cc = np.maximum(1, np.round(100 / self.voxel_size))
         for i,structure in enumerate(self.roi_list):
@@ -54,22 +51,7 @@ class DoseEvaluator:
                     continue
                 masked_pred = np.take(self.dose_pred,np.where(self.seg == int(label))).flatten()
             
-            # identical method
-            # if self.seperate_label or (self.seg is list):
-                
-            #     masked_ref=np.where(self.seg[i]>0,self.dose_ref,np.nan)
-            #     masked_ref = masked_ref[np.logical_not(np.isnan(masked_ref))]
-            #     if len(masked_ref)<=0: 
-            #         continue
-            #     masked_pred=np.where(self.seg[i]>0,self.dose_pred,np.nan) 
-            #     masked_pred = masked_pred[np.logical_not(np.isnan(masked_pred))]
-            # else:
-            #     masked_ref=np.where(self.seg==int(label),self.dose_ref,np.nan)
-            #     masked_ref = masked_ref[np.logical_not(np.isnan(masked_ref))]
-            #     if len(masked_ref)<=0: 
-            #         continue
-            #     masked_pred=np.where(self.seg==int(label),self.dose_pred,np.nan) 
-            #     masked_pred = masked_pred[np.logical_not(np.isnan(masked_pred))]
+
                 
             
             for metric in self.metrics:
@@ -106,7 +88,7 @@ class DoseEvaluator:
                         V_ptv_and = np.count_nonzero(roi_dose >= int(label))
                         if V_iso <= 0:
                             continue
-                        metric_value = (V_ptv_and**2)/(V_iso*roi_size)
+                        metric_value = (V_ptv_and**2)*100/(V_iso*roi_size)
                     else:
                         raise ValueError(f"Metrics {metric} is not supported.")
                     temp_dict.update({metric+"_"+pred_ref:metric_value})

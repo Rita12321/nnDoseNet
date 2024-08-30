@@ -132,7 +132,7 @@ def plot_overlay(image_file: str, segmentation_file: str, image_reader_writer: B
 
     image, props = image_reader_writer.read_images((image_file, ))
     image = image[0]
-    seg, props_seg = image_reader_writer.read_seg(segmentation_file)
+    seg, props_seg = image_reader_writer.read_gt(segmentation_file)
     seg = seg[0]
 
     assert all([i == j for i, j in zip(image.shape, seg.shape)]), "image and seg do not have the same shape: %s, %s" % (

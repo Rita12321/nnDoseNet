@@ -15,14 +15,21 @@ def nii2dcm_and_gamma(ref_path, pred_path, mask_path, save_folder, gamma = True)
     
     #TODO: find the save path based on nnDoseNet_predict path? 
     name=pred_path.split("/")[-1]
-    dicom_save_path=join(save_folder,"PredDicom",name+".dcm")
+    dicom_save_path=join(save_folder, "PredDicom", name+".dcm")
     
     
-    ref_dcm,pred_dcm = dose_to_dicom(predict_nifti_path=pred_path,reference_dicom_path=ref_path,save_path=dicom_save_path,for_gamma=True)
-    # D2N=Dicom2Nifti_RT(output_diocm_folder = dicom_save_path , img_nii_path = nifti_file,struct_nii_folder = contour_nii_dir, dose_nii_path = dose_nii, patient_id=patient_id, patient_name=patient_name, openkbp=True)
+    ref_dcm,pred_dcm = dose_to_dicom(predict_nifti_path = pred_path,
+                                     reference_dicom_path = ref_path,
+                                     save_path = dicom_save_path,
+                                     for_gamma = True)
+    
     if gamma:
         gamma_save_path=join(save_folder,"Gamma",name+".nii.gz")
-        gamma_options,pass_gamma_num,mask_num = gamma_analysis(reference=ref_dcm,evaluation=pred_dcm,mask_path=mask_path,save_path=gamma_save_path)
+        gamma_options,pass_gamma_num,mask_num = gamma_analysis(reference = ref_dcm,
+                                                               evaluation = pred_dcm,
+                                                               mask_path = mask_path,
+                                                               save_path = gamma_save_path)
+        
         gamma_dict={pred_path.split("/")[-1]:{"gamma_setting":gamma_options,
                                                 "passing_rate(%)":pass_gamma_num*100/mask_num,
                                                 "pass_gamma_num":pass_gamma_num,
@@ -36,10 +43,11 @@ def nii2dcm_and_gamma(ref_path, pred_path, mask_path, save_folder, gamma = True)
         return {}
 
 def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
-                                   reference_folder:str,
-                                   output_folder: str,
-                                   patient_csv:str,
-                                   num_processes=8,gamma=True) -> None:
+                                      reference_folder:str,
+                                      output_folder: str,
+                                      patient_csv:str,
+                                      num_processes=8,
+                                      gamma=True) -> None:
      
 
     if gamma:
@@ -61,7 +69,7 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
             r.append(p.starmap_async(nii2dcm_and_gamma,
                                      ((join(reference_folder, ref_list[k],"Dicom","RD",os.listdir(join(reference_folder, ref_list[k],"Dicom","RD"))[0]),
                                        join(prediction_folder, str(pred).zfill(4)),
-                                       join(reference_folder, ref_list[k],"Nifti","possible_dose_mask.nii.gz"),#"Body.nii.gz"),#"possible_dose_mask.nii.gz"
+                                       join(reference_folder, ref_list[k],"Nifti","Body.nii.gz"),#TODO: change to read structure json for body mask
                                        output_folder,gamma),)))
             
         remaining = list(range(len(pred_list)))
@@ -93,10 +101,11 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
             pass_list.append(results_dict[str(case)]['passing_rate(%)'])
         
         mean_dict={"gamma_setting":gamma_setting,
-                "mean_gamma_passing_rate":np.mean(pass_list),
-                "std_gamma_passing_rate":np.std(pass_list),
-                "# of case has GPR > 90%": len([i for i in pass_list if float(i) > 90.0]),
-                "total_case":len(results_dict)}
+                   "mean_gamma_passing_rate":np.mean(pass_list),
+                   "std_gamma_passing_rate":np.std(pass_list),
+                   "# of case has GPR > 90%": len([i for i in pass_list if float(i) > 90.0]),
+                   "total_case":len(results_dict)}
+        
         mean_dict.update(dict(sorted(results_dict.items())))
         save_json(mean_dict,join(output_folder,"gamma_summary.json"),sort_keys=False)
 
@@ -106,11 +115,11 @@ def nii2dcm_and_gamma_analysis_entry_point():
     
     parser.add_argument('-pred', type=str, required=True,help='Prediction folder')
     parser.add_argument('-ref', type=str, required=True, help='Reference folder')
-    parser.add_argument('-out', type=str, required=False, default=None, help='Output folder. Default creat a subfolder PredDicom in -pred folder')
-    parser.add_argument('-csv', type=str, required=True, help='csv convertion list of petient_num nifti folder \
+    parser.add_argument('-out', type=str, required=False, default=None, help='Output folder. Default create a subfolder PredDicom in -pred folder')
+    parser.add_argument('-csv', type=str, required=True, help='csv conversion list of patient_num nifti folder \
                             and patient folder name in dicom folder')
     parser.add_argument('-np', type=int, required=False, default=3,
-                        help="Number of processes used for dicom convertion and gamma analysis.  \
+                        help="Number of processes used for dicom conversion and gamma analysis.  \
                             Default: 3")
     parser.add_argument('--no_gamma', action='store_false',
                         help='Only convert prediction of nifti back to dicom without doing gamma analysis. \
@@ -153,17 +162,17 @@ def nii2dcm_and_gamma_analysis_Ts_entry_point():
                         help='[OPTIONAL] Configurations for which the evaluation should be run. Default: 2d 3f_fullres '
                             '3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data '
                             'from 3d_fullres. Configurations that do not exist for some dataset will be skipped.')    
-    parser.add_argument('-csv', type=str, required=False, default=None, help='csv convertion list of petient_num nifti folder \
+    parser.add_argument('-csv', type=str, required=False, default=None, help='csv conversion list of patient_num nifti folder \
                             and patient folder name in dicom folder, default use the \
                             "[nndose_prediction]/[-name]/Dataset+[-id]}/GroundTruth/patientTs.csv" that is created format and \
-                            creat when formatting datset Ts')
+                            create when formatting dataset Ts')
     parser.add_argument('-np', type=int, required=False, default=3,
-                        help=f"Number of processes used for dicom convertion and gamma analysis. !! Pease set this nps less than \
+                        help=f"Number of processes used for dicom conversion and gamma analysis. !! Pease set this nps less than \
                             nps in other process. Gamma analysis required LOTS of Ram so it may crash if you have too many nps , \
                             Default: 3")
     parser.add_argument('--no_gamma', action='store_false',
                         help='Only convert prediction of nifti back to dicom without doing gamma analysis. \
-                            It would be wayyyy faster if you do not need gamma!')
+                            It would be wayyyyyyyy faster if you do not need gamma!')
     args = parser.parse_args()
     
         

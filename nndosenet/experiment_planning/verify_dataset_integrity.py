@@ -58,7 +58,7 @@ def check_cases(base_folder: str, case_identifier: str, expected_num_channels: i
                                                                       suffix=file_ending,
                                                                       join=False) if pattern.fullmatch(i)]
     images, properties_image = rw.read_images(files_image)
-    dose_map, properties_dose = rw.read_seg(file_dose)
+    dose_map, properties_dose = rw.read_gt(file_dose)
 
     # check for nans
     if np.any(np.isnan(images)):

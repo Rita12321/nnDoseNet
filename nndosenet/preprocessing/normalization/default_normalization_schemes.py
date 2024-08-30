@@ -17,9 +17,9 @@ class ImageNormalization(ABC):
         self.target_dtype = target_dtype
 
     @abstractmethod
-    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
+    def run(self, image: np.ndarray, gt: np.ndarray = None) -> np.ndarray:
         """
-        Image and seg must have the same shape. Seg is not always used
+        Image and ground truth dose map must have the same shape. Seg is not always used
         """
         pass
 
@@ -27,9 +27,9 @@ class ImageNormalization(ABC):
 class ZScoreNormalization(ImageNormalization):
     leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = True
 
-    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
+    def run(self, image: np.ndarray, gt: np.ndarray = None) -> np.ndarray:
         """
-        here seg is used to store the zero valued region. The value for that region in the segmentation is -1 by
+        here ground truth dose map is used to store the zero valued region. The value for that region in the segmentation is -1 by
         default.
         """
         image = image.astype(self.target_dtype)
@@ -38,7 +38,7 @@ class ZScoreNormalization(ImageNormalization):
             # in BraTS). We want to run the normalization only in the brain region, so we need to mask the image.
             # The default nnU-net sets use_mask_for_norm to True if cropping to the nonzero region substantially
             # reduced the image size.
-            mask = seg >= 0
+            mask = gt >= 0
             mean = image[mask].mean()
             std = image[mask].std()
             image[mask] = (image[mask] - mean) / (max(std, 1e-8))
@@ -52,7 +52,7 @@ class ZScoreNormalization(ImageNormalization):
 class CTNormalization(ImageNormalization):
     leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
 
-    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
+    def run(self, image: np.ndarray, gt: np.ndarray = None) -> np.ndarray:
         assert self.intensityproperties is not None, "CTNormalization requires intensity properties"
         image = image.astype(self.target_dtype)
         mean_intensity = self.intensityproperties['mean']
@@ -67,18 +67,18 @@ class CTNormalization(ImageNormalization):
 class NoNormalization(ImageNormalization):
     leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
 
-    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
+    def run(self, image: np.ndarray, gt: np.ndarray = None) -> np.ndarray:
         return image.astype(self.target_dtype)
 class NoNormalization_mask(ImageNormalization):
     leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
 
-    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
+    def run(self, image: np.ndarray, gt: np.ndarray = None) -> np.ndarray:
         return image.astype(np.uint8)   
 
 class RescaleTo01Normalization(ImageNormalization):
     leaves_pixels_outside_mask_at_zero_if_use_mask_for_norm_is_true = False
 
-    def run(self, image: np.ndarray, seg: np.ndarray = None) -> np.ndarray:
+    def run(self, image: np.ndarray, gt: np.ndarray = None) -> np.ndarray:
         image = image.astype(self.target_dtype)
         image = image - image.min()
         image = image / np.clip(image.max(), a_min=1e-8, a_max=None)

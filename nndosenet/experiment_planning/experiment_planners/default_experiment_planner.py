@@ -255,9 +255,9 @@ class ExperimentPlanner(object):
                 PTV_OAR_BODY[2]=c
         if -1 in PTV_OAR_BODY:
             print('WARNING: "Target","OAR","BODY" should be mention in channel_names and please specific which channel it is in'\
-                '"Target" is the PTV or CTV or GTV or anything you that you target for traetment'\
-                '"OAR" is the oragn at risk or anything you want to minimize the deliverd dosage'\
-                '"BODY" is the contour of the patient, or the range that the treatment would be deliverd '\
+                '"Target" is the PTV or CTV or GTV or anything you that you target for treatment'\
+                '"OAR" is the organ at risk or anything you want to minimize the delivered dosage'\
+                '"BODY" is the contour of the patient, or the range that the treatment would be delivered '\
                 'Preferred format:'\
                 '"channel_names": {"0": "CT", "1": "Target", "2": "OAR", "3": "BODY"}')
                 
@@ -594,13 +594,13 @@ class ExperimentPlanner(object):
         save_json(plans, plans_file, sort_keys=False)
         print('Plans were saved to %s' % join(nnDose_preprocessed, self.dataset_name, self.plans_identifier + '.json'))
 
-    def generate_data_identifier(self, confgiuration_name: str) -> str:
+    def generate_data_identifier(self, configuration_name: str) -> str:
         """
-        configurations are unique within each plans file but differnet plans file can have configurations with the
+        configurations are unique within each plans file but different plans file can have configurations with the
         same name. In order to distinguish the assiciated data we need a data identifier that reflects not just the
         config but also the plans it originates from
         """
-        return self.plans_identifier + '_' + confgiuration_name
+        return self.plans_identifier + '_' + configuration_name
 
     def load_plans(self, fname: str):
         self.plans = load_json(fname)

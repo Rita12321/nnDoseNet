@@ -21,12 +21,12 @@ def create_nonzero_mask(data):
     return nonzero_mask
 
 
-def crop_to_nonzero(data, seg=None, nonzero_label=-1):
+def crop_to_nonzero(data, gt=None, nonzero_label=-1):
     """
 
     :param data:
-    :param seg:
-    :param nonzero_label: this will be written into the segmentation map
+    :param gt:
+    :param nonzero_label: this will be written into the ground truth dose map
     :return:
     """
     nonzero_mask = create_nonzero_mask(data)
@@ -35,17 +35,17 @@ def crop_to_nonzero(data, seg=None, nonzero_label=-1):
     slicer = bounding_box_to_slice(bbox)
     data = data[tuple([slice(None), *slicer])]
 
-    if seg is not None:
-        seg = seg[tuple([slice(None), *slicer])]
+    if gt is not None:
+        gt = gt[tuple([slice(None), *slicer])]
 
     nonzero_mask = nonzero_mask[slicer][None]
-    if seg is not None:
-        seg[(seg == 0) & (~nonzero_mask)] = nonzero_label
+    if gt is not None:
+        gt[(gt == 0) & (~nonzero_mask)] = nonzero_label
     else:
         nonzero_mask = nonzero_mask.astype(np.int8)
         nonzero_mask[nonzero_mask == 0] = nonzero_label
         nonzero_mask[nonzero_mask > 0] = 0
-        seg = nonzero_mask
-    return data, seg, bbox
+        gt = nonzero_mask
+    return data, gt, bbox
 
 

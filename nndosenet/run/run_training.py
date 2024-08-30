@@ -220,8 +220,8 @@ def run_training_entry():
                         help="[OPTIONAL] If you set this flag the training cases will not be decompressed. Reading compressed "
                              "data is much more CPU and (potentially) RAM intensive and should only be used if you "
                              "know what you are doing")
-    parser.add_argument('--npz', action='store_true', required=False,
-                        help='[OPTIONAL] Save predictions from final validation in npz files. Needed for finding the best ensemble.')
+    # parser.add_argument('--npz', action='store_true', required=False,
+    #                     help='[OPTIONAL] Save predictions from final validation in npz files. Needed for finding the best ensemble.')
     parser.add_argument('--c', action='store_true', required=False,
                         help='[OPTIONAL] Continue training from latest checkpoint')
     parser.add_argument('--val', action='store_true', required=False,
@@ -250,7 +250,7 @@ def run_training_entry():
         device = torch.device('mps')
 
     run_training(args.dataset_name_or_id, args.configuration, args.fold, args.tr, args.p,args.pretrained_weights,
-                 args.num_gpus, args.use_compressed, args.npz, args.c, args.val, args.disable_checkpointing,
+                 args.num_gpus, args.use_compressed, False, args.c, args.val, args.disable_checkpointing,
                  device=device)
 
 

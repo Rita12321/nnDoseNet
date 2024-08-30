@@ -37,27 +37,27 @@ class DefaultPreprocessor(object):
         Everything we need is in the plans. Those are given when run() is called
         """
 
-    def run_case_npy(self, data: np.ndarray, seg: Union[np.ndarray, None], properties: dict,
+    def run_case_npy(self, data: np.ndarray, gt: Union[np.ndarray, None], properties: dict,
                      plans_manager: PlansManager, configuration_manager: ConfigurationManager,
                      dataset_json: Union[dict, str]):
         # let's not mess up the inputs!
         data = np.copy(data)
-        if seg is not None:
-            seg = np.copy(seg)
+        if gt is not None:
+            gt = np.copy(gt)
 
-        has_seg = seg is not None
+        has_seg = gt is not None
 
         # apply transpose_forward, this also needs to be applied to the spacing!
         data = data.transpose([0, *[i + 1 for i in plans_manager.transpose_forward]])
-        if seg is not None:
-            seg = seg.transpose([0, *[i + 1 for i in plans_manager.transpose_forward]])
+        if gt is not None:
+            gt = gt.transpose([0, *[i + 1 for i in plans_manager.transpose_forward]])
         original_spacing = [properties['spacing'][i] for i in plans_manager.transpose_forward]
 
         # crop, remember to store size before cropping!
         shape_before_cropping = data.shape[1:]
         properties['shape_before_cropping'] = shape_before_cropping
         # this command will generate a segmentation. This is important because of the nonzero mask which we may need
-        data, seg, bbox = crop_to_nonzero(data, seg)
+        data, gt, bbox = crop_to_nonzero(data, gt)
         properties['bbox_used_for_cropping'] = bbox
         # print(data.shape, seg.shape)
         properties['shape_after_cropping_and_before_resampling'] = data.shape[1:]
@@ -74,7 +74,7 @@ class DefaultPreprocessor(object):
         # normalize
         # normalization MUST happen before resampling or we get huge problems with resampled nonzero masks no
         # longer fitting the images perfectly!
-        data = self._normalize(data, seg, configuration_manager,
+        data = self._normalize(data, gt, configuration_manager,
                                plans_manager.foreground_intensity_properties_per_channel)
   
         # print('current shape', data.shape[1:], 'current_spacing', original_spacing,
@@ -100,7 +100,7 @@ class DefaultPreprocessor(object):
         else:        
             data = configuration_manager.resampling_fn_data(data, new_shape, original_spacing, target_spacing)
 
-        seg = configuration_manager.resampling_fn_seg(seg, new_shape, original_spacing, target_spacing)
+        gt = configuration_manager.resampling_fn_seg(gt, new_shape, original_spacing, target_spacing)
 
         if self.verbose:
             print(f'old shape: {old_shape}, new_shape: {new_shape}, old_spacing: {original_spacing}, '
@@ -127,23 +127,23 @@ class DefaultPreprocessor(object):
 
             # no need to filter background in regions because it is already filtered in handle_labels
             # print(all_labels, regions)
-            properties['class_locations'] = self._sample_foreground_locations(seg, collect_for_this,
+            properties['class_locations'] = self._sample_foreground_locations(gt, collect_for_this,
                                                                                    verbose=self.verbose)
-            seg = self.modify_seg_fn(seg, plans_manager, dataset_json, configuration_manager)
+            gt = self.modify_dose_fn(gt, plans_manager, dataset_json, configuration_manager)
             
 ## NOTE: changed: having a label call dose  --> np. float32
         if label_manager.dose_label:
             #print("doselabel")
-            seg = seg.astype(np.float32)
-        elif np.max(seg) > 127:
+            gt = gt.astype(np.float32)
+        elif np.max(gt) > 127:
             #print("seg????>127")
-            seg = seg.astype(np.int16)
+            gt = gt.astype(np.int16)
         else:
             #print("are you kidding? ")
-            seg = seg.astype(np.int8)
-        return data, seg
+            gt = gt.astype(np.int8)
+        return data, gt
 
-    def run_case(self, image_files: List[str], seg_file: Union[str, None], plans_manager: PlansManager,
+    def run_case(self, image_files: List[str], dose_file: Union[str, None], plans_manager: PlansManager,
                  configuration_manager: ConfigurationManager,
                  dataset_json: Union[dict, str]):
         """
@@ -162,26 +162,26 @@ class DefaultPreprocessor(object):
         
         data, data_properites = rw.read_images(image_files)
         
-        # if possible, load seg
-        if seg_file is not None:
-            seg, _ = rw.read_seg(seg_file)
+        # if possible, load ground truth (dose map)
+        if dose_file is not None:
+            gt, _ = rw.read_gt(dose_file)
         else:
-            seg = None
+            gt = None
 
-        data, seg = self.run_case_npy(data, seg, data_properites, plans_manager, configuration_manager,
+        data, gt = self.run_case_npy(data, gt, data_properites, plans_manager, configuration_manager,
                                       dataset_json)
-        return data, seg, data_properites
+        return data, gt, data_properites
 
-    def run_case_save(self, output_filename_truncated: str, image_files: List[str], seg_file: str,
+    def run_case_save(self, output_filename_truncated: str, image_files: List[str], dose_file: str,
                       plans_manager: PlansManager, configuration_manager: ConfigurationManager,
                       dataset_json: Union[dict, str]):
-        data, seg, properties = self.run_case(image_files, seg_file, plans_manager, configuration_manager, dataset_json)
+        data, gt, properties = self.run_case(image_files, dose_file, plans_manager, configuration_manager, dataset_json)
         # print('dtypes', data.dtype, seg.dtype)
-        np.savez_compressed(output_filename_truncated + '.npz', data=data, seg=seg)
+        np.savez_compressed(output_filename_truncated + '.npz', data=data, seg=gt)
         write_pickle(properties, output_filename_truncated + '.pkl')
 
     @staticmethod
-    def _sample_foreground_locations(seg: np.ndarray, classes_or_regions: Union[List[int], List[Tuple[int, ...]]],
+    def _sample_foreground_locations(gt: np.ndarray, classes_or_regions: Union[List[int], List[Tuple[int, ...]]],
                                      seed: int = 1234, verbose: bool = False):
         num_samples = 10000
         min_percent_coverage = 0.01  # at least 1% of the class voxels need to be selected, otherwise it may be too
@@ -191,12 +191,12 @@ class DefaultPreprocessor(object):
         for c in classes_or_regions:
             k = c if not isinstance(c, list) else tuple(c)
             if isinstance(c, (tuple, list)):
-                mask = seg == c[0]
+                mask = gt == c[0]
                 for cc in c[1:]:
-                    mask = mask | (seg == cc)
+                    mask = mask | (gt == cc)
                 all_locs = np.argwhere(mask)
             else:
-                all_locs = np.argwhere(seg == c)
+                all_locs = np.argwhere(gt == c)
             if len(all_locs) == 0:
                 class_locs[k] = []
                 continue
@@ -209,7 +209,7 @@ class DefaultPreprocessor(object):
                 print(c, target_num_samples)
         return class_locs
 
-    def _normalize(self, data: np.ndarray, seg: np.ndarray, configuration_manager: ConfigurationManager,
+    def _normalize(self, data: np.ndarray, gt: np.ndarray, configuration_manager: ConfigurationManager,
                    foreground_intensity_properties_per_channel: dict) -> np.ndarray:
         for c in range(data.shape[0]):
             scheme = configuration_manager.normalization_schemes[c]
@@ -220,7 +220,7 @@ class DefaultPreprocessor(object):
                 raise RuntimeError('Unable to locate class \'%s\' for normalization' % scheme)
             normalizer = normalizer_class(use_mask_for_norm=configuration_manager.use_mask_for_norm[c],
                                           intensityproperties=foreground_intensity_properties_per_channel[str(c)])
-            data[c] = normalizer.run(data[c], seg[0])
+            data[c] = normalizer.run(data[c], gt[0])
         return data
             
 
@@ -266,14 +266,14 @@ class DefaultPreprocessor(object):
         image_fnames = create_lists_from_splitted_dataset_folder(join(nnDose_raw, dataset_name, 'imagesTr'), file_ending,
                                                                  identifiers)
         # list of segmentation filenames
-        seg_fnames = [join(nnDose_raw, dataset_name, 'labelsTr', i + file_ending) for i in identifiers]
+        dose_fnames = [join(nnDose_raw, dataset_name, 'labelsTr', i + file_ending) for i in identifiers]
 
         # multiprocessing magic.
         r = []
         with multiprocessing.get_context("spawn").Pool(num_processes) as p:
-            for outfile, infiles, segfiles in zip(output_filenames_truncated, image_fnames, seg_fnames):
+            for outfile, infiles, dosefiles in zip(output_filenames_truncated, image_fnames, dose_fnames):
                 r.append(p.starmap_async(self.run_case_save,
-                                         ((outfile, infiles, segfiles, plans_manager, configuration_manager,
+                                         ((outfile, infiles, dosefiles, plans_manager, configuration_manager,
                                            dataset_json),)))
             remaining = list(range(len(output_filenames_truncated)))
             # p is pretty nifti. If we kill workers they just respawn but don't do any work.
@@ -290,11 +290,11 @@ class DefaultPreprocessor(object):
                     remaining = [i for i in remaining if i not in done]
                     sleep(0.1)
 
-    def modify_seg_fn(self, seg: np.ndarray, plans_manager: PlansManager, dataset_json: dict,
+    def modify_dose_fn(self, gt: np.ndarray, plans_manager: PlansManager, dataset_json: dict,
                       configuration_manager: ConfigurationManager) -> np.ndarray:
         # this function will be called at the end of self.run_case. Can be used to change the segmentation
         # after resampling. Useful for experimenting with sparse annotations: I can introduce sparsity after resampling
         # and don't have to create a new dataset each time I modify my experiments
-        return seg
+        return gt
 
 

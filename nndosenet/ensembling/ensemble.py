@@ -19,16 +19,14 @@ def average_probabilities(list_of_files: List[str],image_reader_writer: BaseRead
     avg = None
     for f in list_of_files:
             
-        img,properties=image_reader_writer.read_seg(f)
+        img,properties=image_reader_writer.read_gt(f)
  
         if avg is None:
             avg = img
-            # avg = np.load(f)['probabilities']#TODO:read img
-            # maybe increase precision to prevent rounding errors
             if avg.dtype != np.float32:
                 avg = avg.astype(np.float32)
         else:
-            avg += img # np.load(f)['probabilities']#TODO:read img
+            avg += img 
  
     avg /= len(list_of_files)
     return avg,properties
@@ -41,27 +39,15 @@ def merge_files(list_of_files,
                 label_manager: LabelManager#,
                 # save_probabilities: bool = False
                 ):
-    # load the pkl file associated with the first file in list_of_files
-    # properties = load_pickle(list_of_files[0][:-7] + '.pkl')#.npz -4
-    # load and average predictions
     
     probabilities,properties = average_probabilities(list_of_files,image_reader_writer)
-
     segmentation = label_manager.probability_squeeze_channel(probabilities)
-        
-    image_reader_writer.write_seg(segmentation, output_filename_truncated + output_file_ending, properties)
+    image_reader_writer.write_gt(segmentation, output_filename_truncated + output_file_ending, properties)
     
-    
-    
-    
-    # if save_probabilities:
-    #     np.savez_compressed(output_filename_truncated + '.npz', probabilities=probabilities)
-    #     save_pickle(probabilities, output_filename_truncated + '.pkl')
 
 
 def ensemble_folders(list_of_input_folders: List[str],
                      output_folder: str,
-                    #  save_merged_probabilities: bool = False,
                      num_processes: int = default_num_processes,
                      dataset_json_file_or_dict: str = None,
                      plans_json_file_or_dict: str = None):
@@ -90,7 +76,7 @@ def ensemble_folders(list_of_input_folders: List[str],
 
     # now collect the files in each of the folders and enforce that all files are present in all folders
     files_per_folder = [set(subfiles(i, suffix='.nii.gz', join=False)) for i in list_of_input_folders]
-    # print(files_per_folder )
+    
     # first build a set with all files
     s = deepcopy(files_per_folder[0])
     for f in files_per_folder[1:]:
@@ -99,7 +85,6 @@ def ensemble_folders(list_of_input_folders: List[str],
         assert len(s.difference(f)) == 0, "Not all folders contain the same files for ensembling. Please only " \
                                           "provide folders that contain the predictions"
     lists_of_lists_of_files = [[join(fl, fi) for fl in list_of_input_folders] for fi in s]
-    #print(lists_of_lists_of_files )
     output_files_truncated = [join(output_folder, fi[:-7]) for fi in s]
 
     image_reader_writer = plans_manager.image_reader_writer_class()
@@ -159,11 +144,11 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
         for fold in folds:
             if not isdir(join(tr, f'fold_{fold}', 'validation')):
                 raise RuntimeError(f'Expected model output directory does not exist. You must train all requested '
-                                   f'folds of the speficied model.\nModel: {tr}\nFold: {fold}')
+                                   f'folds of the specified model.\nModel: {tr}\nFold: {fold}')
             files_here = subfiles(join(tr, f'fold_{fold}', 'validation'), suffix='.nii.gz', join=False)#.npz
             if len(files_here) == 0:
-                raise RuntimeError(f"No .npz files found in folder {join(tr, f'fold_{fold}', 'validation')}. Rerun your "
-                                   f"validation with the --npz flag. Use nnDoseNet_train [...] --val --npz.")#TODO change errro message
+                raise RuntimeError(f"No .nii.gz files found in folder {join(tr, f'fold_{fold}', 'validation')}. Rerun your "
+                                   f"nnDoseNet_train [...] --val.")
             files_per_folder[tr][fold] = subfiles(join(tr, f'fold_{fold}', 'validation'), suffix='.nii.gz', join=False)#.npz
             unique_filenames.update(files_per_folder[tr][fold])
 

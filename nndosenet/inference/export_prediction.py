@@ -113,7 +113,7 @@ def export_prediction_from_logits(predicted_array_or_file: Union[np.ndarray, tor
 
     rw = plans_manager.image_reader_writer_class()
 
-    rw.write_seg(segmentation_final, output_file_truncated + dataset_json_dict_or_file['file_ending'],
+    rw.write_gt(segmentation_final, output_file_truncated + dataset_json_dict_or_file['file_ending'],
                  properties_dict)
 
 

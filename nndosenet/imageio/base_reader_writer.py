@@ -72,7 +72,7 @@ class BaseReaderWriter(ABC):
         pass
 
     @abstractmethod
-    def read_seg(self, seg_fname: str) -> Tuple[np.ndarray, dict]:
+    def read_gt(self, seg_fname: str) -> Tuple[np.ndarray, dict]:
         """
         Same requirements as BaseReaderWriter.read_image. Returned segmentations must have shape 1,x,y,z. Multiple
         segmentations are not (yet?) allowed
@@ -82,14 +82,14 @@ class BaseReaderWriter(ABC):
         :return:
             1) a np.ndarray of shape (1, x, y, z) where x, y, z are
             the spatial dimensions (set x=1 for 2D! Example: (1, 1, 224, 224) for 2D segmentation).
-            2) a dictionary with metadata. This can be anything. BUT it HAS to inclue a {'spacing': (a, b, c)} where a
+            2) a dictionary with metadata. This can be anything. BUT it HAS to include a {'spacing': (a, b, c)} where a
             is the spacing of x, b of y and c of z! If an image doesn't have spacing, just set this to 1. For 2D, set
             a=999 (largest spacing value! Make it larger than b and c)
         """
         pass
 
     @abstractmethod
-    def write_seg(self, seg: np.ndarray, output_fname: str, properties: dict) -> None:
+    def write_gt(self, seg: np.ndarray, output_fname: str, properties: dict) -> None:
         """
         Export the predicted segmentation to the desired file format. The given seg array will have the same shape and
         orientation as the corresponding image data, so you don't need to do any resampling or whatever. Just save :-)

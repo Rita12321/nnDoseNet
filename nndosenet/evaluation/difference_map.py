@@ -5,8 +5,7 @@ import os
 import pandas as pd
 # from nndosenet.imageio.reader_writer_registry import determine_reader_writer_from_dataset_json, \
 #     determine_reader_writer_from_file_ending
-from batchgenerators.utilities.file_and_folder_operations import subfiles, join, save_json, load_json, \
-    isfile
+from batchgenerators.utilities.file_and_folder_operations import subfiles, join,  load_json
 import tqdm
 
 def difference_map(label_np,pred_np,dose_mask=None,do_MSE=False,do_MAE=False): 
@@ -38,9 +37,9 @@ def MAE_from_diff(diff_map,num_dose=None):
             return np.sum(np.abs(diff_map.flatten()))/num_dose
     
     return np.mean(np.sum(np.abs(diff_map.flatten())))    
-#TODO: difference map api
+
 def write_diffmap(label,pred,file_ending,out_folder,dose_mask=None,do_MSE=False,do_MAE=False):
-       #todo imageio file ending
+       #todo image.io file ending
     #print(label,pred)
     label_img=sitk.ReadImage (label)
     label_np=sitk.GetArrayFromImage(label_img)
@@ -97,8 +96,3 @@ def entrypoint_diff_map():
         out_folder=args.o
         
     diff_map_api(args.gt_folder,args.pred_folder,file_ending=file_ending,out_folder=out_folder,num_processes=args.np)
-# if __name__ == '__main__':
-    # gt_folder="/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/prostate_UAB/Dataset099_prostate_UAB/GroundTruth"
-    # pred_folder="/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/prostate_UAB/Dataset099_prostate_UAB/Prediction/2d"
-    
-    # diff_map_api(gt_folder,pred_folder,djfile,out_folder,num_processes=8)

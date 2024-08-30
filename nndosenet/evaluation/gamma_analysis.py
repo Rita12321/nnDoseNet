@@ -4,19 +4,19 @@ import SimpleITK as sitk
 import numpy as np
 import typing
 def find_dose_spacing(reference):
-    spaceing=[reference.PixelSpacing[0],reference.PixelSpacing[1],1]
+    spacing=[reference.PixelSpacing[0],reference.PixelSpacing[1],1]
     if reference.SliceThickness is None:
-        spaceing[2]=spaceing[0]
-        return spaceing
+        spacing[2]=spacing[0]
+        return spacing
     
     if reference.SliceThickness is not None:
         # if str(reference.SliceThickness).isnumeric():
-            spaceing[2] = int(reference.SliceThickness)
-            return spaceing
+            spacing[2] = int(reference.SliceThickness)
+            return spacing
     
-    spaceing[2]=spaceing[0]
+    spacing[2]=spacing[0]
 
-    return spaceing
+    return spacing
 
 def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
                    evaluation: typing.Union[pydicom.dataset.FileDataset, str],
@@ -83,9 +83,6 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
     if save_path==None:
         return gamma
     gamma_np=np.nan_to_num(gamma,-1)
-    # image=sitk.GetImageFromArray(gamma_np)  
-    # empty=np.zeros(shape)
-    # empty[bb_cor['xmin']:bb_cor['xmax'],bb_cor['ymin']:bb_cor['ymax'],bb_cor['zmin']:bb_cor['zmax']]=gamma
     image=sitk.GetImageFromArray(gamma_np)
     
     spacing=find_dose_spacing(reference=evaluation) 
@@ -104,9 +101,6 @@ def pass_rate(max_gamma, gamma, gamma_image, mask_path):
     mask=resample2ref(gamma_image,mask)
     mask=sitk.GetArrayFromImage(mask).flatten()
     mask=np.nonzero(mask)[0]
-    # print(np.nonzero(ori_mask.flatten()))
-    # print(np.nonzero(mask.flatten()))
-    # mask=np.nonzero(.flatten())
     
     gamma=np.take(gamma.flatten(),mask)
     pass_gamma=len(np.nonzero(gamma<max_gamma)[0])

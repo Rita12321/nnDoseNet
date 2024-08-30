@@ -111,10 +111,10 @@ class SimpleITKIO(BaseReaderWriter):
 
         return stacked_images.astype(np.float64), dict
 
-    def read_seg(self, seg_fname: str) -> Tuple[np.ndarray, dict]:
+    def read_gt(self, seg_fname: str) -> Tuple[np.ndarray, dict]:
         return self.read_images((seg_fname, ))
 
-    def write_seg(self, seg: np.ndarray, output_fname: str, properties: dict) -> None:
+    def write_gt(self, seg: np.ndarray, output_fname: str, properties: dict) -> None:
         assert len(seg.shape) == 3, 'segmentation must be 3d. If you are exporting a 2d segmentation, please provide it as shape 1,x,y'
         output_dimension = len(properties['sitk_stuff']['spacing'])
         assert 1 < output_dimension < 4

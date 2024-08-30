@@ -84,8 +84,8 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
     PTV_METRICS=["mean","min","max","D_0.1_cc","D_99","D_95","D_1","homogeneity","conformity"]#
     OAR_METRICS=["mean","min","max","D_0.1_cc"]
     # metrics: full image evaluation, only need ref and pred
-    dose_ref, dose_dict = image_reader_writer.read_seg(reference_file)
-    dose_pred, _ = image_reader_writer.read_seg(prediction_file)
+    dose_ref, dose_dict = image_reader_writer.read_gt(reference_file)
+    dose_pred, _ = image_reader_writer.read_gt(prediction_file)
     dose_ref = dose_ref.squeeze().flatten()
     dose_pred = dose_pred.squeeze().flatten()    
     
@@ -110,35 +110,35 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
             for j in i:
                 path=join(ptv_file,j+".nii.gz")
                 if os.path.isfile(path):
-                    temp, _ = image_reader_writer.read_seg(path)
+                    temp, _ = image_reader_writer.read_gt(path)
                     seg_ptv.append(temp.squeeze().flatten())
                     
                 else:
                     seg_ptv.append(np.zeros(shape)) 
         results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv, 
-                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,seperate_label=True).calculate_dvh_metrics()
+                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,separate_label=True).calculate_dvh_metrics()
     else:
-        seg_ptv, _ = image_reader_writer.read_seg(ptv_file)
+        seg_ptv, _ = image_reader_writer.read_gt(ptv_file)
         seg_ptv = seg_ptv.squeeze().flatten()
         results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv, 
-                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,seperate_label=False).calculate_dvh_metrics() 
+                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,separate_label=False).calculate_dvh_metrics() 
     if os.path.isdir(oar_file) :
         seg_oar=[]
         for i in structure_label['OAR'].values():
             for j in i:
                 path=join(oar_file,j+".nii.gz")
                 if os.path.isfile(path):
-                    temp, _ = image_reader_writer.read_seg(path)
+                    temp, _ = image_reader_writer.read_gt(path)
                     seg_oar.append(temp.squeeze().flatten())
                 else:
                     seg_oar.append(np.zeros(shape)) 
         results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar, 
-                                structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,seperate_label=True).calculate_dvh_metrics()
+                                structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,separate_label=True).calculate_dvh_metrics()
     else:
-        seg_oar, _ = image_reader_writer.read_seg(oar_file)
+        seg_oar, _ = image_reader_writer.read_gt(oar_file)
         seg_oar = seg_oar.squeeze().flatten()
         results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar, 
-                                structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,seperate_label=False).calculate_dvh_metrics()
+                                structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,separate_label=False).calculate_dvh_metrics()
 
 
     return results
@@ -239,7 +239,7 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
                 means["# < 105% prescription of "+m] = count_105
                 means["# < 107% prescription of "+m] = count_107
                 
-        # mean contour metrices 
+        # mean contour metrics 
         for typ in ["Target","OAR"]:
             means[typ]={} 
             contour_list = list(results[0][typ].keys())      
@@ -342,11 +342,11 @@ def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_inp
                                    num_processes=num_processes,ignore_label=None,dose_label=True, chill=chill,
                               raw_folder=raw_folder,patient_csv=patient_csv)
 
-# This function is for sementation with region input
+# This function is for segmentation with region input
 # def labels_to_list_of_regions(labels: List[int]):
 #     return [(i,) for i in labels]
 
-# This function is for sementation
+# This function is for segmentation
 # def region_or_label_to_mask(segmentation: np.ndarray, region_or_label: Union[int, Tuple[int, ...]]) -> np.ndarray:
 #     if np.isscalar(region_or_label):
 #         return segmentation == region_or_label
@@ -356,7 +356,7 @@ def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_inp
 #             mask[segmentation == r] = True
 #     return mask
 
-# This function is for sementation
+# This function is for segmentation
 # def compute_tp_fp_fn_tn(mask_ref: np.ndarray, mask_pred: np.ndarray, ignore_mask: np.ndarray = None):
 #     if ignore_mask is None:
 #         use_mask = np.ones_like(mask_ref, dtype=bool)
@@ -435,6 +435,8 @@ def evaluate_folder_entry_point():
     
 
 if __name__ == '__main__':
+    #I know I spelled prediction wrong when i am naming my project folder....
+    #but I have too many code using abs path that i can't changed it.Please don't laugh ><
     folder_ref = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/GroundTruth/labelsTs'
     folder_pred = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/Prediction'
     folder_input = '/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom/openkbp/Ts'

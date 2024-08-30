@@ -36,9 +36,9 @@ class DatasetFingerprintExtractor(object):
         # We don't want to use all foreground voxels because that can accumulate a lot of data (out of memory). It is
         # also not critically important to get all pixels as long as there are enough. Let's use 10e7 voxels in total
         # (for the entire dataset)
-        self.num_foreground_voxels_for_intensitystats = 10e7
+        self.num_foreground_voxels_for_intensity_stats = 10e7
 
-    @staticmethod #segegmentaion here refer to ground truth label which is dose map
+    @staticmethod #segmentation here refer to ground truth label which is dose map
     def collect_foreground_intensities(segmentation: np.ndarray, images: np.ndarray, seed: int = 1234,
                                        num_samples: int = 10000):
         """
@@ -84,7 +84,7 @@ class DatasetFingerprintExtractor(object):
                      num_samples: int = 10000):
         rw = reader_writer_class()
         images, properties_images = rw.read_images(image_files)
-        segmentation, properties_seg = rw.read_seg(segmentation_file)
+        segmentation, properties_seg = rw.read_gt(segmentation_file)
 
         # we no longer crop and save the cropped images before this is run. Instead we run the cropping on the fly.
         # Downside is that we need to do this twice (once here and once during preprocessing). Upside is that we don't
@@ -126,7 +126,7 @@ class DatasetFingerprintExtractor(object):
                                         training_identifiers]
 
             # determine how many foreground voxels we need to sample per training case
-            num_foreground_samples_per_case = int(self.num_foreground_voxels_for_intensitystats //
+            num_foreground_samples_per_case = int(self.num_foreground_voxels_for_intensity_stats //
                                                   len(training_identifiers))
 
             r = []
@@ -149,10 +149,7 @@ class DatasetFingerprintExtractor(object):
                         remaining = [i for i in remaining if i not in done]
                         sleep(0.1)
 
-            # results = ptqdm(DatasetFingerprintExtractor.analyze_case,
-            #                 (training_images_per_case, training_labels_per_case),
-            #                 processes=self.num_processes, zipped=True, reader_writer_class=reader_writer_class,
-            #                 num_samples=num_foreground_samples_per_case, disable=self.verbose)
+
             results = [i.get()[0] for i in r]
 
             shapes_after_crop = [r[0] for r in results]

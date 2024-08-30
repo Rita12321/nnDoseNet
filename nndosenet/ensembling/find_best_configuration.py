@@ -40,8 +40,8 @@ def filter_available_models(model_dict: Union[List[dict], Tuple[dict, ...]], dat
                                                    trained_model['configuration'], fold=None)
         if not isdir(expected_output_folder):
             raise RuntimeError(f"Trained model {trained_model} does not have an output folder. "
-                  f"Expected: {expected_output_folder}. Please run the training for this model! (don't forget "
-                  f"the --npz flag if you want to ensemble multiple configurations)")
+                  f"Expected: {expected_output_folder}. Please run the training for this model!")# (don't forget "
+                  #f"the --npz flag if you want to ensemble multiple configurations)")
 
         valid.append(trained_model)
     return valid
@@ -344,7 +344,7 @@ def find_best_configuration_entry_point():
 
 
 def accumulate_crossval_results_entry_point():
-    parser = argparse.ArgumentParser('Copies all predicted segmentations from the individual folds into one joint '
+    parser = argparse.ArgumentParser('Copies all predicted dose map from the individual folds into one joint '
                                      'folder and evaluates them')
     parser.add_argument('dataset_name_or_id', type=str, help='Dataset Name or id')
     parser.add_argument('-c', type=str, required=True,

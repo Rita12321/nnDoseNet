@@ -15,10 +15,10 @@ def organize_and_convert_dicom_entry():
      parser.add_argument('-nps', type=int ,default=3,
                          help="")
      parser.add_argument('-structure', type=str ,default=None,
-                         help="You can specify the structure.json you want to use in stucture convertion, default would use the structure.json\
+                         help="You can specify the structure.json you want to use in structure conversion, default would use the structure.json\
                               in nnDose_dicom/[--name] ")     
      parser.add_argument('--organized_dicom', default=False, action="store_true", required=False,
-                         help="if the dicom file is already organized or put tnto correspond folder,\
+                         help="if the dicom file is already organized or put to correspond folder,\
                               you will get warning about not finding dcm in folder while dcms are already moved.\
                               it's very noisy :(")
    
@@ -41,7 +41,7 @@ def label_nifti_and_final_formatting_entry():
      parser.add_argument('-nps', type=int ,default=3,
                          help="")
      parser.add_argument('-structure', type=str ,default=None,
-                         help="You can specify the structure.json you want to use in stucture label, default would use the structure.json\
+                         help="You can specify the structure.json you want to use in structure label, default would use the structure.json\
                               in nnDose_dicom/[--name] ") 
      
      args, unrecognized_args = parser.parse_known_args()
@@ -65,10 +65,10 @@ def format_dataset_entry():
      parser.add_argument('-nps', type=int ,default=3,
                          help="")
      parser.add_argument('-structure', type=str ,default=None,
-                         help="You can specify the structure.json you want to use in stucture convertion and label , default would use the structure.json\
+                         help="You can specify the structure.json you want to use in structure conversion and label , default would use the structure.json\
                               in nnDose_dicom/[--name] ")
      parser.add_argument('--organized_dicom', default=False, action="store_true", required=False,
-                    help="if the dicom file is already organized or put tnto correspond folder,\
+                    help="if the dicom file is already organized or put to correspond folder,\
                          you will get warning about not finding dcm in folder while dcms are already moved.\
                          it's very annoying :(")
      

@@ -10,7 +10,7 @@ import torch
 from batchgenerators.dataloading.data_loader import DataLoader
 
 from nndosenet.preprocessing.preprocessors.default_preprocessor import DefaultPreprocessor
-from nndosenet.utilities.label_handling.label_handling import convert_labelmap_to_one_hot
+# from nndosenet.utilities.label_handling.label_handling import convert_labelmap_to_one_hot
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager, ConfigurationManager
 
 
@@ -29,16 +29,15 @@ def preprocess_fromfiles_save_to_queue(list_of_lists: List[List[str]],
 
         preprocessor = configuration_manager.preprocessor_class(verbose=verbose)
         for idx in range(len(list_of_lists)):
-            data, seg, data_properites = preprocessor.run_case(list_of_lists[idx],
-                                                               list_of_segs_from_prev_stage_files[
-                                                                   idx] if list_of_segs_from_prev_stage_files is not None else None,
+            data, _, data_properites = preprocessor.run_case(list_of_lists[idx],
+                                                               None,
                                                                plans_manager,
                                                                configuration_manager,
                                                                dataset_json)
             
-            if list_of_segs_from_prev_stage_files is not None and list_of_segs_from_prev_stage_files[idx] is not None:
-                seg_onehot = convert_labelmap_to_one_hot(seg[0], label_manager.foreground_labels, data.dtype)
-                data = np.vstack((data, seg_onehot))
+            # if list_of_segs_from_prev_stage_files is not None and list_of_segs_from_prev_stage_files[idx] is not None:
+            #     seg_onehot = convert_labelmap_to_one_hot(seg[0], label_manager.foreground_labels, data.dtype)
+            #     data = np.vstack((data, seg_onehot))
 
             data = torch.from_numpy(data).contiguous().float()
 
@@ -85,9 +84,7 @@ def preprocessing_iterator_fromfiles(list_of_lists: List[List[str]],
         queue = Manager().Queue(maxsize=1)
         pr = context.Process(target=preprocess_fromfiles_save_to_queue,
                      args=(
-                         list_of_lists[i::num_processes],
-                         list_of_segs_from_prev_stage_files[
-                         i::num_processes] if list_of_segs_from_prev_stage_files is not None else None,
+                         list_of_lists[i::num_processes],None,
                          output_filenames_truncated[
                          i::num_processes] if output_filenames_truncated is not None else None,
                          plans_manager,
@@ -136,8 +133,8 @@ class PreprocessAdapter(DataLoader):
 
         self.label_manager = plans_manager.get_label_manager(dataset_json)
 
-        if list_of_segs_from_prev_stage_files is None:
-            list_of_segs_from_prev_stage_files = [None] * len(list_of_lists)
+        # if list_of_segs_from_prev_stage_files is None:
+        list_of_segs_from_prev_stage_files = [None] * len(list_of_lists)
         if output_filenames_truncated is None:
             output_filenames_truncated = [None] * len(list_of_lists)
 
@@ -159,40 +156,40 @@ class PreprocessAdapter(DataLoader):
         data, seg, data_properites = self.preprocessor.run_case(files, seg_prev_stage, self.plans_manager,
                                                                 self.configuration_manager,
                                                                 self.dataset_json)
-        if seg_prev_stage is not None:
-            seg_onehot = convert_labelmap_to_one_hot(seg[0], self.label_manager.foreground_labels, data.dtype)
-            data = np.vstack((data, seg_onehot))
+        # if seg_prev_stage is not None:
+        #     seg_onehot = convert_labelmap_to_one_hot(seg[0], self.label_manager.foreground_labels, data.dtype)
+        #     data = np.vstack((data, seg_onehot))
 
         data = torch.from_numpy(data)
 
         return {'data': data, 'data_properites': data_properites, 'ofile': ofile}
 
 
-class PreprocessAdapterFromNpy(DataLoader):
-    def __init__(self, list_of_images: List[np.ndarray],
-                 list_of_segs_from_prev_stage: Union[List[np.ndarray], None],
-                 list_of_image_properties: List[dict],
-                 truncated_ofnames: Union[List[str], None],
-                 plans_manager: PlansManager, dataset_json: dict, configuration_manager: ConfigurationManager,
-                 num_threads_in_multithreaded: int = 1, verbose: bool = False):
-        preprocessor = configuration_manager.preprocessor_class(verbose=verbose)
-        self.preprocessor, self.plans_manager, self.configuration_manager, self.dataset_json, self.truncated_ofnames = \
-            preprocessor, plans_manager, configuration_manager, dataset_json, truncated_ofnames
+# class PreprocessAdapterFromNpy(DataLoader):
+#     def __init__(self, list_of_images: List[np.ndarray],
+#                  list_of_segs_from_prev_stage: Union[List[np.ndarray], None],
+#                  list_of_image_properties: List[dict],
+#                  truncated_ofnames: Union[List[str], None],
+#                  plans_manager: PlansManager, dataset_json: dict, configuration_manager: ConfigurationManager,
+#                  num_threads_in_multithreaded: int = 1, verbose: bool = False):
+#         preprocessor = configuration_manager.preprocessor_class(verbose=verbose)
+#         self.preprocessor, self.plans_manager, self.configuration_manager, self.dataset_json, self.truncated_ofnames = \
+#             preprocessor, plans_manager, configuration_manager, dataset_json, truncated_ofnames
 
-        self.label_manager = plans_manager.get_label_manager(dataset_json)
+#         self.label_manager = plans_manager.get_label_manager(dataset_json)
 
-        if list_of_segs_from_prev_stage is None:
-            list_of_segs_from_prev_stage = [None] * len(list_of_images)
-        if truncated_ofnames is None:
-            truncated_ofnames = [None] * len(list_of_images)
+#         if list_of_segs_from_prev_stage is None:
+#             list_of_segs_from_prev_stage = [None] * len(list_of_images)
+#         if truncated_ofnames is None:
+#             truncated_ofnames = [None] * len(list_of_images)
 
-        super().__init__(
-            list(zip(list_of_images, list_of_segs_from_prev_stage, list_of_image_properties, truncated_ofnames)),
-            1, num_threads_in_multithreaded,
-            seed_for_shuffle=1, return_incomplete=True,
-            shuffle=False, infinite=False, sampling_probabilities=None)
+#         super().__init__(
+#             list(zip(list_of_images, list_of_segs_from_prev_stage, list_of_image_properties, truncated_ofnames)),
+#             1, num_threads_in_multithreaded,
+#             seed_for_shuffle=1, return_incomplete=True,
+#             shuffle=False, infinite=False, sampling_probabilities=None)
 
-        self.indices = list(range(len(list_of_images)))
+#         self.indices = list(range(len(list_of_images)))
 
     def generate_train_batch(self):
         idx = self.get_indices()[0]
@@ -208,9 +205,9 @@ class PreprocessAdapterFromNpy(DataLoader):
                                                    self.configuration_manager,
                                                    self.dataset_json)
         
-        if seg_prev_stage is not None:
-            seg_onehot = convert_labelmap_to_one_hot(seg[0], self.label_manager.foreground_labels, data.dtype)
-            data = np.vstack((data, seg_onehot))
+        # if seg_prev_stage is not None:
+        #     seg_onehot = convert_labelmap_to_one_hot(seg[0], self.label_manager.foreground_labels, data.dtype)
+        #     data = np.vstack((data, seg_onehot))
 
 
         data = torch.from_numpy(data)
@@ -233,16 +230,16 @@ def preprocess_fromnpy_save_to_queue(list_of_images: List[np.ndarray],
         label_manager = plans_manager.get_label_manager(dataset_json)
         preprocessor = configuration_manager.preprocessor_class(verbose=verbose)
         for idx in range(len(list_of_images)):
-            data, seg = preprocessor.run_case_npy(list_of_images[idx],
+            data, gt = preprocessor.run_case_npy(list_of_images[idx],
                                                   list_of_segs_from_prev_stage[
                                                       idx] if list_of_segs_from_prev_stage is not None else None,
                                                   list_of_image_properties[idx],
                                                   plans_manager,
                                                   configuration_manager,
                                                   dataset_json)
-            if list_of_segs_from_prev_stage is not None and list_of_segs_from_prev_stage[idx] is not None:
-                seg_onehot = convert_labelmap_to_one_hot(seg[0], label_manager.foreground_labels, data.dtype)
-                data = np.vstack((data, seg_onehot))
+            # if list_of_segs_from_prev_stage is not None and list_of_segs_from_prev_stage[idx] is not None:
+            #     seg_onehot = convert_labelmap_to_one_hot(seg[0], label_manager.foreground_labels, data.dtype)
+            #     data = np.vstack((data, seg_onehot))
 
             data = torch.from_numpy(data).contiguous().float()
 

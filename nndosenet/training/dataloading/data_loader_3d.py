@@ -1,15 +1,13 @@
 import numpy as np
 from nndosenet.training.dataloading.base_data_loader import nnUNetDataLoaderBase
 from nndosenet.training.dataloading.nnunet_dataset import nnUNetDataset
-from datetime import datetime
-import SimpleITK as sitk
 class nnUNetDataLoader3D(nnUNetDataLoaderBase):
    
     def generate_train_batch(self):
         selected_keys = self.get_indices()
         # preallocate memory for data and seg
         data_all = np.zeros(self.data_shape, dtype=np.float32)
-        seg_all = np.zeros(self.seg_shape, dtype=np.float32)#NOTE:changed np.int16-->np.float32
+        gt_all = np.zeros(self.gt_shape, dtype=np.float32)#NOTE:changed np.int16-->np.float32
         case_properties = []
 
         for j, i in enumerate(selected_keys):
@@ -17,7 +15,7 @@ class nnUNetDataLoader3D(nnUNetDataLoaderBase):
             # (Lung for example)
             force_fg = self.get_do_oversample(j)
 
-            data, seg, properties = self._data.load_case(i)
+            data, gt, properties = self._data.load_case(i)
        
 
 
@@ -41,17 +39,17 @@ class nnUNetDataLoader3D(nnUNetDataLoaderBase):
             this_slice = tuple([slice(0, data.shape[0])] + [slice(i, j) for i, j in zip(valid_bbox_lbs, valid_bbox_ubs)])
             data = data[this_slice]
 
-            this_slice = tuple([slice(0, seg.shape[0])] + [slice(i, j) for i, j in zip(valid_bbox_lbs, valid_bbox_ubs)])
-            seg = seg[this_slice]
+            this_slice = tuple([slice(0, gt.shape[0])] + [slice(i, j) for i, j in zip(valid_bbox_lbs, valid_bbox_ubs)])
+            gt = gt[this_slice]
  
             
             
             padding = [(-min(0, bbox_lbs[i]), max(bbox_ubs[i] - shape[i], 0)) for i in range(dim)]
             data_all[j] = np.pad(data, ((0, 0), *padding), 'constant', constant_values=0)#0 
-            seg_all[j] = np.pad(seg, ((0, 0), *padding), 'constant', constant_values=-1)#-1
+            gt_all[j] = np.pad(gt, ((0, 0), *padding), 'constant', constant_values=-1)#-1
             
 
               
-        return {'data': data_all, 'seg': seg_all, 'properties': case_properties, 'keys': selected_keys}
+        return {'data': data_all, 'seg': gt_all, 'properties': case_properties, 'keys': selected_keys}
 
 

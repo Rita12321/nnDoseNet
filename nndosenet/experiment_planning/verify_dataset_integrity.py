@@ -28,23 +28,6 @@ from nndosenet.utilities.label_handling.label_handling import LabelManager
 from nndosenet.utilities.utils import get_identifiers_from_splitted_dataset_folder
 
 
-# def verify_labels(label_file: str, readerclass: Type[BaseReaderWriter], expected_labels: List[int]) -> bool:
-    
-
-    
-#     rw = readerclass()
-#     dose, properties = rw.read_seg(label_file)
-#     found_labels = np.sort(pd.unique(dose.ravel()))  # np.unique(seg)
-#     unexpected_labels = [i for i in found_labels if i not in expected_labels]
-#     if len(found_labels) == 0 and found_labels[0] == 0:
-#         print('WARNING: File %s only has label 0 (which should be background). This may be intentional or not, '
-#               'up to you.' % label_file)
-#     if len(unexpected_labels) > 0:
-#         print("Error: Unexpected labels found in file %s.\nExpected: %s\nFound: %s" % (label_file, expected_labels,
-#                                                                                        found_labels))
-#         return False
-#     return True
-
 
 def check_cases(base_folder: str, case_identifier: str, expected_num_channels: int,
                 readerclass: Type[BaseReaderWriter], file_ending: str) -> bool:
@@ -174,8 +157,8 @@ def verify_dataset_integrity(folder: str, num_processes: int = 8,dose: bool=Fals
     # problems anyway
     label_manager = LabelManager(dataset_json['labels'], regions_class_order=dataset_json.get('regions_class_order'),dose_label=dose)
     expected_labels = label_manager.all_labels
-    if label_manager.has_ignore_label:
-        expected_labels.append(label_manager.ignore_label)
+    # if label_manager.has_ignore_label:
+    #     expected_labels.append(label_manager.ignore_label)
     labels_valid_consecutive = np.ediff1d(expected_labels) == 1
     assert all(
         labels_valid_consecutive), f'Labels must be in consecutive order (0, 1, 2, ...). The labels {np.array(expected_labels)[1:][~labels_valid_consecutive]} do not satisfy this restriction'
@@ -188,18 +171,6 @@ def verify_dataset_integrity(folder: str, num_processes: int = 8,dose: bool=Fals
     # check whether only the desired labels are present
     with multiprocessing.get_context("spawn").Pool(num_processes) as p:
         
-        # if label_manager.dose_label!=True:
-            
-        #     result = p.starmap(
-        #         verify_labels,
-        #         zip([join(folder, 'labelsTr', i) for i in labelfiles], [reader_writer_class] * len(labelfiles),
-        #             [expected_labels] * len(labelfiles))
-        #     )
-        #     if not all(result):
-        #         raise RuntimeError(
-        #             'Some segmentation images contained unexpected labels. Please check text output above to see which one(s).')
-
-        # check whether shapes and spacings match between images and labels
         result = p.starmap(
             check_cases,
             zip([folder] * expected_num_training, training_identifiers, [num_modalities] * expected_num_training,

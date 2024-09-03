@@ -38,7 +38,7 @@ class DoseEvaluator:
         for i,structure in enumerate(self.roi_list):
             temp_dict = self.roi_list[structure]
             label = self.roi_list[structure]["input_label"]
-            if self.seperate_label or (self.seg is list):
+            if self.separate_label or (self.seg is list):
                 
                 masked_ref = np.take(self.dose_ref,np.where(self.seg[i]>0)).flatten()
                 if len(masked_ref) <= 0: 

@@ -1,17 +1,14 @@
 from nndosenet.dicom_bridge.dicom2nifti import DicomConverter,NiftiLabeler
 import numpy as np
 import SimpleITK as sitk
-# import nibabel as nib
 import os
 import multiprocessing
 import glob
 from tqdm import tqdm
 from time import sleep
 import shutil
-# import math as m
 import pandas as pd
-# from rt_utils import RTStructBuilder
-from nndosenet.paths import nnDose_preprocessed, nnDose_raw,nnDose_dicom,nnDose_prediction
+from nndosenet.paths import nnDose_raw, nnDose_prediction
 from batchgenerators.utilities.file_and_folder_operations import *
 import pydicom
 
@@ -134,34 +131,7 @@ def organize_dicom(DATA_FOLDER):
                     
         
         
-        # for type in type_list:
-        #     dcms=glob.glob(join(patient_path,type+"*.dcm"))
-        #     if len(dcms)<=0:
-        #         # print('WARNING: cannot find any file start with" '+type+'".dcm'\
-        #         #         'trying to find files not ending with .dcm')
-        #         dcms=glob.glob(join(patient_path,type+"*"))
-        #         if len(dcms)<=0:
-        #             print('WARNING: cannot find any file start with" '+type+'" '\
-        #                     'please check the if the folder directory is correct or it has" '+type+' " in file name.') 
-        #         else:
-        #             print('find',len(dcms),'file start with " ',type,
-        #                 'please make sure it end with .dcm next time, otherwise there might have error cause by it') 
-        #     for dcm in dcms:
-        #         shutil.move(dcm,join(patient_path,"Dicom",type))        
-        
-        
-        
-        ##extra
-        # type="extra"
-        # create_folder(join(patient_path,"Dicom",type))  
-        # dcms=glob.glob(join(patient_path,"*"))      
-        # if len(dcms)>4:
-        #     print("There are ", len(dcms)-4, "extra files, that is not starting with CT,RD or RS. They are moved to folder extra")
-        #     for dcm in dcms:
-        #         if os.path.isdir(dcm):
-        #             continue
-        #         shutil.move(dcm,join(patient_path,"Dicom",type))  
-        #print(' finish organizing the the data in dir: '+DATA_FOLDER)    
+  
 def organize_nifti(DATA_FOLDER):
     """
     DATA_FOLDER=nnUNet_dicom/Dataset/Tr

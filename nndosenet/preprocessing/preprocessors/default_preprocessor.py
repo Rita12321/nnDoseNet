@@ -117,13 +117,13 @@ class DefaultPreprocessor(object):
             # LabelManager is pretty light computation-wise.
             
             #label_manager = plans_manager.get_label_manager(dataset_json)#call before if has_seg
-            collect_for_this = label_manager.foreground_regions if label_manager.has_regions \
-                else label_manager.foreground_labels
-
+            # collect_for_this = label_manager.foreground_regions if label_manager.has_regions \
+            #     else label_manager.foreground_labels
+            collect_for_this = label_manager.foreground_labels
             # when using the ignore label we want to sample only from annotated regions. Therefore we also need to
             # collect samples uniformly from all classes (incl background)
-            if label_manager.has_ignore_label:
-                collect_for_this.append(label_manager.all_labels)
+            # if label_manager.has_ignore_label:
+            #     collect_for_this.append(label_manager.all_labels)
 
             # no need to filter background in regions because it is already filtered in handle_labels
             # print(all_labels, regions)
@@ -177,7 +177,7 @@ class DefaultPreprocessor(object):
                       dataset_json: Union[dict, str]):
         data, gt, properties = self.run_case(image_files, dose_file, plans_manager, configuration_manager, dataset_json)
         # print('dtypes', data.dtype, seg.dtype)
-        np.savez_compressed(output_filename_truncated + '.npz', data=data, seg=gt)
+        np.savez_compressed(output_filename_truncated + '.npz', data=data, gt=gt)
         write_pickle(properties, output_filename_truncated + '.pkl')
 
     @staticmethod

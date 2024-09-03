@@ -38,16 +38,16 @@ class DatasetFingerprintExtractor(object):
         # (for the entire dataset)
         self.num_foreground_voxels_for_intensity_stats = 10e7
 
-    @staticmethod #segmentation here refer to ground truth label which is dose map
-    def collect_foreground_intensities(segmentation: np.ndarray, images: np.ndarray, seed: int = 1234,
+    @staticmethod #dose_map here refer to ground truth label which is dose map
+    def collect_foreground_intensities(dose_map: np.ndarray, images: np.ndarray, seed: int = 1234,
                                        num_samples: int = 10000):
         """
         images=image with multiple channels = shape (c, x, y(, z))
         """
         assert len(images.shape) == 4
-        assert len(segmentation.shape) == 4
+        assert len(dose_map.shape) == 4
 
-        assert not np.any(np.isnan(segmentation)), "Segmentation contains NaN values. grrrr.... :-("
+        assert not np.any(np.isnan(dose_map)), "Dose map contains NaN values. grrrr.... :-("
         assert not np.any(np.isnan(images)), "Images contains NaN values. grrrr.... :-("
 
         rs = np.random.RandomState(seed)
@@ -56,8 +56,8 @@ class DatasetFingerprintExtractor(object):
         # we don't use the intensity_statistics_per_channel at all, it's just something that might be nice to have
         intensity_statistics_per_channel = []
 
-        # segmentation is 4d: 1,x,y,z. We need to remove the empty dimension for the following code to work
-        foreground_mask = segmentation[0] > 0
+        # dose_map is 4d: 1,x,y,z. We need to remove the empty dimension for the following code to work
+        foreground_mask = dose_map[0] > 0
 
         for i in range(len(images)):
             foreground_pixels = images[i][foreground_mask]
@@ -80,20 +80,20 @@ class DatasetFingerprintExtractor(object):
         return intensities_per_channel, intensity_statistics_per_channel
 
     @staticmethod
-    def analyze_case(image_files: List[str], segmentation_file: str, reader_writer_class: Type[BaseReaderWriter],
+    def analyze_case(image_files: List[str], dose_file: str, reader_writer_class: Type[BaseReaderWriter],
                      num_samples: int = 10000):
         rw = reader_writer_class()
         images, properties_images = rw.read_images(image_files)
-        segmentation, properties_seg = rw.read_gt(segmentation_file)
+        dose_map, properties_dose = rw.read_gt(dose_file)
 
         # we no longer crop and save the cropped images before this is run. Instead we run the cropping on the fly.
         # Downside is that we need to do this twice (once here and once during preprocessing). Upside is that we don't
         # need to save the cropped data anymore. Given that cropping is not too expensive it makes sense to do it this
         # way. This is only possible because we are now using our new input/output interface.
-        data_cropped, seg_cropped, bbox = crop_to_nonzero(images, segmentation)
+        data_cropped, dose_cropped, bbox = crop_to_nonzero(images, dose_map)
 
         foreground_intensities_per_channel, foreground_intensity_stats_per_channel = \
-            DatasetFingerprintExtractor.collect_foreground_intensities(seg_cropped, data_cropped,
+            DatasetFingerprintExtractor.collect_foreground_intensities(dose_cropped, data_cropped,
                                                                        num_samples=num_samples)
 
         spacing = properties_images['spacing']

@@ -46,7 +46,7 @@ class BaseReaderWriter(ABC):
         spatial dimensions (so shape must be c,x,y,z where c is the number of modalities (can be 1)).
         Use the dictionary to store necessary meta information that is lost when converting to numpy arrays, for
         example the Spacing, Orientation and Direction of the image. This dictionary will be handed over to write_seg
-        for exporting the predicted segmentations, so make sure you have everything you need in there!
+        for exporting the predicted ground truth (dose map), so make sure you have everything you need in there!
 
         IMPORTANT: dict MUST have a 'spacing' key with a tuple/list of length 3 with the voxel spacing of the np.ndarray.
         Example: my_dict = {'spacing': (3, 0.5, 0.5), ...}. This is needed for planning and
@@ -74,10 +74,10 @@ class BaseReaderWriter(ABC):
     @abstractmethod
     def read_gt(self, seg_fname: str) -> Tuple[np.ndarray, dict]:
         """
-        Same requirements as BaseReaderWriter.read_image. Returned segmentations must have shape 1,x,y,z. Multiple
-        segmentations are not (yet?) allowed
+        Same requirements as BaseReaderWriter.read_image. Returned ground truth (dose map) must have shape 1,x,y,z. Multiple
+        ground truth (dose map) are not (yet?) allowed
 
-        If images and segmentations can be read the same way you can just `return self.read_image((image_fname,))`
+        If images and ground truth (dose map) can be read the same way you can just `return self.read_image((image_fname,))`
         :param seg_fname:
         :return:
             1) a np.ndarray of shape (1, x, y, z) where x, y, z are
@@ -101,7 +101,7 @@ class BaseReaderWriter(ABC):
         1,x,y. You need to catch that and export accordingly (for 2d images you need to convert the 3d segmentation
         to 2d via seg = seg[0])!
 
-        :param seg: A segmentation (np.ndarray, integer) of shape (x, y, z). For 2D segmentations this will be (1, y, z)!
+        :param seg: A segmentation (np.ndarray, integer) of shape (x, y, z). For 2D ground truth (dose map) this will be (1, y, z)!
         :param output_fname:
         :param properties: the dictionary that you created in read_images (the ones this segmentation is based on).
         Use this to restore metadata

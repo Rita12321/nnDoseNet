@@ -34,10 +34,10 @@ class nnUNetDataLoaderBase(DataLoader):
             self.need_to_pad += pad_sides
         self.num_channels = None
         self.pad_sides = pad_sides
-        self.data_shape, self.seg_shape = self.determine_shapes()
+        self.data_shape, self.gt_shape = self.determine_shapes()
         self.sampling_probabilities = sampling_probabilities
         self.annotated_classes_key = tuple(label_manager.all_labels)
-        self.has_ignore = label_manager.has_ignore_label
+        # self.has_ignore = label_manager.has_ignore_label
         self.get_do_oversample = self._oversample_last_XX_percent if not probabilistic_oversampling \
             else self._probabilistic_oversampling
 
@@ -53,12 +53,12 @@ class nnUNetDataLoaderBase(DataLoader):
 
     def determine_shapes(self):
         # load one case
-        data, seg, properties = self._data.load_case(self.indices[0])
+        data, gt, properties = self._data.load_case(self.indices[0])
         num_color_channels = data.shape[0]
 
         data_shape = (self.batch_size, num_color_channels, *self.patch_size)
-        seg_shape = (self.batch_size, seg.shape[0], *self.patch_size)
-        return data_shape, seg_shape
+        gt_shape = (self.batch_size, gt.shape[0], *self.patch_size)
+        return data_shape, gt_shape
 
     def get_bbox(self, data_shape: np.ndarray, force_fg: bool, class_locations: Union[dict, None],
                  overwrite_class: Union[int, Tuple[int, ...]] = None, verbose: bool = False):
@@ -80,11 +80,11 @@ class nnUNetDataLoaderBase(DataLoader):
 
         # if not force_fg then we can just sample the bbox randomly from lb and ub. Else we need to make sure we get
         # at least one of the foreground classes in the patch
-        if not force_fg and not self.has_ignore:
+        if not force_fg:
             bbox_lbs = [np.random.randint(lbs[i], ubs[i] + 1) for i in range(dim)]
             # print('I want a random location')
         else:
-            if not force_fg and self.has_ignore:
+            if not force_fg :
                 selected_class = self.annotated_classes_key
                 if len(class_locations[selected_class]) == 0:
                     # no annotated pixels in this case. Not good. But we can hardly skip it here

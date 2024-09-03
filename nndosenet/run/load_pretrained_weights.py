@@ -2,14 +2,13 @@ import torch
 from torch._dynamo import OptimizedModule
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-
+#NOTE Not testes in nnDoseNet directly copied from nnUNet but change few keys
 def load_pretrained_weights(network, fname, verbose=False):
     """
     Transfers all weights between matching keys in state_dicts. matching is done by name and we only transfer if the
-    shape is also the same. Segmentation layers (the 1x1(x1) layers that produce the segmentation maps)
-    identified by keys ending with '.seg_layers') are not transferred!
+    shape is also the same. 
 
-    If the pretrained weights were optained with a training outside nnDoseNet and DDP or torch.optimize was used,
+    If the pretrained weights were obtained with a training outside nnDoseNet and DDP or torch.optimize was used,
     you need to change the keys of the pretrained state_dict. DDP adds a 'module.' prefix and torch.optim adds
     '_orig_mod'. You DO NOT need to worry about this if pretraining was done with nnDoseNet as
     nnUNetTrainer.save_checkpoint takes care of that!
@@ -57,7 +56,7 @@ def load_pretrained_weights(network, fname, verbose=False):
 
     print("################### Loading pretrained weights from file ", fname, '###################')
     if verbose:
-        print("Below is the list of overlapping blocks in pretrained model and nnUNet architecture:")
+        print("Below is the list of overlapping blocks in pretrained model and nnDoseNet architecture:")
         for key, value in pretrained_dict.items():
             print(key, 'shape', value.shape)
         print("################### Done ###################")

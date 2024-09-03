@@ -8,7 +8,7 @@ from batchgenerators.utilities.file_and_folder_operations import join,isdir,isfi
 from nndosenet.paths import nnDose_prediction,nnDose_dicom
 from nndosenet.dicom_bridge.nifti2dicom_dose import dose_to_dicom
 from nndosenet.evaluation.gamma_analysis import gamma_analysis
-from nndosenet.utilities.dataset_name_id_conversion import convert_id_to_dataset_name, maybe_convert_to_dataset_name
+# from nndosenet.utilities.dataset_name_id_conversion import convert_id_to_dataset_name, maybe_convert_to_dataset_name
 from tqdm import tqdm
 from time import sleep
 def nii2dcm_and_gamma(ref_path, pred_path, mask_path, save_folder, gamma = True) -> np.ndarray:

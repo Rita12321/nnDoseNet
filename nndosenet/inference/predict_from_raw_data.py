@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 import nndosenet
 from nndosenet.configuration import default_num_processes
-from nndosenet.inference.data_iterators import PreprocessAdapterFromNpy, preprocessing_iterator_fromfiles, \
+from nndosenet.inference.data_iterators import preprocessing_iterator_fromfiles, \
     preprocessing_iterator_fromnpy
 from nndosenet.inference.export_prediction import export_prediction_from_logits, \
     convert_predicted_logits_to_segmentation_with_correct_shape
@@ -218,12 +218,12 @@ class nnUNetPredictor(object):
             save_json(self.plans_manager.plans, join(output_folder, 'plans.json'), sort_keys=False)
         #######################
 
-        # check if we need a prediction from the previous stage
-        if self.configuration_manager.previous_stage_name is not None:
-            assert folder_with_segs_from_prev_stage is not None, \
-                f'The requested configuration is a cascaded network. It requires the segmentations of the previous ' \
-                f'stage ({self.configuration_manager.previous_stage_name}) as input. Please provide the folder where' \
-                f' they are located via folder_with_segs_from_prev_stage'
+        # # check if we need a prediction from the previous stage
+        # if self.configuration_manager.previous_stage_name is not None:
+        #     assert folder_with_segs_from_prev_stage is not None, \
+        #         f'The requested configuration is a cascaded network. It requires the segmentations of the previous ' \
+        #         f'stage ({self.configuration_manager.previous_stage_name}) as input. Please provide the folder where' \
+        #         f' they are located via folder_with_segs_from_prev_stage'
 
         # sort out input and output filenames
         list_of_lists_or_source_folder, output_filename_truncated, seg_from_prev_stage_files = \
@@ -580,7 +580,7 @@ class nnUNetPredictor(object):
                 if self.verbose: print('preallocating arrays')
                 try:
                     data = data.to(self.device)
-                    predicted_logits = torch.zeros((self.label_manager.num_segmentation_heads, *data.shape[1:]),
+                    predicted_logits = torch.zeros((self.label_manager.num_output_heads, *data.shape[1:]),
                                                    dtype=torch.float32,
                                                    device=results_device)
                     n_predictions = torch.zeros(data.shape[1:], dtype=torch.float32,
@@ -593,7 +593,7 @@ class nnUNetPredictor(object):
                     # sometimes the stuff is too large for GPUs. In that case fall back to CPU
                     results_device = torch.device('cpu')
                     data = data.to(results_device)
-                    predicted_logits = torch.zeros((self.label_manager.num_segmentation_heads, *data.shape[1:]),
+                    predicted_logits = torch.zeros((self.label_manager.num_output_heads, *data.shape[1:]),
                                                    dtype=torch.float32,
                                                    device=results_device)
                     n_predictions = torch.zeros(data.shape[1:], dtype=torch.float32,
@@ -887,11 +887,12 @@ def predict_Ts_entry_point():
                                     join(output_folder,"summary.json"), 
                                     args.nps,raw_folder=True,
                                     patient_csv=join(nnDose_prediction,args.name,"Dataset"+args.id+"_"+args.name,"GroundTruth","patientTs.csv"))
-       
+    
+    
     print("prediction is in ",output_folder)
     print("Please check \n nnDoseNet_ensemble -h \n to ensemble prediction if needed ")
     print("Also check  \n nnDoseNet_dicom_based_evaluation -h \n If Ts files has dicom ground truth ")
-    print("If not we still offer \n nnDoseNet_difference_map -h \n for more visualize evaluation method")
+    print("If not we still offer \n nnDoseNet_difference_map -h \n for more visualized evaluation method")
 
 if __name__ == '__main__':
     predict_entry_point()

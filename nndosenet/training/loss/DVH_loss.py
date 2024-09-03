@@ -1,8 +1,8 @@
-from typing import Callable
+# from typing import Callable
 
 import torch
-from nndosenet.utilities.ddp_allgather import AllGatherGrad
-from nndosenet.utilities.tensor_utilities import sum_tensor
+# from nndosenet.utilities.ddp_allgather import AllGatherGrad
+# from nndosenet.utilities.tensor_utilities import sum_tensor
 from torch import nn
 
 

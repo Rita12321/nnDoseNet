@@ -13,13 +13,13 @@ def _convert_to_npy(npz_file: str, unpack_segmentation: bool = True, overwrite_e
         a = np.load(npz_file)  # inexpensive, no compression is done here. This just reads metadata
         if overwrite_existing or not isfile(npz_file[:-3] + "npy"):
             np.save(npz_file[:-3] + "npy", a['data'])
-        if unpack_segmentation and (overwrite_existing or not isfile(npz_file[:-4] + "_seg.npy")):
-            np.save(npz_file[:-4] + "_seg.npy", a['seg'])
+        if unpack_segmentation and (overwrite_existing or not isfile(npz_file[:-4] + "_gt.npy")):
+            np.save(npz_file[:-4] + "_gt.npy", a['gt'])
     except KeyboardInterrupt:
         if isfile(npz_file[:-3] + "npy"):
             os.remove(npz_file[:-3] + "npy")
-        if isfile(npz_file[:-4] + "_seg.npy"):
-            os.remove(npz_file[:-4] + "_seg.npy")
+        if isfile(npz_file[:-4] + "_gt.npy"):
+            os.remove(npz_file[:-4] + "_gt.npy")
         raise KeyboardInterrupt
 
 

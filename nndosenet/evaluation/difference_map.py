@@ -2,11 +2,8 @@ import SimpleITK as sitk
 import numpy as np  
 import multiprocessing  
 import os 
-import pandas as pd
-# from nndosenet.imageio.reader_writer_registry import determine_reader_writer_from_dataset_json, \
-#     determine_reader_writer_from_file_ending
 from batchgenerators.utilities.file_and_folder_operations import subfiles, join,  load_json
-import tqdm
+
 
 def difference_map(label_np,pred_np,dose_mask=None,do_MSE=False,do_MAE=False): 
     diff_map=label_np-pred_np

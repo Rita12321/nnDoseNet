@@ -8,21 +8,21 @@ class nnUNetDataLoader2D(nnUNetDataLoaderBase):
         selected_keys = self.get_indices()
         # preallocate memory for data and seg
         data_all = np.zeros(self.data_shape, dtype=np.float32)
-        seg_all = np.zeros(self.seg_shape, dtype=np.float32)#NOTE: change
+        gt_all = np.zeros(self.gt_shape, dtype=np.float32)#NOTE: change
         case_properties = []
 
         for j, current_key in enumerate(selected_keys):
             # oversampling foreground will improve stability of model training, especially if many patches are empty
             # (Lung for example)
             force_fg = self.get_do_oversample(j)
-            data, seg, properties = self._data.load_case(current_key)
+            data, gt, properties = self._data.load_case(current_key)
 
             # select a class/region first, then a slice where this class is present, then crop to that area
             if not force_fg:
-                if self.has_ignore:
-                    selected_class_or_region = self.annotated_classes_key
-                else:
-                    selected_class_or_region = None
+                # if self.has_ignore:
+                #     selected_class_or_region = self.annotated_classes_key
+                # else:
+                selected_class_or_region = None
             else:
                 # filter out all classes that are not present here
                 eligible_classes_or_regions = [i for i in properties['class_locations'].keys() if len(properties['class_locations'][i]) > 0]
@@ -43,7 +43,7 @@ class nnUNetDataLoader2D(nnUNetDataLoaderBase):
                 selected_slice = np.random.choice(len(data[0]))
 
             data = data[:, selected_slice]
-            seg = seg[:, selected_slice]
+            gt = gt[:, selected_slice]
 
             # the line of death lol
             # this needs to be a separate variable because we could otherwise permanently overwrite
@@ -76,14 +76,14 @@ class nnUNetDataLoader2D(nnUNetDataLoaderBase):
             this_slice = tuple([slice(0, data.shape[0])] + [slice(i, j) for i, j in zip(valid_bbox_lbs, valid_bbox_ubs)])
             data = data[this_slice]
 
-            this_slice = tuple([slice(0, seg.shape[0])] + [slice(i, j) for i, j in zip(valid_bbox_lbs, valid_bbox_ubs)])
-            seg = seg[this_slice]
+            this_slice = tuple([slice(0, gt.shape[0])] + [slice(i, j) for i, j in zip(valid_bbox_lbs, valid_bbox_ubs)])
+            gt = gt[this_slice]
 
             padding = [(-min(0, bbox_lbs[i]), max(bbox_ubs[i] - shape[i], 0)) for i in range(dim)]
             data_all[j] = np.pad(data, ((0, 0), *padding), 'constant', constant_values=0)
-            seg_all[j] = np.pad(seg, ((0, 0), *padding), 'constant', constant_values=-1)
+            gt_all[j] = np.pad(gt, ((0, 0), *padding), 'constant', constant_values=-1)
 
-        return {'data': data_all, 'seg': seg_all, 'properties': case_properties, 'keys': selected_keys}
+        return {'data': data_all, 'seg': gt_all, 'properties': case_properties, 'keys': selected_keys}
 
 
 

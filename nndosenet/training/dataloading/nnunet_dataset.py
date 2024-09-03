@@ -45,8 +45,8 @@ class nnUNetDataset(object):
             self.dataset[c] = {}
             self.dataset[c]['data_file'] = join(folder, "%s.npz" % c)
             self.dataset[c]['properties_file'] = join(folder, "%s.pkl" % c)
-            if folder_with_segs_from_previous_stage is not None:
-                self.dataset[c]['seg_from_prev_stage_file'] = join(folder_with_segs_from_previous_stage, "%s.npz" % c)
+            # if folder_with_segs_from_previous_stage is not None:
+            #     self.dataset[c]['seg_from_prev_stage_file'] = join(folder_with_segs_from_previous_stage, "%s.npz" % c)
 
         if len(case_identifiers) <= num_images_properties_loading_threshold:
             for i in self.dataset.keys():
@@ -90,25 +90,25 @@ class nnUNetDataset(object):
         else:
             data = np.load(entry['data_file'])['data']
 
-        if 'open_seg_file' in entry.keys():
-            seg = entry['open_seg_file']
+        if 'open_gt_file' in entry.keys():
+            gt = entry['open_gt_file']
             # print('using open data file')
-        elif isfile(entry['data_file'][:-4] + "_seg.npy"):
-            seg = np.load(entry['data_file'][:-4] + "_seg.npy", 'r')
+        elif isfile(entry['data_file'][:-4] + "_gt.npy"):
+            gt = np.load(entry['data_file'][:-4] + "_gt.npy", 'r')
             if self.keep_files_open:
-                self.dataset[key]['open_seg_file'] = seg
-                # print('saving open seg file')
+                self.dataset[key]['open_gt_file'] = gt
+                # print('saving open gt file')
         else:
-            seg = np.load(entry['data_file'])['seg']
+            gt = np.load(entry['data_file'])['gt']
 
-        if 'seg_from_prev_stage_file' in entry.keys():
-            if isfile(entry['seg_from_prev_stage_file'][:-4] + ".npy"):
-                seg_prev = np.load(entry['seg_from_prev_stage_file'][:-4] + ".npy", 'r')
-            else:
-                seg_prev = np.load(entry['seg_from_prev_stage_file'])['seg']
-            seg = np.vstack((seg, seg_prev[None]))
+        # if 'seg_from_prev_stage_file' in entry.keys():
+        #     if isfile(entry['seg_from_prev_stage_file'][:-4] + ".npy"):
+        #         seg_prev = np.load(entry['seg_from_prev_stage_file'][:-4] + ".npy", 'r')
+        #     else:
+        #         seg_prev = np.load(entry['seg_from_prev_stage_file'])['gt']
+        #     seg = np.vstack((seg, seg_prev[None]))
 
-        return data, seg, entry['properties']
+        return data, gt, entry['properties']
 
 
 

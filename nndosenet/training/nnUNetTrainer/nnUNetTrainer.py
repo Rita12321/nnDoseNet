@@ -37,8 +37,8 @@ from nndosenet.training.data_augmentation.custom_transforms.seperate_channel_tra
 from nndosenet.training.data_augmentation.custom_transforms.limited_length_multithreaded_augmenter import \
     LimitedLenWrapper
 from nndosenet.training.data_augmentation.custom_transforms.masking import MaskTransform
-from nndosenet.training.data_augmentation.custom_transforms.region_based_training import \
-    ConvertSegmentationToRegionsTransform
+# from nndosenet.training.data_augmentation.custom_transforms.region_based_training import \
+#     ConvertSegmentationToRegionsTransform
 from nndosenet.training.data_augmentation.custom_transforms.transforms_for_dummy_2d import Convert2DTo3DTransform, \
     Convert3DTo2DTransform
 from nndosenet.training.dataloading.data_loader_2d import nnUNetDataLoader2D
@@ -120,9 +120,9 @@ class nnUNetTrainer(object):
         
         self.fold = fold
         self.unpack_dataset = unpack_dataset
-        self.num_epochs=self.configuration_manager.epoch_num
-        self.mask_channel=self.configuration_manager.mask_channel
-        self.PTV_OAR_BODY=self.configuration_manager.PTV_OAR_BODY
+        self.num_epochs = self.configuration_manager.epoch_num
+        self.mask_channel = self.configuration_manager.mask_channel
+        self.PTV_OAR_BODY = self.configuration_manager.PTV_OAR_BODY
         
 
 
@@ -144,11 +144,11 @@ class nnUNetTrainer(object):
         # IMPORTANT! the mapping must be bijective, so lowres must point to fullres and vice versa (using
         # "previous_stage" and "next_stage"). Otherwise it won't work!
         self.is_cascaded = False #self.configuration_manager.previous_stage_name is not None #TODO: cascade not avaliable yet
-        self.folder_with_segs_from_previous_stage = \
-            join(nnDose_results, self.plans_manager.dataset_name,
-                 self.__class__.__name__ + '__' + self.plans_manager.plans_name + "__" +
-                 self.configuration_manager.previous_stage_name, 'predicted_next_stage', self.configuration_name) \
-                if self.is_cascaded else None
+        # self.folder_with_segs_from_previous_stage = \
+        #     join(nnDose_results, self.plans_manager.dataset_name,
+        #          self.__class__.__name__ + '__' + self.plans_manager.plans_name + "__" +
+        #          self.configuration_manager.previous_stage_name, 'predicted_next_stage', self.configuration_name) \
+        #         if self.is_cascaded else None
 
         ### Some hyperparameters for you to fiddle with
         self.initial_lr = 1e-2
@@ -477,7 +477,7 @@ class nnUNetTrainer(object):
             raise RuntimeError()
 
         # todo this function is stupid. It doesn't even use the correct scale range (we keep things as they were in the
-        #  old nnunet for now)
+        #  nnunet method for now)
         initial_patch_size = get_patch_size(patch_size[-dim:],
                                             *rotation_for_DA.values(),
                                             (0.85, 1.25))
@@ -583,7 +583,7 @@ class nnUNetTrainer(object):
             splits_file = join(self.preprocessed_dataset_folder_base, "splits_final.json")
             dataset = nnUNetDataset(self.preprocessed_dataset_folder, case_identifiers=None,
                                     num_images_properties_loading_threshold=0,
-                                    folder_with_segs_from_previous_stage=self.folder_with_segs_from_previous_stage)
+                                    folder_with_segs_from_previous_stage=None)
             # if the split file does not exist we need to create it
             if not isfile(splits_file):
                 self.print_to_log_file("Creating new 5-fold cross-validation split...")
@@ -634,10 +634,10 @@ class nnUNetTrainer(object):
         # load the datasets for training and validation. Note that we always draw random samples so we really don't
         # care about distributing training cases across GPUs.
         dataset_tr = nnUNetDataset(self.preprocessed_dataset_folder, tr_keys,
-                                   folder_with_segs_from_previous_stage=self.folder_with_segs_from_previous_stage,
+                                   folder_with_segs_from_previous_stage=None,
                                    num_images_properties_loading_threshold=0)
         dataset_val = nnUNetDataset(self.preprocessed_dataset_folder, val_keys,
-                                    folder_with_segs_from_previous_stage=self.folder_with_segs_from_previous_stage,
+                                    folder_with_segs_from_previous_stage=None,
                                     num_images_properties_loading_threshold=0)
         return dataset_tr, dataset_val
 
@@ -664,16 +664,15 @@ class nnUNetTrainer(object):
             order_resampling_data=0, order_resampling_seg=0,#3,0
             use_mask_for_norm=self.configuration_manager.use_mask_for_norm,
             is_cascaded=self.is_cascaded, foreground_labels=self.label_manager.foreground_labels,
-            regions=self.label_manager.foreground_regions if self.label_manager.has_regions else None,
-            ignore_label=self.label_manager.ignore_label,mask_channel=self.configuration_manager.mask_channel,PTV_OAR_BODY=self.configuration_manager.PTV_OAR_BODY)
+            regions = None,
+            ignore_label=None,mask_channel=self.configuration_manager.mask_channel,PTV_OAR_BODY=self.configuration_manager.PTV_OAR_BODY)
 
         # validation pipeline
         val_transforms = self.get_validation_transforms(deep_supervision_scales,
                                                         is_cascaded=self.is_cascaded,
                                                         foreground_labels=self.label_manager.foreground_labels,
-                                                        regions=self.label_manager.foreground_regions if
-                                                        self.label_manager.has_regions else None,
-                                                        ignore_label=self.label_manager.ignore_label
+                                                        regions=None,
+                                                        ignore_label=None
                                                         ,mask_channel=self.configuration_manager.mask_channel)
         
   
@@ -743,7 +742,9 @@ class nnUNetTrainer(object):
                                 is_cascaded: bool = False,
                                 foreground_labels: Union[Tuple[int, ...], List[int]] = None,
                                 regions: List[Union[List[int], Tuple[int, ...], int]] = None,
-                                ignore_label: int = None,mask_channel=None,PTV_OAR_BODY=None) -> AbstractTransform:
+                                ignore_label: int = None,
+                                mask_channel=None,
+                                PTV_OAR_BODY=None) -> AbstractTransform:
         
         
         tr_transforms = []
@@ -802,22 +803,7 @@ class nnUNetTrainer(object):
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
 
-        # if is_cascaded:#false
-        #     assert foreground_labels is not None, 'We need foreground_labels for cascade augmentations'
-        #     tr_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg', 'data'))
-        #     tr_transforms.append(ApplyRandomBinaryOperatorTransform(
-        #         channel_idx=list(range(-len(foreground_labels), 0)),
-        #         p_per_sample=0.4,
-        #         key="data",
-        #         strel_size=(1, 8),
-        #         p_per_label=1))
-        #     tr_transforms.append(
-        #         RemoveRandomConnectedComponentFromOneHotEncodingTransform(
-        #             channel_idx=list(range(-len(foreground_labels), 0)),
-        #             key="data",
-        #             p_per_sample=0.2,
-        #             fill_with_other_class_p=0,
-        #             dont_do_if_covers_more_than_x_percent=0.15))
+
 
         tr_transforms.append(RenameTransform('seg', 'target', True))
 
@@ -838,7 +824,8 @@ class nnUNetTrainer(object):
                                   is_cascaded: bool = False,
                                   foreground_labels: Union[Tuple[int, ...], List[int]] = None,
                                   regions: List[Union[List[int], Tuple[int, ...], int]] = None,
-                                  ignore_label: int = None,mask_channel=None) -> AbstractTransform:
+                                  ignore_label: int = None,
+                                  mask_channel=None) -> AbstractTransform:
         val_transforms = []
         val_transforms.append(RemoveLabelTransform(-1, 0))
         if mask_channel is not None :
@@ -849,7 +836,7 @@ class nnUNetTrainer(object):
                                                               output_key='data_mask'))
 
         # if is_cascaded:
-        #     val_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg', 'data'))
+        #     val_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg, 'data'))
 
         val_transforms.append(RenameTransform('seg', 'target', True))
 
@@ -1175,13 +1162,13 @@ class nnUNetTrainer(object):
                 val_keys = val_keys[self.local_rank:: dist.get_world_size()]
 
             dataset_val = nnUNetDataset(self.preprocessed_dataset_folder, val_keys,
-                                        folder_with_segs_from_previous_stage=self.folder_with_segs_from_previous_stage,
+                                        folder_with_segs_from_previous_stage=None,
                                         num_images_properties_loading_threshold=0)
 
-            next_stages = self.configuration_manager.next_stage_names
+            # next_stages = self.configuration_manager.next_stage_names
 
-            if next_stages is not None:
-                _ = [maybe_mkdir_p(join(self.output_folder_base, 'predicted_next_stage', n)) for n in next_stages]
+            # if next_stages is not None:
+            #     _ = [maybe_mkdir_p(join(self.output_folder_base, 'predicted_next_stage', n)) for n in next_stages]
 
             results = []
             for k in dataset_val.keys():
@@ -1193,7 +1180,7 @@ class nnUNetTrainer(object):
                                                      allowed_num_queued=2)
 
                 self.print_to_log_file(f"predicting {k}")
-                data, seg, properties = dataset_val.load_case(k)
+                data, gt, properties = dataset_val.load_case(k)
                 # if self.is_cascaded: #no cascade just keep for future use
                 #     data = np.vstack((data, convert_labelmap_to_one_hot(seg[-1], self.label_manager.foreground_labels,
                 #                                                    output_dtype=data.dtype)))
@@ -1227,43 +1214,44 @@ class nnUNetTrainer(object):
                         )
                     )
                 )
+                '''
                 # for debug purposes
                 # export_prediction(prediction_for_export, properties, self.configuration, self.plans, self.dataset_json,
                 #              output_filename_truncated, save_probabilities)
 
                 # if needed, export the prediction for the next stage
-                if next_stages is not None:
-                    for n in next_stages:
-                        next_stage_config_manager = self.plans_manager.get_configuration(n)
-                        expected_preprocessed_folder = join(nnDose_preprocessed, self.plans_manager.dataset_name,
-                                                            next_stage_config_manager.data_identifier)
+                # if next_stages is not None:
+                #     for n in next_stages:
+                #         next_stage_config_manager = self.plans_manager.get_configuration(n)
+                #         expected_preprocessed_folder = join(nnDose_preprocessed, self.plans_manager.dataset_name,
+                #                                             next_stage_config_manager.data_identifier)
 
-                        try:
-                            # we do this so that we can use load_case and do not have to hard code how loading training cases is implemented
-                            tmp = nnUNetDataset(expected_preprocessed_folder, [k],
-                                                num_images_properties_loading_threshold=0)
-                            d, s, p = tmp.load_case(k)
-                        except FileNotFoundError:
-                            self.print_to_log_file(
-                                f"Predicting next stage {n} failed for case {k} because the preprocessed file is missing! "
-                                f"Run the preprocessing for this configuration first!")
-                            continue
+                #         try:
+                #             # we do this so that we can use load_case and do not have to hard code how loading training cases is implemented
+                #             tmp = nnUNetDataset(expected_preprocessed_folder, [k],
+                #                                 num_images_properties_loading_threshold=0)
+                #             d, s, p = tmp.load_case(k)
+                #         except FileNotFoundError:
+                #             self.print_to_log_file(
+                #                 f"Predicting next stage {n} failed for case {k} because the preprocessed file is missing! "
+                #                 f"Run the preprocessing for this configuration first!")
+                #             continue
 
-                        target_shape = d.shape[1:]
-                        output_folder = join(self.output_folder_base, 'predicted_next_stage', n)
-                        output_file = join(output_folder, k + '.npz')
+                #         target_shape = d.shape[1:]
+                #         output_folder = join(self.output_folder_base, 'predicted_next_stage', n)
+                #         output_file = join(output_folder, k + '.npz')
 
-                        # resample_and_save(prediction, target_shape, output_file, self.plans_manager, self.configuration_manager, properties,
-                        #                   self.dataset_json)
-                        results.append(segmentation_export_pool.starmap_async(
-                            resample_and_save, (
-                                (prediction, target_shape, output_file, self.plans_manager,
-                                 self.configuration_manager,
-                                 properties,
-                                 self.dataset_json),
-                            )
-                        ))
-
+                #         # resample_and_save(prediction, target_shape, output_file, self.plans_manager, self.configuration_manager, properties,
+                #         #                   self.dataset_json)
+                #         results.append(segmentation_export_pool.starmap_async(
+                #             resample_and_save, (
+                #                 (prediction, target_shape, output_file, self.plans_manager,
+                #                  self.configuration_manager,
+                #                  properties,
+                #                  self.dataset_json),
+                #             )
+                #         ))
+                '''
             _ = [r.get() for r in results]
 
         if self.is_ddp:
@@ -1274,15 +1262,15 @@ class nnUNetTrainer(object):
                 structure_json=load_json(join(self.raw_dataset_folder_base, 'structure.json'))['structure_label']
             except:
                 structure_json=None
-            metrics = compute_dose_metrics_on_folder(join(self.preprocessed_dataset_folder_base, 'ground_truths'),
-                                                validation_output_folder,
-                                                join(self.raw_dataset_folder_base, 'imagesTr'),
-                                                join(validation_output_folder, 'summary.json'),
-                                                self.plans_manager.image_reader_writer_class(),
-                                                self.dataset_json["file_ending"],
-                                                structure_json,
-                                                self.label_manager.ignore_label,
-                                                self.label_manager.dose_label,
+            metrics = compute_dose_metrics_on_folder(folder_ref=join(self.preprocessed_dataset_folder_base, 'ground_truths'),
+                                                folder_pred =validation_output_folder,
+                                                folder_input=join(self.raw_dataset_folder_base, 'imagesTr'),
+                                                output_file=join(validation_output_folder, 'summary.json'),
+                                                image_reader_writer=self.plans_manager.image_reader_writer_class(),
+                                                file_ending=self.dataset_json["file_ending"],
+                                                structure_df=structure_json,
+                                                ignore_label=None,
+                                                dose_label=self.label_manager.dose_label,
                                                 chill=True)
             self.print_to_log_file("Validation complete", also_print_to_console=True)
 

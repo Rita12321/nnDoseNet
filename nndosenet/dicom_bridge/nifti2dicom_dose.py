@@ -1,8 +1,4 @@
 
-import multiprocessing as mp
-import os
-import typing as typ
-
 import numpy as np
 import pydicom
 import SimpleITK as sitk
@@ -10,10 +6,9 @@ import SimpleITK as sitk
 
 
 def resample2gt(ref_dicom:sitk.Image,prediction:sitk.Image):
-    # dose = ref_dicom.pixel_array.astype(float)
-    # prediction.SetOrigin(ref_dicom.GetOrigin())
-    # prediction.SetSpacing(ref_dicom.GetSpacing())
-    
+    """
+    Resample the prediction to the ground truth shape to fit in the grid of dicom file
+    """
     resample = sitk.ResampleImageFilter()
     resample.SetReferenceImage(ref_dicom)
     resample.SetInterpolator(sitk.sitkNearestNeighbor)
@@ -47,7 +42,7 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
         for_gamma: Return  pydicom.dataset.FileDataset format of reference and predict dose or not
 
     """
-    openkbp = True
+    openkbp = False
     reference_dicom = pydicom.dcmread(reference_dicom_path)
     predict_dicom = reference_dicom.copy()
 
@@ -55,13 +50,7 @@ def dose_to_dicom(predict_nifti_path: str,reference_dicom_path: str,save_path: s
         dose_sitk,pre_np_dose = open_kbp_trouble(sitk.ReadImage(predict_nifti_path))
     else:
         dose_sitk = sitk.ReadImage(predict_nifti_path)
-        # spacing_z=dose_sitk.GetSpacing()[2]
         pre_np_dose = sitk.GetArrayFromImage(dose_sitk)
-    # dose_sitk,pre_np_dose = open_kbp_trouble(sitk.ReadImage(predict_nifti_path))
-    
-    # elif isinstance(dose, sitk.Image):
-    #     spacing_z=dose.GetSpacing()[2]
-    #     dose = sitk.GetArrayFromImage(dose)
 
     # 16 or 32-bit unsigned integers are possible
     if reference_dicom.BitsAllocated == 16:

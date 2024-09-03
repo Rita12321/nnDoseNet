@@ -87,12 +87,6 @@ class ExperimentPlanner(object):
             self.mask_channel=self.dataset_json['mask_channel'] 
             return True
         return False
-    # def check_if_masked_channel(self):
-    #     if 'mask_channel' in self.dataset_json.keys() and self.dataset_json['mask_channel'] != 'None':
-    #         self.mask_channel=self.dataset_json['mask_channel'] 
-    #         return True
-    #     return False
-      
 
     @staticmethod
     @lru_cache(maxsize=None)
@@ -555,8 +549,8 @@ class ExperimentPlanner(object):
 
         if plan_3d_lowres is not None:
             plans['configurations']['3d_lowres'] = plan_3d_lowres
-            if plan_3d_fullres is not None:
-                plans['configurations']['3d_lowres']['next_stage'] = '3d_cascade_fullres'
+            # if plan_3d_fullres is not None:
+            #     plans['configurations']['3d_lowres']['next_stage'] = '3d_cascade_fullres'
             print('3D lowres U-Net configuration:')
             print(plan_3d_lowres)
             print()
@@ -565,11 +559,11 @@ class ExperimentPlanner(object):
             print('3D fullres U-Net configuration:')
             print(plan_3d_fullres)
             print()
-            if plan_3d_lowres is not None:
-                plans['configurations']['3d_cascade_fullres'] = {
-                    'inherits_from': '3d_fullres',
-                    'previous_stage': '3d_lowres'
-                }
+            # if plan_3d_lowres is not None:
+            #     plans['configurations']['3d_cascade_fullres'] = {
+            #         'inherits_from': '3d_fullres',
+            #         'previous_stage': '3d_lowres'
+            #     }
 
         self.plans = plans
         self.save_plans(plans)

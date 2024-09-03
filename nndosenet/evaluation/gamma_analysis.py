@@ -37,30 +37,6 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
         raise ValueError('Cannot get predict/evaluation dose dicom file, wrong file type.') 
     
     
-    # shape=reference.pixel_array.shape
-    # mask=sitk.ReadImage(mask_path)
-    # gamma_image=sitk.GetImageFromArray(reference.pixel_array)
-    # spacing=find_dose_spacing(reference=reference) 
-
-    # gamma_image.SetSpacing(spacing)
-    # gamma_image.SetOrigin(reference.ImagePositionPatient)
-    # mask=resample2ref(gamma_image,mask)
-    # mask=sitk.GetArrayFromImage(mask)
-    # print("body",get_bounding_box(mask))
-    
-    # ref_pix,eva_pix,bb_cor=get_bounding_box_of_ref_and_prediction(reference.pixel_array,evaluation.pixel_array) 
-    # new_shape=ref_pix.shape
-    # print(bb_cor)
-    # print(shape,ref_pix.shape)
-    # reference.Rows=new_shape[1]
-    # reference.Columns=new_shape[2]
-    # reference.NumberOfFrames=new_shape[0]
-
-    # reference=rewrite_dcm(reference,ref_pix)
-    # evaluation=rewrite_dcm(evaluation,eva_pix)
-    # axes_reference, dose_reference = pymedphys.dicom.zyx_and_dose_from_dataset(ref_bb_dcm)
-    # axes_evaluation, dose_evaluation = pymedphys.dicom.zyx_and_dose_from_dataset(eva_bb_dcm)
-    
     axes_reference, dose_reference = pymedphys.dicom.zyx_and_dose_from_dataset(reference)
     axes_evaluation, dose_evaluation = pymedphys.dicom.zyx_and_dose_from_dataset(evaluation)
 

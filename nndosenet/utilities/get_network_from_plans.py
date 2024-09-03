@@ -24,7 +24,7 @@ def get_network_from_plans(plans_manager: PlansManager,
 
     label_manager = plans_manager.get_label_manager(dataset_json)
 
-    segmentation_network_class_name = configuration_manager.UNet_class_name
+    network_class_name = configuration_manager.UNet_class_name
     mapping = {
         'PlainConvUNet': PlainConvUNet,
         'ResidualEncoderUNet': ResidualEncoderUNet
@@ -45,12 +45,12 @@ def get_network_from_plans(plans_manager: PlansManager,
             'nonlin': nn.LeakyReLU, 'nonlin_kwargs': {'inplace': True},
         }
     }
-    assert segmentation_network_class_name in mapping.keys(), 'The network architecture specified by the plans file ' \
+    assert network_class_name in mapping.keys(), 'The network architecture specified by the plans file ' \
                                                               'is non-standard (maybe your own?). Yo\'ll have to dive ' \
                                                               'into either this ' \
                                                               'function (get_network_from_plans) or ' \
-                                                              'the init of your nnUNetModule to accomodate that.'
-    network_class = mapping[segmentation_network_class_name]
+                                                              'the init of your UNetModule to accommodate that.'
+    network_class = mapping[network_class_name]
 
     conv_or_blocks_per_stage = {
         'n_conv_per_stage'
@@ -67,10 +67,10 @@ def get_network_from_plans(plans_manager: PlansManager,
         conv_op=conv_op,
         kernel_sizes=configuration_manager.conv_kernel_sizes,
         strides=configuration_manager.pool_op_kernel_sizes,
-        num_classes=label_manager.num_segmentation_heads,
+        num_classes=label_manager.num_output_heads,
         deep_supervision=deep_supervision,
         **conv_or_blocks_per_stage,
-        **kwargs[segmentation_network_class_name]
+        **kwargs[network_class_name]
     )
     model.apply(InitWeights_He(1e-2))
     if network_class == ResidualEncoderUNet:

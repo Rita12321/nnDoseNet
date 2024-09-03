@@ -62,8 +62,8 @@ class DicomConverter():#patient wise
   
     def get_ct(self,save=False,patient_id_dicom=False):
         ct_path = join(self.nii_folder,"ct.nii.gz")
-        if os.path.isfile(ct_path):
-            return sitk.ReadImage(ct_path)
+        if os.path.isfile(ct_path) and (not patient_id_dicom):
+            return sitk.ReadImage(ct_path),None
         
         # from dicom
         if len (os.listdir(self.ct_folder))>0:
@@ -105,7 +105,7 @@ class DicomConverter():#patient wise
         if out_path == None:
             out_path = join(self.nii_folder,"dose.nii.gz")
             
-        ct = self.get_ct()
+        ct,_ = self.get_ct()
 
         dose = dose_data.pixel_array.astype(float)
         dose = dose*float(dose_data.DoseGridScaling)
@@ -123,7 +123,7 @@ class DicomConverter():#patient wise
 
     def resample_to_ct(self,image: sitk.Image,transform=sitk.Euler3DTransform(),
                  interpolator = sitk.sitkNearestNeighbor,default_value=0):
-        reference_image = self.get_ct()
+        reference_image,_ = self.get_ct()
         return sitk.Resample(image, reference_image, transform,
                                 interpolator, default_value) 
                     
@@ -140,7 +140,7 @@ class DicomConverter():#patient wise
             And if want them to combine as 1 structure, you can label them as same value, like this
             structure_label:{"OAR": {"50":["Femur_Head_L","Femur_Head_R"]}
         '''        
-        ct = self.get_ct()
+        ct,_ = self.get_ct()
         structure_list = list(self.structure_name.keys())
         structure_found_dict = {}
         structure_found_dict.update({'patient_id':self.patient_id})
@@ -233,7 +233,7 @@ class NiftiLabeler(DicomConverter):
         self.confirm_and_label()   
 
     def confirm_and_label(self):
-        ct=self.get_ct()
+        ct,_=self.get_ct()
         shape=sitk.GetArrayFromImage(ct).shape
         type_list = ["Target","OAR","Body"]
         for type in type_list:

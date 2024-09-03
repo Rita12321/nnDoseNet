@@ -1,10 +1,10 @@
-from collections import OrderedDict
+# from collections import OrderedDict
 from typing import Union, Tuple, List
 
 import numpy as np
 import pandas as pd
 import torch
-from batchgenerators.augmentations.utils import resize_segmentation
+# from batchgenerators.augmentations.utils import resize_segmentation
 from scipy.ndimage.interpolation import map_coordinates
 from skimage.transform import resize
 from nndosenet.configuration import ANISO_THRESHOLD

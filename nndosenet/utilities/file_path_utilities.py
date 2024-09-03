@@ -26,35 +26,35 @@ def get_output_folder(dataset_name_or_id: Union[str, int], trainer_name: str = '
     return tmp
 
 
-def parse_dataset_trainer_plans_configuration_from_path(path: str):
-    folders = split_path(path)
-    # this here can be a little tricky because we are making assumptions. Let's hope this never fails lol
+# def parse_dataset_trainer_plans_configuration_from_path(path: str):
+#     folders = split_path(path)
+#     # this here can be a little tricky because we are making assumptions. Let's hope this never fails lol
 
-    # safer to make this depend on two conditions, the fold_x and the DatasetXXX
-    # first let's see if some fold_X is present
-    fold_x_present = [i.startswith('fold_') for i in folders]
-    if any(fold_x_present):
-        idx = fold_x_present.index(True)
-        # OK now two entries before that there should be DatasetXXX
-        assert len(folders[:idx]) >= 2, 'Bad path, cannot extract what I need. Your path needs to be at least ' \
-                                        'DatasetXXX/MODULE__PLANS__CONFIGURATION for this to work'
-        if folders[idx - 2].startswith('Dataset'):
-            splitted = folders[idx - 1].split('__')
-            assert len(splitted) == 3, 'Bad path, cannot extract what I need. Your path needs to be at least ' \
-                                        'DatasetXXX/MODULE__PLANS__CONFIGURATION for this to work'
-            return folders[idx - 2], *splitted
-    else:
-        # we can only check for dataset followed by a string that is separable into three strings by splitting with '__'
-        # look for DatasetXXX
-        dataset_folder = [i.startswith('Dataset') for i in folders]
-        if any(dataset_folder):
-            idx = dataset_folder.index(True)
-            assert len(folders) >= (idx + 1), 'Bad path, cannot extract what I need. Your path needs to be at least ' \
-                                        'DatasetXXX/MODULE__PLANS__CONFIGURATION for this to work'
-            splitted = folders[idx + 1].split('__')
-            assert len(splitted) == 3, 'Bad path, cannot extract what I need. Your path needs to be at least ' \
-                                       'DatasetXXX/MODULE__PLANS__CONFIGURATION for this to work'
-            return folders[idx], *splitted
+#     # safer to make this depend on two conditions, the fold_x and the DatasetXXX
+#     # first let's see if some fold_X is present
+#     fold_x_present = [i.startswith('fold_') for i in folders]
+#     if any(fold_x_present):
+#         idx = fold_x_present.index(True)
+#         # OK now two entries before that there should be DatasetXXX
+#         assert len(folders[:idx]) >= 2, 'Bad path, cannot extract what I need. Your path needs to be at least ' \
+#                                         'DatasetXXX/MODULE__PLANS__CONFIGURATION for this to work'
+#         if folders[idx - 2].startswith('Dataset'):
+#             splitted = folders[idx - 1].split('__')
+#             assert len(splitted) == 3, 'Bad path, cannot extract what I need. Your path needs to be at least ' \
+#                                         'DatasetXXX/MODULE__PLANS__CONFIGURATION for this to work'
+#             return folders[idx - 2], *splitted
+#     else:
+#         # we can only check for dataset followed by a string that is separable into three strings by splitting with '__'
+#         # look for DatasetXXX
+#         dataset_folder = [i.startswith('Dataset') for i in folders]
+#         if any(dataset_folder):
+#             idx = dataset_folder.index(True)
+#             assert len(folders) >= (idx + 1), 'Bad path, cannot extract what I need. Your path needs to be at least ' \
+#                                         'DatasetXXX/MODULE__PLANS__CONFIGURATION for this to work'
+#             splitted = folders[idx + 1].split('__')
+#             assert len(splitted) == 3, 'Bad path, cannot extract what I need. Your path needs to be at least ' \
+#                                        'DatasetXXX/MODULE__PLANS__CONFIGURATION for this to work'
+#             return folders[idx], *splitted
 
 
 def get_ensemble_name(model1_folder, model2_folder, folds: Tuple[int, ...]):

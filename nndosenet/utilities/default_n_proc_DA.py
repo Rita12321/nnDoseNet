@@ -5,7 +5,7 @@ import os
 def get_allowed_n_proc_DA():
     """
     This function is used to set the number of processes used on different Systems. 
-    If not specified, it would auto matically use around 1/3 of cpu if 1/3 of cpu if less than 1 cpu, would just use 1 cpu.
+    If not specified, it would automatically use around 1/3 of cpu if 1/3 of cpu if less than 1 cpu, would just use 1 cpu.
     You can modify it to suit your needs. Everything is allowed.
 
     IMPORTANT: if the environment variable nnDose_n_proc_DA is set it will overwrite anything in this script
@@ -27,7 +27,7 @@ def get_allowed_n_proc_DA():
         if hostname in ['Fabian', ]:
             use_this = 12
         elif hostname in ['radonphys-dl-002', ]:
-            use_this = 27
+            use_this = 26
         elif hostname in ['hdf19-gpu16', 'hdf19-gpu17', 'hdf19-gpu18', 'hdf19-gpu19', 'e230-AMDworkstation']:
             use_this = 16
         elif hostname.startswith('e230-dgx1'):

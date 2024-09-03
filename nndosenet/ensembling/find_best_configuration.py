@@ -28,7 +28,7 @@ def filter_available_models(model_dict: Union[List[dict], Tuple[dict, ...]], dat
         plans_manager = PlansManager(join(nnDose_preprocessed, maybe_convert_to_dataset_name(dataset_name_or_id),
                                trained_model['plans'] + '.json'))
         # check if configuration exists
-        # 3d_cascade_fullres and 3d_lowres do not exist for each dataset so we allow them to be absent IF they are not
+        # 3d_lowres do not exist for each dataset so we allow them to be absent if they are not
         # specified in the plans file
         if trained_model['configuration'] not in plans_manager.available_configurations:
             print(f"Configuration {trained_model['configuration']} not found in plans {trained_model['plans']}.\n"
@@ -40,8 +40,7 @@ def filter_available_models(model_dict: Union[List[dict], Tuple[dict, ...]], dat
                                                    trained_model['configuration'], fold=None)
         if not isdir(expected_output_folder):
             raise RuntimeError(f"Trained model {trained_model} does not have an output folder. "
-                  f"Expected: {expected_output_folder}. Please run the training for this model!")# (don't forget "
-                  #f"the --npz flag if you want to ensemble multiple configurations)")
+                  f"Expected: {expected_output_folder}. Please run the training for this model!")
 
         valid.append(trained_model)
     return valid
@@ -61,19 +60,10 @@ def generate_inference_command_on_Ts(dataset_name_or_id: Union[int, str], config
     predict_command = ''
     trained_model_folder = get_output_folder(dataset_name_or_id, trainer_name, plans_identifier, configuration_name, fold=None)
     plans_manager = PlansManager(join(trained_model_folder, 'plans.json'))
-    configuration_manager = plans_manager.get_configuration(configuration_name)
-    # if 'previous_stage' in plans_manager.available_configurations:
-    #     prev_stage = configuration_manager.previous_stage_name
-    #     predict_command += generate_inference_command(dataset_name_or_id, prev_stage, plans_identifier, trainer_name,
-    #                                                   folds, None, output_folder='OUTPUT_FOLDER_PREV_STAGE') + '\n'
-    #     folder_with_segs_from_prev_stage = 'OUTPUT_FOLDER_PREV_STAGE'
 
     predict_command = f'nnDoseNet_predict_Ts -name {dataset_name_or_id} -id {input_folder} -f {fold_str} ' \
                       f'-tr {trainer_name} -c {configuration_name} -p {plans_identifier}'
-    # if folder_with_segs_from_prev_stage is not None:
-    #     predict_command += f' -prev_stage_predictions {folder_with_segs_from_prev_stage}'
-    # if save_npz:
-    #     predict_command += ' --npz'
+
     return predict_command
 
 def generate_inference_command(dataset_name_or_id: Union[int, str], configuration_name: str,
@@ -90,20 +80,10 @@ def generate_inference_command(dataset_name_or_id: Union[int, str], configuratio
     #TODO: might need to change inference command yo nndosenet prediction folder command
     predict_command = ''
     trained_model_folder = get_output_folder(dataset_name_or_id, trainer_name, plans_identifier, configuration_name, fold=None)
-    plans_manager = PlansManager(join(trained_model_folder, 'plans.json'))
-    configuration_manager = plans_manager.get_configuration(configuration_name)
-    # if 'previous_stage' in plans_manager.available_configurations:
-    #     prev_stage = configuration_manager.previous_stage_name
-    #     predict_command += generate_inference_command(dataset_name_or_id, prev_stage, plans_identifier, trainer_name,
-    #                                                   folds, None, output_folder='OUTPUT_FOLDER_PREV_STAGE') + '\n'
-    #     folder_with_segs_from_prev_stage = 'OUTPUT_FOLDER_PREV_STAGE'
 
     predict_command = f'nnDoseNet_predict -d {dataset_name_or_id} -i {input_folder} -o {output_folder} -f {fold_str} ' \
                       f'-tr {trainer_name} -c {configuration_name} -p {plans_identifier}'
-    # if folder_with_segs_from_prev_stage is not None:
-    #     predict_command += f' -prev_stage_predictions {folder_with_segs_from_prev_stage}'
-    # if save_npz:
-    #     predict_command += ' --npz'
+
     return predict_command
 
 
@@ -162,7 +142,7 @@ def find_best_configuration(dataset_name_or_id,
                             structure_json=None
                 label_manager = plans_manager.get_label_manager(dataset_json)
                 rw = plans_manager.image_reader_writer_class()
-                #print(structure_json)
+
                 compute_dose_metrics_on_folder(join(nnDose_raw, dataset_name, 'labelsTr'),
                                           output_folder_ensemble,
                                           join(nnDose_raw, dataset_name, 'imagesTr'),
@@ -170,7 +150,7 @@ def find_best_configuration(dataset_name_or_id,
                                           rw,
                                           dataset_json['file_ending'],
                                           structure_json['structure_label'],
-                                          label_manager.ignore_label,
+                                          None,
                                           num_processes)
                 all_results[identifier] = \
                     {
@@ -192,14 +172,6 @@ def find_best_configuration(dataset_name_or_id,
     print(f'\n*Best*: {best_key}: {all_results[best_key]["result"]}')
     print()
 
-    # print('***Determining postprocessing for best model/ensemble***')
-    # determine_postprocessing(all_results[best_key]['source'], join(nnDose_raw, dataset_name, 'labelsTr'),
-    #                          plans_file_or_dict=join(all_results[best_key]['source'], 'plans.json'),
-    #                          dataset_json_file_or_dict=join(all_results[best_key]['source'], 'dataset.json'),
-    #                          num_processes=num_processes, keep_postprocessed_files=True)
-
-    # in addition to just reading the console output (how it was previously) we should return the information
-    # needed to run the full inference via API
     
     return_dict = {
         'folds': folds,
@@ -210,11 +182,7 @@ def find_best_configuration(dataset_name_or_id,
         'best_model_or_ensemble': {
             'result_on_crossval_pre_pp': all_results[best_key]["result"],
             #TODO: future : dose normalize postprocess
-            #'result_on_crossval_post_pp': load_json(join(all_results[best_key]['source'], 'postprocessed', 'summary.json'))['foreground_mean']['Dice'],
-            #'postprocessing_file': join(all_results[best_key]['source'], 'postprocessing.pkl'),
             'some_plans_file': join(all_results[best_key]['source'], 'plans.json'),
-            # just needed for label handling, can
-            # come from any of the ensemble members (if any)
             'selected_model_or_models': []
         }
     }

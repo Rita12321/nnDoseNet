@@ -45,9 +45,7 @@ def label_nifti_and_final_formatting_entry():
                               in nnDose_dicom/[--name] ") 
      
      args, unrecognized_args = parser.parse_known_args()
-     
-     # print(nnDose_raw)
-     # print(nnDose_dicom)
+
      raw_dicom_folder = join(nnDose_dicom,args.name)
 
      organize_nifti(join(raw_dicom_folder,args.trts))

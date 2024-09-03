@@ -5,18 +5,17 @@ from copy import deepcopy
 from multiprocessing import Pool
 from typing import Tuple, List, Union, Optional
 from sklearn.metrics import mean_squared_error as MSE
-from pymedphys import gamma as gamma_analysis
+# from pymedphys import gamma as gamma_analysis
 import numpy as np
 from batchgenerators.utilities.file_and_folder_operations import subfiles, join, save_json, load_json, \
     isfile
 from nndosenet.configuration import default_num_processes
 from nndosenet.imageio.base_reader_writer import BaseReaderWriter
-from nndosenet.imageio.reader_writer_registry import determine_reader_writer_from_dataset_json, \
-    determine_reader_writer_from_file_ending
+from nndosenet.imageio.reader_writer_registry import determine_reader_writer_from_dataset_json
 from nndosenet.imageio.simpleitk_reader_writer import SimpleITKIO
 # the Evaluator class of the previous nnDoseNet was great and all but man was it overengineered. Keep it simple
 from nndosenet.utilities.json_export import recursive_fix_for_json_export
-from nndosenet.utilities.plans_handling.plans_handler import PlansManager
+# from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 from nndosenet.evaluation.basic_DVH_metrics import DoseEvaluator
 from nndosenet.paths import nnDose_dicom
 
@@ -171,7 +170,7 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
         files_oar = files_ptv.copy()
         if not os.path.isfile(files_ptv[0]):
             if not os.path.isfile(patient_csv):
-                raise(RuntimeError("cannnot find", files_ptv[0]," and ", patient_csv,"need patient and id convertion csv to read the file from nndose_dicom"))
+                raise(RuntimeError("cannot find", files_ptv[0]," and ", patient_csv,"need patient and id conversion csv to read the file from nndose_dicom"))
             csv=pd.read_csv(patient_csv)
             p_id=dict(zip (csv['id'],csv['patient']))
 
@@ -183,135 +182,90 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
     
     files_ref = [join(folder_ref, i) for i in files_pred]
     files_pred = [join(folder_pred, i) for i in files_pred]
-    # print(files_ref)
-    # print(files_pred)
-    # print(files_ptv)
-    # print(files_oar)
-    # print(structure_df)
-    # print("Using",num_processes, "CPU")
+
     
     with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
-        # for i in list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [regions_or_labels] * len(files_pred), [ignore_label] * len(files_pred))):
-        #     compute_metrics(*i)
+
+
         
-        # compute_dose_metrics or compute_metrics(for segmentation)
-
-        if dose_label:
-            print("computing dose metrics")
-            results = pool.starmap(
-                compute_dose_metrics,
-                list(zip(files_ref, files_pred, files_ptv, files_oar, [image_reader_writer] * len(files_pred),
-                         [structure_df] * len(files_pred),
-                        ))
-            )
-        else:
-            print("non-dose? you should check out nnUNet if you want to do segmentation!")
-            # results = pool.starmap(
-            #     compute_seg_metrics,
-            #     list(zip(files_ref, files_pred, [image_reader_writer] * len(files_pred), [structure_df] * len(files_pred),
-            #             [ignore_label] * len(files_pred)))
-            # )
-
-    if dose_label:
-
-        image_prescription_compare_list=['max_Ref','max_Pred']
-        target_prescription_compare_list=['D_99_Pred','D_99_Ref','D_95_Pred','D_95_Ref']
-        means={}
-        # find max prescription per case 
-        for i in results:
-            for c in i['Target'].keys():
-                if i['prescription'] < float(i['Target'][c]["input_label"]):
-                    i['prescription'] = float(i['Target'][c]["input_label"])
-        
-        # mean image metrices 
-        metric_list = results[0]['metrics'].keys()
-        for m in metric_list:
-            count_107 = 0
-            count_105 = 0
-            for i in results:
-                means[m] = np.nanmean(i['metrics'][m] )
-                if m in image_prescription_compare_list:
-                    means[m]
-                    if i['metrics'][m] < i['prescription']*1.07:
-                        count_107 += 1
-                        count_105 += 1
-            if m in image_prescription_compare_list:
-                means["# < 105% prescription of "+m] = count_105
-                means["# < 107% prescription of "+m] = count_107
-                
-        # mean contour metrics 
-        for typ in ["Target","OAR"]:
-            means[typ]={} 
-            contour_list = list(results[0][typ].keys())      
-            metric_list = results[0][typ][contour_list[0]].keys()#
-            for c in contour_list:
-                means[typ][c]={}
-                means[typ][c]["input_label"]=results[0][typ][c]["input_label"]
-
-                for m in metric_list:
-                    count=0
-                    if m =="input_label":
-                        continue
-                    temp_list=[]
-                    
-                    for r in results:
-                        try:
-                            if m in target_prescription_compare_list:
-                                if r[typ][c][m] > float(means[typ][c]["input_label"]):
-                                    count += 1
-                    
-                            temp_list.append(r[typ][c][m])
-                        except:
-                            pass
-           
-                    means[typ][c][m]=np.mean(temp_list)
-                    
-                    if m in target_prescription_compare_list:
-                        means[typ][c]["# > target prescription of "+m] = count
-                        
-                    
-        [recursive_fix_for_json_export(i) for i in results]
-        recursive_fix_for_json_export(means)
-        
-        
-        result = {'mean': means,'metric_per_case': results}
+        print("computing dose metrics")
+        results = pool.starmap(
+            compute_dose_metrics,
+            list(zip(files_ref, files_pred, files_ptv, files_oar, [image_reader_writer] * len(files_pred),
+                        [structure_df] * len(files_pred),
+                    ))
+        )
 
 
-        if output_file is not None:
-            save_summary_json(result, output_file)
-        return result
-        # print('DONE')
-
-    else:
-        print("non-dose? you should check out nnUNet if you want to do segmentation!")
-        
-
-        #mean metric per class
+    image_prescription_compare_list=['max_Ref','max_Pred']
+    target_prescription_compare_list=['D_99_Pred','D_99_Ref','D_95_Pred','D_95_Ref']
+    means={}
+    # find max prescription per case 
+    for i in results:
+        for c in i['Target'].keys():
+            if i['prescription'] < float(i['Target'][c]["input_label"]):
+                i['prescription'] = float(i['Target'][c]["input_label"])
     
-        metric_list = list(results[0]['metrics'][structure_df[0]].keys())
-        means = {}
-        for r in structure_df:
-            means[r] = {}
+    # mean image metrices 
+    metric_list = results[0]['metrics'].keys()
+    for m in metric_list:
+        count_107 = 0
+        count_105 = 0
+        for i in results:
+            means[m] = np.nanmean(i['metrics'][m] )
+            if m in image_prescription_compare_list:
+                means[m]
+                if i['metrics'][m] < i['prescription']*1.07:
+                    count_107 += 1
+                    count_105 += 1
+        if m in image_prescription_compare_list:
+            means["# < 105% prescription of "+m] = count_105
+            means["# < 107% prescription of "+m] = count_107
+            
+    # mean contour metrics 
+    for typ in ["Target","OAR"]:
+        means[typ]={} 
+        contour_list = list(results[0][typ].keys())      
+        metric_list = results[0][typ][contour_list[0]].keys()#
+        for c in contour_list:
+            means[typ][c]={}
+            means[typ][c]["input_label"]=results[0][typ][c]["input_label"]
+
             for m in metric_list:
-                means[r][m] = np.nanmean([i['metrics'][r][m] for i in results])
-
-        # foreground mean
-        foreground_mean = {}
-        for m in metric_list:
-            values = []
-            for k in means.keys():
-                if k == 0 or k == '0':
+                count=0
+                if m =="input_label":
                     continue
-                values.append(means[k][m])
-            foreground_mean[m] = np.mean(values)
+                temp_list=[]
+                
+                for r in results:
+                    try:
+                        if m in target_prescription_compare_list:
+                            if r[typ][c][m] > float(means[typ][c]["input_label"]):
+                                count += 1
+                
+                        temp_list.append(r[typ][c][m])
+                    except:
+                        pass
+        
+                means[typ][c][m]=np.mean(temp_list)
+                
+                if m in target_prescription_compare_list:
+                    means[typ][c]["# > target prescription of "+m] = count
+                    
+                
+    [recursive_fix_for_json_export(i) for i in results]
+    recursive_fix_for_json_export(means)
+    
+    
+    result = {'mean': means,'metric_per_case': results}
 
-        [recursive_fix_for_json_export(i) for i in results]
-        recursive_fix_for_json_export(means)
-        recursive_fix_for_json_export(foreground_mean)
-        result = {'metric_per_case': results, 'mean': means, 'foreground_mean': foreground_mean}
+
     if output_file is not None:
         save_summary_json(result, output_file)
     return result
+
+
+    
 
 def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_input:str,
                                 dataset_json_file: str,# plans_file: str, 
@@ -342,71 +296,6 @@ def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_inp
                                    num_processes=num_processes,ignore_label=None,dose_label=True, chill=chill,
                               raw_folder=raw_folder,patient_csv=patient_csv)
 
-# This function is for segmentation with region input
-# def labels_to_list_of_regions(labels: List[int]):
-#     return [(i,) for i in labels]
-
-# This function is for segmentation
-# def region_or_label_to_mask(segmentation: np.ndarray, region_or_label: Union[int, Tuple[int, ...]]) -> np.ndarray:
-#     if np.isscalar(region_or_label):
-#         return segmentation == region_or_label
-#     else:
-#         mask = np.zeros_like(segmentation, dtype=bool)
-#         for r in region_or_label:
-#             mask[segmentation == r] = True
-#     return mask
-
-# This function is for segmentation
-# def compute_tp_fp_fn_tn(mask_ref: np.ndarray, mask_pred: np.ndarray, ignore_mask: np.ndarray = None):
-#     if ignore_mask is None:
-#         use_mask = np.ones_like(mask_ref, dtype=bool)
-#     else:
-#         use_mask = ~ignore_mask
-#     tp = np.sum((mask_ref & mask_pred) & use_mask)
-#     fp = np.sum(((~mask_ref) & mask_pred) & use_mask)
-#     fn = np.sum((mask_ref & (~mask_pred)) & use_mask)
-#     tn = np.sum(((~mask_ref) & (~mask_pred)) & use_mask)
-#     return tp, fp, fn, tn
-
-# This function is for segmentation
-# def compute_seg_metrics(reference_file: str, prediction_file: str, image_reader_writer: BaseReaderWriter,
-#                     labels_or_regions: Union[List[int], List[Union[int, Tuple[int, ...]]]],
-#                     ignore_label: int = None) -> dict:
-#     # load images
-#     seg_ref, seg_ref_dict = image_reader_writer.read_seg(reference_file)
-#     seg_pred, seg_pred_dict = image_reader_writer.read_seg(prediction_file)
-#     # spacing = seg_ref_dict['spacing']
-
-#     ignore_mask = seg_ref == ignore_label if ignore_label is not None else None
-#     print("computing seg metrics")
-
-#     results = {}
-#     results['reference_file'] = reference_file
-#     results['prediction_file'] = prediction_file
-#     results['dose']='False'
-#     results['metrics'] = {}
-    
-#     for r in labels_or_regions:
-#         results['metrics'][r] = {}
-#         mask_ref = region_or_label_to_mask(seg_ref, r)
-#         mask_pred = region_or_label_to_mask(seg_pred, r)
-
-#         mask_ref = region_or_label_to_mask(seg_ref, r)
-#         mask_pred = region_or_label_to_mask(seg_pred, r)
-#         tp, fp, fn, tn = compute_tp_fp_fn_tn(mask_ref, mask_pred, ignore_mask)
-#         if tp + fp + fn == 0:
-#             results['metrics'][r]['Dice'] = np.nan
-#             results['metrics'][r]['IoU'] = np.nan
-#         else:
-#             results['metrics'][r]['Dice'] = 2 * tp / (2 * tp + fp + fn)
-#             results['metrics'][r]['IoU'] = tp / (tp + fp + fn)
-#         results['metrics'][r]['FP'] = fp
-#         results['metrics'][r]['TP'] = tp
-#         results['metrics'][r]['FN'] = fn
-#         results['metrics'][r]['TN'] = tn
-#         results['metrics'][r]['n_pred'] = fp + tp
-#         results['metrics'][r]['n_ref'] = fn + tp
-#     return results
     
 def evaluate_folder_entry_point():
     import argparse
@@ -445,7 +334,7 @@ if __name__ == '__main__':
     patient_csv = "/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/GroundTruth/patientTs.csv"
     image_reader_writer = SimpleITKIO()
     file_ending = '.nii.gz'
-    regions = None
+
     ignore_label = None
     dose_label= True
     num_processes = 12

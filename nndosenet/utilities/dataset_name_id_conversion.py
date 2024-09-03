@@ -13,7 +13,7 @@
 #    limitations under the License.
 from typing import Union
 
-from nndosenet.paths import nnDose_preprocessed, nnDose_raw, nnDose_results,nnDose_dicom,nnDose_prediction
+from nndosenet.paths import nnDose_preprocessed, nnDose_raw, nnDose_results, nnDose_prediction
 from batchgenerators.utilities.file_and_folder_operations import *
 import numpy as np
 
@@ -30,11 +30,16 @@ def find_candidate_datasets(dataset_id: int):
     else:
         candidates_raw = []
 
-    candidates_trained_models = []
+    candidates_trained_models = [] 
     if nnDose_results is not None and isdir(nnDose_results):
         candidates_trained_models += subdirs(nnDose_results, prefix=startswith, join=False)
 
-    all_candidates = candidates_preprocessed + candidates_raw + candidates_trained_models
+    candidates_prediction = [] 
+    if nnDose_prediction is not None and isdir(nnDose_prediction):
+        for name in  subdirs(nnDose_prediction, prefix=startswith, join=False):
+            candidates_prediction += subdirs(join(nnDose_prediction,name), prefix=startswith, join=False)
+    
+    all_candidates = candidates_preprocessed + candidates_raw + candidates_trained_models+candidates_prediction
     unique_candidates = np.unique(all_candidates)
     return unique_candidates
 
@@ -72,5 +77,5 @@ def maybe_convert_to_dataset_name(dataset_name_or_id: Union[int, str]) -> str:
         except ValueError:
             raise ValueError("dataset_name_or_id was a string and did not start with 'Dataset' so we tried to "
                              "convert it to a dataset ID (int). That failed, however. Please give an integer number "
-                             "('1', '2', etc) or a correct tast name. Your input: %s" % dataset_name_or_id)
+                             "('1', '2', etc) or a correct dataset name. Your input: %s" % dataset_name_or_id)
     return convert_id_to_dataset_name(dataset_name_or_id)

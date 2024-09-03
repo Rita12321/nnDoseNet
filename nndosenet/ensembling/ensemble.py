@@ -7,12 +7,12 @@ from typing import List, Union, Tuple
 import torch
 import numpy as np
 from batchgenerators.utilities.file_and_folder_operations import load_json, join, subfiles, \
-    maybe_mkdir_p, isdir, save_pickle, load_pickle, isfile
+    maybe_mkdir_p, isdir, isfile
 from nndosenet.configuration import default_num_processes
 from nndosenet.imageio.base_reader_writer import BaseReaderWriter
 from nndosenet.utilities.label_handling.label_handling import LabelManager
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
-
+from nndosenet.evaluation.evaluate_predictions import compute_dose_metrics_on_folder2
 
 def average_probabilities(list_of_files: List[str],image_reader_writer: BaseReaderWriter) -> np.ndarray:
     assert len(list_of_files), 'At least one file must be given in list_of_files'
@@ -41,8 +41,8 @@ def merge_files(list_of_files,
                 ):
     
     probabilities,properties = average_probabilities(list_of_files,image_reader_writer)
-    segmentation = label_manager.probability_squeeze_channel(probabilities)
-    image_reader_writer.write_gt(segmentation, output_filename_truncated + output_file_ending, properties)
+    output = label_manager.probability_squeeze_channel(probabilities)
+    image_reader_writer.write_gt(output, output_filename_truncated + output_file_ending, properties)
     
 
 
@@ -111,18 +111,7 @@ def ensemble_folders(list_of_input_folders: List[str],
         )
 
 
-def entry_point_ensemble_folders():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', nargs='+', type=str, required=True,
-                        help='list of input folders')
-    parser.add_argument('-o', type=str, required=True, help='output folder')
-    parser.add_argument('-np', type=int, required=False, default=default_num_processes,
-                        help=f"Numbers of processes used for ensembling. Default: {default_num_processes}")
-    # parser.add_argument('--save_npz', action='store_true', required=False, help='Set this flag to store output '
-    #                                                                             'probabilities in separate .npz files')
 
-    args = parser.parse_args()
-    ensemble_folders(args.i, args.o, args.np)
 
 
 def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
@@ -170,7 +159,7 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
         file_mapping.append({})
         for fold in folds:
             for fi in files_per_folder[tr][fold]:
-                #print("####",file_mapping)
+
                 # check for duplicates
                 assert fi not in file_mapping[-1].keys(), f" \
                 detected. Case {fi} is present in more than " \
@@ -199,8 +188,7 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
                 output_files_truncated,
                 [dataset_json['file_ending']] * num_preds,
                 [image_reader_writer] * num_preds,
-                [label_manager] * num_preds,
-                [False] * num_preds
+                [label_manager] * num_preds
             )
         )
 
@@ -210,3 +198,23 @@ def ensemble_crossvalidations(list_of_trained_model_folders: List[str],
         shutil.copy(join(list_of_trained_model_folders[0], 'structure.json'), join(output_folder, 'structure.json'))
     except:
         pass
+
+
+def entry_point_ensemble_folders():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', nargs='+', type=str, required=True,
+                        help='list of input folders')
+    parser.add_argument('-o', type=str, required=True, help='output folder')
+    parser.add_argument('-np', type=int, required=False, default=default_num_processes,
+                        help=f"Numbers of processes used for ensembling. Default: {default_num_processes}")
+    # parser.add_argument('--save_npz', action='store_true', required=False, help='Set this flag to store output '
+    #                                                                             'probabilities in separate .npz files')
+
+    args = parser.parse_args()
+    ensemble_folders(args.i, args.o, args.np)
+    print("All done!")
+    print("ensemble is in ",args.o)
+ 
+    print("\nPlease check \n nnDoseNet_evaluate_folder -h \n to evaluate prediction ")
+    print("Also check  \n nnDoseNet_dicom_based_evaluation -h \n If Ts files has dicom ground truth ")
+    print("If not we still offer \n nnDoseNet_difference_map -h \n for visualized evaluation method")

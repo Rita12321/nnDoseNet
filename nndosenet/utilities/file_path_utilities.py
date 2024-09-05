@@ -16,7 +16,7 @@ def convert_identifier_to_trainer_plans_config(identifier: str):
     return os.path.basename(identifier).split('__')
 
 
-def get_output_folder(dataset_name_or_id: Union[str, int], trainer_name: str = 'nnUNetTrainer',
+def get_output_folder(dataset_name_or_id: Union[str, int], trainer_name: str = 'nnDoseTrainer',
                       plans_identifier: str = 'nnDosePlans', configuration: str = '3d_fullres',
                       fold: Union[str, int] = None) -> str:
     tmp = join(nnDose_results, maybe_convert_to_dataset_name(dataset_name_or_id),

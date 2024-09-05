@@ -93,8 +93,8 @@ class nnUNetPredictor(object):
         configuration_manager = plans_manager.get_configuration(configuration_name)
         # restore network
         num_input_channels = determine_num_input_channels(plans_manager, configuration_manager, dataset_json)
-        trainer_class = recursive_find_python_class(join(nndosenet.__path__[0], "training", "nnUNetTrainer"),
-                                                    trainer_name, 'nndosenet.training.nnUNetTrainer')
+        trainer_class = recursive_find_python_class(join(nndosenet.__path__[0], "training", "nnDoseTrainer"),
+                                                    trainer_name, 'nndosenet.training.nnDoseTrainer')
         network = trainer_class.build_network_architecture(plans_manager, dataset_json, configuration_manager,
                                                            num_input_channels, enable_deep_supervision=False)
         self.plans_manager = plans_manager
@@ -115,7 +115,7 @@ class nnUNetPredictor(object):
                               dataset_json: dict, trainer_name: str,
                               inference_allowed_mirroring_axes: Optional[Tuple[int, ...]]):
         """
-        This is used by the nnUNetTrainer to initialize nnUNetPredictor for the final validation
+        This is used by the nnDoseTrainer to initialize nnUNetPredictor for the final validation
         """
         self.plans_manager = plans_manager
         self.configuration_manager = configuration_manager
@@ -639,8 +639,8 @@ def predict_entry_point():
     parser.add_argument('-p', type=str, required=False, default='nnDosePlans',
                         help='Plans identifier. Specify the plans in which the desired configuration is located. '
                              'Default: nnDosePlans')
-    parser.add_argument('-tr', type=str, required=False, default='nnUNetTrainer',
-                        help='What nnU-Net trainer class was used for training? Default: nnUNetTrainer')
+    parser.add_argument('-tr', type=str, required=False, default='nnDoseTrainer',
+                        help='What nnU-Net trainer class was used for training? Default: nnDoseTrainer')
     parser.add_argument('-c', type=str, required=True,
                         help='nnDoseNet configuration that should be used for prediction. Config must be located '
                              'in the plans specified with -p')
@@ -738,8 +738,8 @@ def predict_Ts_entry_point():
     parser.add_argument('-p', type=str, required=False, default='nnDosePlans',
                         help='Plans identifier. Specify the plans in which the desired configuration is located. '
                              'Default: nnDosePlans')
-    parser.add_argument('-tr', type=str, required=False, default='nnUNetTrainer',
-                        help='What nnU-Net trainer class was used for training? Default: nnUNetTrainer')
+    parser.add_argument('-tr', type=str, required=False, default='nnDoseTrainer',
+                        help='What nnU-Net trainer class was used for training? Default: nnDoseTrainer')
     parser.add_argument('-c', type=str, required=True,
                         help='nnDoseNet configuration that should be used for prediction. Config must be located '
                              'in the plans specified with -p')

@@ -11,7 +11,7 @@ def load_pretrained_weights(network, fname, verbose=False):
     If the pretrained weights were obtained with a training outside nnDoseNet and DDP or torch.optimize was used,
     you need to change the keys of the pretrained state_dict. DDP adds a 'module.' prefix and torch.optim adds
     '_orig_mod'. You DO NOT need to worry about this if pretraining was done with nnDoseNet as
-    nnUNetTrainer.save_checkpoint takes care of that!
+    nnDoseTrainer.save_checkpoint takes care of that!
 
     """
     saved_model = torch.load(fname)

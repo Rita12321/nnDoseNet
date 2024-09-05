@@ -1,12 +1,12 @@
 from dynamic_network_architectures.architectures.unet import ResidualEncoderUNet, PlainConvUNet
 from dynamic_network_architectures.building_blocks.helper import convert_dim_to_conv_op, get_matching_batchnorm
 from dynamic_network_architectures.initialization.weight_init import init_last_bn_before_add_to_0, InitWeights_He
-from nndosenet.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
+from nndosenet.training.nnDoseTrainer.nnDoseTrainer import nnDoseTrainer
 from nndosenet.utilities.plans_handling.plans_handler import ConfigurationManager, PlansManager
 from torch import nn
 
 
-class nnUNetTrainerBN(nnUNetTrainer):
+class nnUNetTrainerBN(nnDoseTrainer):
     @staticmethod
     def build_network_architecture(plans_manager: PlansManager,
                                    dataset_json,

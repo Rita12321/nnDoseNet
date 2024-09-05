@@ -9,7 +9,7 @@ import torch.multiprocessing as mp
 from batchgenerators.utilities.file_and_folder_operations import join, isfile, load_json
 from nndosenet.paths import nnDose_preprocessed
 from nndosenet.run.load_pretrained_weights import load_pretrained_weights
-from nndosenet.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
+from nndosenet.training.nnDoseTrainer.nnDoseTrainer import nnDoseTrainer
 from nndosenet.utilities.dataset_name_id_conversion import maybe_convert_to_dataset_name
 from nndosenet.utilities.find_class_by_name import recursive_find_python_class
 from torch.backends import cudnn
@@ -31,20 +31,20 @@ def find_free_network_port() -> int:
 def get_trainer_from_args(dataset_name_or_id: Union[int, str],
                           configuration: str,
                           fold: int,
-                          trainer_name: str = 'nnUNetTrainer',
+                          trainer_name: str = 'nnDoseTrainer',
                           plans_identifier: str = 'nnDosePlans',
                           use_compressed: bool = False,
                           device: torch.device = torch.device('cuda')):
     # load nnunet class and do sanity checks
-    nnunet_trainer = recursive_find_python_class(join(nndosenet.__path__[0], "training", "nnUNetTrainer"),
-                                                trainer_name, 'nndosenet.training.nnUNetTrainer')
+    nnunet_trainer = recursive_find_python_class(join(nndosenet.__path__[0], "training", "nnDoseTrainer"),
+                                                trainer_name, 'nndosenet.training.nnDoseTrainer')
     if nnunet_trainer is None:
         raise RuntimeError(f'Could not find requested nnunet trainer {trainer_name} in '
-                           f'nndosenet.training.nnUNetTrainer ('
-                           f'{join(nndosenet.__path__[0], "training", "nnUNetTrainer")}). If it is located somewhere '
+                           f'nndosenet.training.nnDoseTrainer ('
+                           f'{join(nndosenet.__path__[0], "training", "nnDoseTrainer")}). If it is located somewhere '
                            f'else, please move it there.')
-    assert issubclass(nnunet_trainer, nnUNetTrainer), 'The requested nnunet trainer class must inherit from ' \
-                                                    'nnUNetTrainer'
+    assert issubclass(nnunet_trainer, nnDoseTrainer), 'The requested nnunet trainer class must inherit from ' \
+                                                    'nnDoseTrainer'
 
     # handle dataset input. If it's an ID we need to convert to int from string
     if dataset_name_or_id.startswith('Dataset'):
@@ -67,7 +67,7 @@ def get_trainer_from_args(dataset_name_or_id: Union[int, str],
     return nnunet_trainer
 
 
-def maybe_load_checkpoint(nnunet_trainer: nnUNetTrainer, continue_training: bool, validation_only: bool,
+def maybe_load_checkpoint(nnunet_trainer: nnDoseTrainer, continue_training: bool, validation_only: bool,
                           pretrained_weights_file: str = None):
     if continue_training and pretrained_weights_file is not None:
         raise RuntimeError('Cannot both continue a training AND load pretrained weights. Pretrained weights can only '
@@ -134,7 +134,7 @@ def run_ddp(rank, dataset_name_or_id, configuration, fold, tr, p,use_compressed,
 
 def run_training(dataset_name_or_id: Union[str, int],
                  configuration: str, fold: Union[int, str],
-                 trainer_class_name: str = 'nnUNetTrainer',
+                 trainer_class_name: str = 'nnDoseTrainer',
                  plans_identifier: str = 'nnDosePlans',
                  pretrained_weights: Optional[str] = None,
                  num_gpus: int = 1,
@@ -205,8 +205,8 @@ def run_training_entry():
                         help="Configuration that should be trained")
     parser.add_argument('fold', type=str,
                         help='Fold of the 5-fold cross-validation. Should be an int between 0 and 4.')
-    parser.add_argument('-tr', type=str, required=False, default='nnUNetTrainer',
-                        help='[OPTIONAL] Use this flag to specify a custom trainer. Default: nnUNetTrainer')
+    parser.add_argument('-tr', type=str, required=False, default='nnDoseTrainer',
+                        help='[OPTIONAL] Use this flag to specify a custom trainer. Default: nnDoseTrainer')
     parser.add_argument('-p', type=str, required=False, default='nnDosePlans',
                         help='[OPTIONAL] Use this flag to specify a custom plans identifier. Default: nnDosePlans')
     parser.add_argument('-pretrained_weights', type=str, required=False, default=None,

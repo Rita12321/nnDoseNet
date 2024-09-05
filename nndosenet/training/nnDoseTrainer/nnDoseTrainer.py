@@ -65,7 +65,7 @@ from torch.cuda import device_count
 from torch.cuda.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-class nnUNetTrainer(object):
+class nnDoseTrainer(object):
     def __init__(self, plans: dict, configuration: str, fold: int,dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         # From https://grugbrain.dev/. Worth a read ya big brains ;-)
@@ -264,7 +264,7 @@ class nnUNetTrainer(object):
         patch size)
         but don't bug us with your bugs arising from fiddling with this :-P
         This is the function that is called in inference as well! This is needed so that all network architecture
-        variants can be loaded at inference time (inference will use the same nnUNetTrainer that was used for
+        variants can be loaded at inference time (inference will use the same nnDoseTrainer that was used for
         training, so if you change the network architecture during training by deriving a new trainer class then
         inference will know about it). -by nnU-Net creator
         """

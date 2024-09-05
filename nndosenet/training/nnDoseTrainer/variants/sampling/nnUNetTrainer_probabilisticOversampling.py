@@ -4,11 +4,11 @@ import torch
 
 from nndosenet.training.dataloading.data_loader_2d import nnUNetDataLoader2D
 from nndosenet.training.dataloading.data_loader_3d import nnUNetDataLoader3D
-from nndosenet.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
+from nndosenet.training.nnDoseTrainer.nnDoseTrainer import nnDoseTrainer
 import numpy as np
 
 
-class nnUNetTrainer_probabilisticOversampling(nnUNetTrainer):
+class nnUNetTrainer_probabilisticOversampling(nnDoseTrainer):
     """
     sampling of foreground happens randomly and not for the last 33% of samples in a batch
     since most trainings happen with batch size 2 and nnunet guarantees at least one fg sample, effectively this can

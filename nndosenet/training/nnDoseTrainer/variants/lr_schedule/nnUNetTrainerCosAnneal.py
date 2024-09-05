@@ -1,10 +1,10 @@
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
-from nndosenet.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
+from nndosenet.training.nnDoseTrainer.nnDoseTrainer import nnDoseTrainer
 
 
-class nnUNetTrainerCosAnneal(nnUNetTrainer):
+class nnUNetTrainerCosAnneal(nnDoseTrainer):
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(self.network.parameters(), self.initial_lr, weight_decay=self.weight_decay,
                                     momentum=0.99, nesterov=True)

@@ -16,9 +16,9 @@ from nndosenet.utilities.file_path_utilities import maybe_convert_to_dataset_nam
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager
 
 default_trained_models = tuple([
-    {'plans': 'nnDosePlans', 'configuration': '2d',                 'trainer': 'nnUNetTrainer'},
-    {'plans': 'nnDosePlans', 'configuration': '3d_fullres',         'trainer': 'nnUNetTrainer'},
-    {'plans': 'nnDosePlans', 'configuration': '3d_lowres',          'trainer': 'nnUNetTrainer'}
+    {'plans': 'nnDosePlans', 'configuration': '2d',                 'trainer': 'nnDoseTrainer'},
+    {'plans': 'nnDosePlans', 'configuration': '3d_fullres',         'trainer': 'nnDoseTrainer'},
+    {'plans': 'nnDosePlans', 'configuration': '3d_lowres',          'trainer': 'nnDoseTrainer'}
 ])
 
 
@@ -46,7 +46,7 @@ def filter_available_models(model_dict: Union[List[dict], Tuple[dict, ...]], dat
     return valid
 
 def generate_inference_command_on_Ts(dataset_name_or_id: Union[int, str], configuration_name: str,
-                               plans_identifier: str = 'nnDosePlans', trainer_name: str = 'nnUNetTrainer',
+                               plans_identifier: str = 'nnDosePlans', trainer_name: str = 'nnDoseTrainer',
                                folds: Union[List[int], Tuple[int, ...]] = (0, 1, 2, 3, 4),
                                folder_with_segs_from_prev_stage: str = None,
                                input_folder: str = 'INPUT_FOLDER',
@@ -67,7 +67,7 @@ def generate_inference_command_on_Ts(dataset_name_or_id: Union[int, str], config
     return predict_command
 
 def generate_inference_command(dataset_name_or_id: Union[int, str], configuration_name: str,
-                               plans_identifier: str = 'nnDosePlans', trainer_name: str = 'nnUNetTrainer',
+                               plans_identifier: str = 'nnDosePlans', trainer_name: str = 'nnDoseTrainer',
                                folds: Union[List[int], Tuple[int, ...]] = (0, 1, 2, 3, 4),
                                folder_with_segs_from_prev_stage: str = None,
                                input_folder: str = 'INPUT_FOLDER',
@@ -289,8 +289,8 @@ def find_best_configuration_entry_point():
                         help='List of plan identifiers. Default: nnDosePlans')
     parser.add_argument('-c', nargs='+', required=False, default=['2d', '3d_fullres', '3d_lowres'],
                         help="List of configurations. Default: ['2d', '3d_fullres', '3d_lowres']")
-    parser.add_argument('-tr', nargs='+', required=False, default=['nnUNetTrainer'],
-                        help='List of trainers. Default: nnUNetTrainer')
+    parser.add_argument('-tr', nargs='+', required=False, default=['nnDoseTrainer'],
+                        help='List of trainers. Default: nnDoseTrainer')
     parser.add_argument('-np', required=False, default=default_num_processes, type=int,
                         help='Number of processes to use for ensembling, postprocessing etc')
     parser.add_argument('-f', nargs='+', type=int, default=(0, 1, 2, 3, 4),
@@ -324,8 +324,8 @@ def accumulate_crossval_results_entry_point():
                         help='Folds to use. Default: 0 1 2 3 4')
     parser.add_argument('-p', type=str, required=False, default='nnDosePlans',
                         help='Plan identifier in which to search for the specified configuration. Default: nnDosePlans')
-    parser.add_argument('-tr', type=str, required=False, default='nnUNetTrainer',
-                        help='Trainer class. Default: nnUNetTrainer')
+    parser.add_argument('-tr', type=str, required=False, default='nnDoseTrainer',
+                        help='Trainer class. Default: nnDoseTrainer')
     args = parser.parse_args()
     trained_model_folder = get_output_folder(args.dataset_name_or_id, args.tr, args.p, args.c)
 

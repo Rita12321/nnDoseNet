@@ -5,7 +5,7 @@ from nndosenet.utilities.file_path_utilities import *
 
 def export_pretrained_model(dataset_name_or_id: Union[int, str], output_file: str,
                             configurations: Tuple[str] = ("2d", "3d_lowres", "3d_fullres"),
-                            trainer: str = 'nnUNetTrainer',
+                            trainer: str = 'nnDoseTrainer',
                             plans_identifier: str = 'nnDosePlans',
                             folds: Tuple[int, ...] = (0, 1, 2, 3, 4),
                             strict: bool = True,

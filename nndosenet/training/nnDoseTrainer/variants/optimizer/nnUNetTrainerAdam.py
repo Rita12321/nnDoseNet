@@ -2,10 +2,10 @@ import torch
 from torch.optim import Adam, AdamW
 
 from nndosenet.training.lr_scheduler.polylr import PolyLRScheduler
-from nndosenet.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
+from nndosenet.training.nnDoseTrainer.nnDoseTrainer import nnDoseTrainer
 
 
-class nnUNetTrainerAdam(nnUNetTrainer):
+class nnUNetTrainerAdam(nnDoseTrainer):
     def configure_optimizers(self):
         optimizer = AdamW(self.network.parameters(),
                           lr=self.initial_lr,
@@ -17,7 +17,7 @@ class nnUNetTrainerAdam(nnUNetTrainer):
         return optimizer, lr_scheduler
 
 
-class nnUNetTrainerVanillaAdam(nnUNetTrainer):
+class nnUNetTrainerVanillaAdam(nnDoseTrainer):
     def configure_optimizers(self):
         optimizer = Adam(self.network.parameters(),
                          lr=self.initial_lr,

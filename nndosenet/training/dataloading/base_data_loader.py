@@ -3,13 +3,13 @@ from typing import Union, Tuple
 from batchgenerators.dataloading.data_loader import DataLoader
 import numpy as np
 from batchgenerators.utilities.file_and_folder_operations import *
-from nndosenet.training.dataloading.nnunet_dataset import nnUNetDataset
+from nndosenet.training.dataloading.nndose_dataset import nnDoseDataset
 from nndosenet.utilities.label_handling.label_handling import LabelManager
 
 
 class nnUNetDataLoaderBase(DataLoader):
     def __init__(self,
-                 data: nnUNetDataset,
+                 data: nnDoseDataset,
                  batch_size: int,
                  patch_size: Union[List[int], Tuple[int, ...], np.ndarray],
                  final_patch_size: Union[List[int], Tuple[int, ...], np.ndarray],
@@ -19,7 +19,7 @@ class nnUNetDataLoaderBase(DataLoader):
                  pad_sides: Union[List[int], Tuple[int, ...], np.ndarray] = None,
                  probabilistic_oversampling: bool = False):
         super().__init__(data, batch_size, 1, None, True, False, True, sampling_probabilities)
-        assert isinstance(data, nnUNetDataset), 'nnUNetDataLoaderBase only supports dictionaries as data'
+        assert isinstance(data, nnDoseDataset), 'nnUNetDataLoaderBase only supports dictionaries as data'
         self.indices = list(data.keys())
         self.oversample_foreground_percent = oversample_foreground_percent
         self.final_patch_size = final_patch_size

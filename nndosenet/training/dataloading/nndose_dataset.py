@@ -8,7 +8,7 @@ from batchgenerators.utilities.file_and_folder_operations import join, load_pick
 from nndosenet.training.dataloading.utils import get_case_identifiers
 
 
-class nnUNetDataset(object):
+class nnDoseDataset(object):
     def __init__(self, folder: str, case_identifiers: List[str] = None,
                  num_images_properties_loading_threshold: int = 0,
                  folder_with_segs_from_previous_stage: str = None):

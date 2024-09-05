@@ -84,11 +84,7 @@ Do not modify this as this is not used. It is just here for your information.
 Special local settings:
 - `inherits_from`: configurations should be able to inherit from each other. This makes it easy to add new configurations that only
 differ in a few local settings from another. If using this, remember to set a new `data_identifier` (if needed)!
-- `previous_stage`:(cascade not avaliable yet) if this configuration is part of a cascade, we need to know what the previous stage (for example 
-the low resolution configuration) was
-- `next_stage`: (cascade not avaliable yet)if this configuration is part of a cascade, we need to know what possible subsequent stages are! This 
-is because we need to export predictions in the correct spacing when running the validation. `next_stage` can either 
-be a string or a list of strings
+
 
 ***New local setting**: **(plz don't change these)**
 - `mask_channel`: list of channel in input data that is a mask

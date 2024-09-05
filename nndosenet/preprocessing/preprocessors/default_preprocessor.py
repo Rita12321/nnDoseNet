@@ -129,7 +129,7 @@ class DefaultPreprocessor(object):
             # print(all_labels, regions)
             properties['class_locations'] = self._sample_foreground_locations(gt, collect_for_this,
                                                                                    verbose=self.verbose)
-            gt = self.modify_dose_fn(gt, plans_manager, dataset_json, configuration_manager)
+            #gt = self.modify_dose_fn(gt, plans_manager, dataset_json, configuration_manager)
             
 ## NOTE: changed: having a label call dose  --> np. float32
         if label_manager.dose_label:
@@ -211,6 +211,7 @@ class DefaultPreprocessor(object):
 
     def _normalize(self, data: np.ndarray, gt: np.ndarray, configuration_manager: ConfigurationManager,
                    foreground_intensity_properties_per_channel: dict) -> np.ndarray:
+        
         for c in range(data.shape[0]):
             scheme = configuration_manager.normalization_schemes[c]
             normalizer_class = recursive_find_python_class(join(nndosenet.__path__[0], "preprocessing", "normalization"),
@@ -225,18 +226,16 @@ class DefaultPreprocessor(object):
             
 
     def run(self, dataset_name_or_id: Union[int, str], configuration_name: str, plans_identifier: str,
-            num_processes: int):
-        
-
+            num_processes: int):        
         """
         data identifier = configuration name in plans. EZ.
         """
         dataset_name = maybe_convert_to_dataset_name(dataset_name_or_id)
 
-        assert isdir(join(nnDose_raw, dataset_name)), "The requested dataset could not be found in nnUNet_raw"
+        assert isdir(join(nnDose_raw, dataset_name)), "The requested dataset could not be found in nnDose_raw"
 
         plans_file = join(nnDose_preprocessed, dataset_name, plans_identifier + '.json')
-        assert isfile(plans_file), "Expected plans file (%s) not found. Run corresponding nnUNet_plan_experiment " \
+        assert isfile(plans_file), "Expected plans file (%s) not found. Run corresponding nnDose_plan_experiment " \
                                    "first." % plans_file
         plans = load_json(plans_file)
         plans_manager = PlansManager(plans)
@@ -265,7 +264,7 @@ class DefaultPreprocessor(object):
         # list of lists with image filenames
         image_fnames = create_lists_from_splitted_dataset_folder(join(nnDose_raw, dataset_name, 'imagesTr'), file_ending,
                                                                  identifiers)
-        # list of segmentation filenames
+        # list of ground truth (dose map)  filenames
         dose_fnames = [join(nnDose_raw, dataset_name, 'labelsTr', i + file_ending) for i in identifiers]
 
         # multiprocessing magic.
@@ -276,7 +275,7 @@ class DefaultPreprocessor(object):
                                          ((outfile, infiles, dosefiles, plans_manager, configuration_manager,
                                            dataset_json),)))
             remaining = list(range(len(output_filenames_truncated)))
-            # p is pretty nifti. If we kill workers they just respawn but don't do any work.
+            # p is pretty nifti. If we kill workers they just re-spawn but don't do any work.
             # So we need to store the original pool of workers.
             workers = [j for j in p._pool]
             with tqdm(desc=None, total=len(output_filenames_truncated), disable=self.verbose) as pbar:

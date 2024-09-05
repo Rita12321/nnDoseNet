@@ -25,7 +25,7 @@ from torch._dynamo import OptimizedModule
 
 from nndosenet.configuration import ANISO_THRESHOLD, default_num_processes
 from nndosenet.evaluation.evaluate_predictions import compute_dose_metrics_on_folder
-from nndosenet.inference.export_prediction import export_prediction_from_logits, resample_and_save
+from nndosenet.inference.export_prediction import export_prediction_from_logits
 from nndosenet.inference.predict_from_raw_data import nnUNetPredictor
 from nndosenet.inference.sliding_window_prediction import compute_gaussian
 from nndosenet.paths import nnDose_preprocessed, nnDose_results, nnDose_raw
@@ -43,7 +43,7 @@ from nndosenet.training.data_augmentation.custom_transforms.transforms_for_dummy
     Convert3DTo2DTransform
 from nndosenet.training.dataloading.data_loader_2d import nnUNetDataLoader2D
 from nndosenet.training.dataloading.data_loader_3d import nnUNetDataLoader3D
-from nndosenet.training.dataloading.nnunet_dataset import nnUNetDataset
+from nndosenet.training.dataloading.nndose_dataset import nnDoseDataset
 from nndosenet.training.dataloading.utils import get_case_identifiers, unpack_dataset
 from nndosenet.training.logging.nnunet_logger import nnUNetLogger
 from nndosenet.training.loss.compound_losses import Err_and_DVH_Loss
@@ -59,7 +59,7 @@ from nndosenet.utilities.helpers import empty_cache
 from nndosenet.utilities.label_handling.label_handling import  determine_num_input_channels
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager, ConfigurationManager
 from sklearn.model_selection import KFold
-from torch import autocast, nn
+from torch import nn
 from torch import distributed as dist
 from torch.cuda import device_count
 from torch.cuda.amp import GradScaler
@@ -83,14 +83,11 @@ class nnUNetTrainer(object):
 
         # OK OK I am guilty. But I tried. http://tiny.cc/gzgwuz
         
-        # A bit mean but ... :)
+        # A bit mean but ... :)        
 
         self.is_ddp = dist.is_available() and dist.is_initialized() 
         self.local_rank = 0 if not self.is_ddp else dist.get_rank()
         self.device = device
-        
-
-
         
 
         # print what device we are using
@@ -125,7 +122,6 @@ class nnUNetTrainer(object):
         self.PTV_OAR_BODY = self.configuration_manager.PTV_OAR_BODY
         
 
-
         ### Setting all the folder names. We need to make sure things don't crash in case we are just running
         # inference and some of the folders may not be defined!
         self.preprocessed_dataset_folder_base = join(nnDose_preprocessed, self.plans_manager.dataset_name) \
@@ -139,17 +135,7 @@ class nnUNetTrainer(object):
 
         self.preprocessed_dataset_folder = join(self.preprocessed_dataset_folder_base,
                                                 self.configuration_manager.data_identifier)
-        # unlike the previous nnunet folder_with_segs_from_previous_stage is now part of the plans. For now it has to
-        # be a different configuration in the same plans
-        # IMPORTANT! the mapping must be bijective, so lowres must point to fullres and vice versa (using
-        # "previous_stage" and "next_stage"). Otherwise it won't work!
-        self.is_cascaded = False #self.configuration_manager.previous_stage_name is not None #TODO: cascade not avaliable yet
-        # self.folder_with_segs_from_previous_stage = \
-        #     join(nnDose_results, self.plans_manager.dataset_name,
-        #          self.__class__.__name__ + '__' + self.plans_manager.plans_name + "__" +
-        #          self.configuration_manager.previous_stage_name, 'predicted_next_stage', self.configuration_name) \
-        #         if self.is_cascaded else None
-
+   
         ### Some hyperparameters for you to fiddle with
         self.initial_lr = 1e-2
         self.weight_decay = 3e-5
@@ -161,8 +147,7 @@ class nnUNetTrainer(object):
         ### Dealing with labels/regions
         self.label_manager = self.plans_manager.get_label_manager(dataset_json)
         
-        # labels can either be a list of int (regular training) or a list of tuples of int (region-based training)
-        # needed for predictions. We do sigmoid in case of (overlapping) regions
+        # labels is an image in nnDoseNet that usually is RT dose map but ideally can be any image.
 
         self.num_input_channels = None  # -> self.initialize()
         self.network = None  # -> self._get_network()
@@ -213,8 +198,8 @@ class nnUNetTrainer(object):
                                                            self.num_input_channels,
                                                            enable_deep_supervision=True).to(self.device)
             # compile network for free speedup
-            if ('nnUNet_compile' in os.environ.keys()) and (
-                    os.environ['nnUNet_compile'].lower() in ('true', '1', 't')):
+            if ('nnDose_compile' in os.environ.keys()) and (
+                    os.environ['nnDose_compile'].lower() in ('true', '1', 't')):
                 self.print_to_log_file('Compiling network...')
                 self.network = torch.compile(self.network)
 
@@ -273,7 +258,7 @@ class nnUNetTrainer(object):
                                    num_input_channels,
                                    enable_deep_supervision: bool = True) -> nn.Module:
         """
-        his is where you build the architecture according to the plans. There is no obligation to use
+        here is where you build the architecture according to the plans. There is no obligation to use
         get_network_from_plans, this is just a utility we use for the nnDoseNet default architectures. You can do what
         you want. Even ignore the plans and just return something static (as long as it can process the requested
         patch size)
@@ -281,9 +266,7 @@ class nnUNetTrainer(object):
         This is the function that is called in inference as well! This is needed so that all network architecture
         variants can be loaded at inference time (inference will use the same nnUNetTrainer that was used for
         training, so if you change the network architecture during training by deriving a new trainer class then
-        inference will know about it).
-
-
+        inference will know about it). -by nnU-Net creator
         """
 
         return get_network_from_plans(plans_manager, dataset_json, configuration_manager,
@@ -566,9 +549,9 @@ class nnUNetTrainer(object):
     def do_split(self):
         """
         The default split is a 5 fold CV on all available training cases. nnDoseNet will create a split (it is seeded,
-        so always the same) and save it as splits_final.pkl file in the preprocessed data directory.
+        so always the same) and save it as splits_final.json file in the preprocessed data directory.
         Sometimes you may want to create your own split for various reasons. For this you will need to create your own
-        splits_final.pkl file. If this file is present, nnDoseNet is going to use it and whatever splits are defined in
+        splits_final.json file. If this file is present, nnDoseNet is going to use it and whatever splits are defined in
         it. You can create as many splits in this file as you want. Note that if you define only 4 splits (fold 0-3)
         and then set fold=4 when training (that would be the fifth split), nnDoseNet will print a warning and proceed to
         use a random 80:20 data split.
@@ -581,7 +564,7 @@ class nnUNetTrainer(object):
             val_keys = tr_keys
         else:
             splits_file = join(self.preprocessed_dataset_folder_base, "splits_final.json")
-            dataset = nnUNetDataset(self.preprocessed_dataset_folder, case_identifiers=None,
+            dataset = nnDoseDataset(self.preprocessed_dataset_folder, case_identifiers=None,
                                     num_images_properties_loading_threshold=0,
                                     folder_with_segs_from_previous_stage=None)
             # if the split file does not exist we need to create it
@@ -633,10 +616,10 @@ class nnUNetTrainer(object):
 
         # load the datasets for training and validation. Note that we always draw random samples so we really don't
         # care about distributing training cases across GPUs.
-        dataset_tr = nnUNetDataset(self.preprocessed_dataset_folder, tr_keys,
+        dataset_tr = nnDoseDataset(self.preprocessed_dataset_folder, tr_keys,
                                    folder_with_segs_from_previous_stage=None,
                                    num_images_properties_loading_threshold=0)
-        dataset_val = nnUNetDataset(self.preprocessed_dataset_folder, val_keys,
+        dataset_val = nnDoseDataset(self.preprocessed_dataset_folder, val_keys,
                                     folder_with_segs_from_previous_stage=None,
                                     num_images_properties_loading_threshold=0)
         return dataset_tr, dataset_val
@@ -663,13 +646,13 @@ class nnUNetTrainer(object):
             patch_size, rotation_for_DA, deep_supervision_scales, mirror_axes, do_dummy_2d_data_aug,
             order_resampling_data=0, order_resampling_seg=0,#3,0
             use_mask_for_norm=self.configuration_manager.use_mask_for_norm,
-            is_cascaded=self.is_cascaded, foreground_labels=self.label_manager.foreground_labels,
+            is_cascaded=False, foreground_labels=self.label_manager.foreground_labels,
             regions = None,
             ignore_label=None,mask_channel=self.configuration_manager.mask_channel,PTV_OAR_BODY=self.configuration_manager.PTV_OAR_BODY)
 
         # validation pipeline
         val_transforms = self.get_validation_transforms(deep_supervision_scales,
-                                                        is_cascaded=self.is_cascaded,
+                                                        is_cascaded=False,
                                                         foreground_labels=self.label_manager.foreground_labels,
                                                         regions=None,
                                                         ignore_label=None
@@ -1161,7 +1144,7 @@ class nnUNetTrainer(object):
             if self.is_ddp:
                 val_keys = val_keys[self.local_rank:: dist.get_world_size()]
 
-            dataset_val = nnUNetDataset(self.preprocessed_dataset_folder, val_keys,
+            dataset_val = nnDoseDataset(self.preprocessed_dataset_folder, val_keys,
                                         folder_with_segs_from_previous_stage=None,
                                         num_images_properties_loading_threshold=0)
 

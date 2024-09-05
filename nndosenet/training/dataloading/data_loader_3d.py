@@ -1,6 +1,6 @@
 import numpy as np
 from nndosenet.training.dataloading.base_data_loader import nnUNetDataLoaderBase
-from nndosenet.training.dataloading.nnunet_dataset import nnUNetDataset
+from nndosenet.training.dataloading.nndose_dataset import nnDoseDataset
 class nnUNetDataLoader3D(nnUNetDataLoaderBase):
    
     def generate_train_batch(self):

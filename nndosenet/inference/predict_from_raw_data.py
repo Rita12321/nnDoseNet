@@ -105,7 +105,7 @@ class nnUNetPredictor(object):
         self.trainer_name = trainer_name
         self.allowed_mirroring_axes = inference_allowed_mirroring_axes
         self.label_manager = plans_manager.get_label_manager(dataset_json)
-        if ('nnUNet_compile' in os.environ.keys()) and (os.environ['nnUNet_compile'].lower() in ('true', '1', 't')) \
+        if ('nnDose_compile' in os.environ.keys()) and (os.environ['nnDose_compile'].lower() in ('true', '1', 't')) \
                 and not isinstance(self.network, OptimizedModule):
             print('compiling network')
             self.network = torch.compile(self.network)
@@ -125,7 +125,7 @@ class nnUNetPredictor(object):
         self.trainer_name = trainer_name
         self.allowed_mirroring_axes = inference_allowed_mirroring_axes
         self.label_manager = plans_manager.get_label_manager(dataset_json)
-        if ('nnUNet_compile' in os.environ.keys()) and (os.environ['nnUNet_compile'].lower() in ('true', '1', 't')) \
+        if ('nnDose_compile' in os.environ.keys()) and (os.environ['nnDose_compile'].lower() in ('true', '1', 't')) \
                 and not isinstance(self.network, OptimizedModule):
             print('compiling network')
             self.network = torch.compile(self.network)
@@ -142,11 +142,11 @@ class nnUNetPredictor(object):
 
     def _manage_input_and_output_lists(self, list_of_lists_or_source_folder: Union[str, List[List[str]]],
                                        output_folder_or_list_of_truncated_output_files: Union[None, str, List[str]],
-                                       folder_with_segs_from_prev_stage: str = None,
+                                       folder_with_gt_from_prev_stage: str = None,
                                        overwrite: bool = True,
                                        part_id: int = 0,
-                                       num_parts: int = 1,
-                                       save_probabilities: bool = False):
+                                       num_parts: int = 1):
+        
         if isinstance(list_of_lists_or_source_folder, str):
             list_of_lists_or_source_folder = create_lists_from_splitted_dataset_folder(list_of_lists_or_source_folder,
                                                                                        self.dataset_json['file_ending'])
@@ -163,22 +163,21 @@ class nnUNetPredictor(object):
         else:
             output_filename_truncated = output_folder_or_list_of_truncated_output_files
 
-        seg_from_prev_stage_files = [join(folder_with_segs_from_prev_stage, i + self.dataset_json['file_ending']) if
-                                     folder_with_segs_from_prev_stage is not None else None for i in caseids]
+        gt_from_prev_stage_files = [join(folder_with_gt_from_prev_stage, i + self.dataset_json['file_ending']) if
+                                     folder_with_gt_from_prev_stage is not None else None for i in caseids]
+        
         # remove already predicted files form the lists
         if not overwrite and output_filename_truncated is not None:
             tmp = [isfile(i + self.dataset_json['file_ending']) for i in output_filename_truncated]
-            if save_probabilities:
-                tmp2 = [isfile(i + '.npz') for i in output_filename_truncated]
-                tmp = [i and j for i, j in zip(tmp, tmp2)]
+
             not_existing_indices = [i for i, j in enumerate(tmp) if not j]
 
             output_filename_truncated = [output_filename_truncated[i] for i in not_existing_indices]
             list_of_lists_or_source_folder = [list_of_lists_or_source_folder[i] for i in not_existing_indices]
-            seg_from_prev_stage_files = [seg_from_prev_stage_files[i] for i in not_existing_indices]
+            gt_from_prev_stage_files = [gt_from_prev_stage_files[i] for i in not_existing_indices]
             print(f'overwrite was set to {overwrite}, so I am only working on cases that haven\'t been predicted yet. '
                   f'That\'s {len(not_existing_indices)} cases.')
-        return list_of_lists_or_source_folder, output_filename_truncated, seg_from_prev_stage_files
+        return list_of_lists_or_source_folder, output_filename_truncated, gt_from_prev_stage_files
 
     def predict_from_files(self,
                            list_of_lists_or_source_folder: Union[str, List[List[str]]],

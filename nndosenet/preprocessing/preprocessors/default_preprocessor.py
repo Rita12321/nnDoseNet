@@ -116,31 +116,17 @@ class DefaultPreprocessor(object):
             # with a LabelManager Instance in this function because that's all its used for. Dunno what's better.
             # LabelManager is pretty light computation-wise.
             
-            #label_manager = plans_manager.get_label_manager(dataset_json)#call before if has_seg
-            # collect_for_this = label_manager.foreground_regions if label_manager.has_regions \
-            #     else label_manager.foreground_labels
-            collect_for_this = label_manager.foreground_labels
-            # when using the ignore label we want to sample only from annotated regions. Therefore we also need to
-            # collect samples uniformly from all classes (incl background)
-            # if label_manager.has_ignore_label:
-            #     collect_for_this.append(label_manager.all_labels)
 
-            # no need to filter background in regions because it is already filtered in handle_labels
-            # print(all_labels, regions)
+            collect_for_this = label_manager.foreground_labels
+
             properties['class_locations'] = self._sample_foreground_locations(gt, collect_for_this,
                                                                                    verbose=self.verbose)
             #gt = self.modify_dose_fn(gt, plans_manager, dataset_json, configuration_manager)
             
 ## NOTE: changed: having a label call dose  --> np. float32
-        if label_manager.dose_label:
-            #print("doselabel")
-            gt = gt.astype(np.float32)
-        elif np.max(gt) > 127:
-            #print("seg????>127")
-            gt = gt.astype(np.int16)
-        else:
-            #print("are you kidding? ")
-            gt = gt.astype(np.int8)
+        
+        gt = gt.astype(np.float32)
+            
         return data, gt
 
     def run_case(self, image_files: List[str], dose_file: Union[str, None], plans_manager: PlansManager,

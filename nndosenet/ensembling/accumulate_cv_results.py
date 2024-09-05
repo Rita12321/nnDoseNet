@@ -64,6 +64,5 @@ def accumulate_cv_results(trained_model_folder,
                                   rw,
                                   dataset_json['file_ending'],
                                   structure_json,
-                                  None,
                                   label_manager.dose_label,
                                   num_processes)

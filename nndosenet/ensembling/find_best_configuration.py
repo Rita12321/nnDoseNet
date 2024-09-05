@@ -150,7 +150,6 @@ def find_best_configuration(dataset_name_or_id,
                                           rw,
                                           dataset_json['file_ending'],
                                           structure_json['structure_label'],
-                                          None,
                                           num_processes)
                 all_results[identifier] = \
                     {

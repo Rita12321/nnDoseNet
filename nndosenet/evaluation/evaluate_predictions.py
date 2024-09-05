@@ -149,7 +149,6 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
                                    image_reader_writer: BaseReaderWriter,
                                    file_ending: str,
                                    structure_df: Union[List[int], List[Union[int, Tuple[int, ...]]]],
-                                   ignore_label: int = None,
                                    dose_label:bool=True,
                                    num_processes: int = 8,
                                    chill: bool = True,ptv_oar=[1,2],raw_folder=False,patient_csv=None) -> dict:
@@ -215,7 +214,7 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
             means[m] = np.nanmean(i['metrics'][m] )
             if m in image_prescription_compare_list:
                 means[m]
-                if i['metrics'][m] < i['prescription']*1.07:
+                if i['metrics'][m] <= i['prescription']*1.07:
                     count_107 += 1
                     count_105 += 1
         if m in image_prescription_compare_list:
@@ -240,7 +239,7 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
                 for r in results:
                     try:
                         if m in target_prescription_compare_list:
-                            if r[typ][c][m] > float(means[typ][c]["input_label"]):
+                            if r[typ][c][m] >= float(means[typ][c]["input_label"]):
                                 count += 1
                 
                         temp_list.append(r[typ][c][m])
@@ -293,7 +292,7 @@ def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_inp
 
     compute_dose_metrics_on_folder(folder_ref, folder_pred, folder_input, output_file, 
                                    rw, file_ending,structure_json,
-                                   num_processes=num_processes,ignore_label=None,dose_label=True, chill=chill,
+                                   num_processes=num_processes,dose_label=True, chill=chill,
                               raw_folder=raw_folder,patient_csv=patient_csv)
 
     
@@ -342,7 +341,6 @@ if __name__ == '__main__':
                               image_reader_writer,
                               file_ending,
                               structure_json,
-                              ignore_label,
                               dose_label,
                               num_processes,raw_folder=True,patient_csv=patient_csv)
     

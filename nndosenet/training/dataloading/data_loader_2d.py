@@ -49,7 +49,7 @@ class nnUNetDataLoader2D(nnUNetDataLoaderBase):
             # this needs to be a separate variable because we could otherwise permanently overwrite
             # properties['class_locations']
             # selected_class_or_region is:
-            # - None if we do not have an ignore label and force_fg is False OR if force_fg is True but there is no foreground in the image
+            # - None if we do not have an  label and force_fg is False OR if force_fg is Trignoreue but there is no foreground in the image
             # - A tuple of all (non-ignore) labels if there is an ignore label and force_fg is False
             # - a class or region if force_fg is True
             class_locations = {

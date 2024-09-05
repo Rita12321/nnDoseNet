@@ -1231,7 +1231,6 @@ class nnUNetTrainer(object):
                                                 image_reader_writer=self.plans_manager.image_reader_writer_class(),
                                                 file_ending=self.dataset_json["file_ending"],
                                                 structure_df=structure_json,
-                                                ignore_label=None,
                                                 dose_label=self.label_manager.dose_label,
                                                 chill=True)
             self.print_to_log_file("Validation complete", also_print_to_console=True)

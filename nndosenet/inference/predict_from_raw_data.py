@@ -178,7 +178,6 @@ class nnUNetPredictor(object):
     def predict_from_files(self,
                            list_of_lists_or_source_folder: Union[str, List[List[str]]],
                            output_folder_or_list_of_truncated_output_files: Union[str, None, List[str]],
-                           save_probabilities: bool = False,
                            overwrite: bool = True,
                            num_processes_preprocessing: int = default_num_processes,
                            num_processes_segmentation_export: int = default_num_processes,
@@ -217,8 +216,7 @@ class nnUNetPredictor(object):
         list_of_lists_or_source_folder, output_filename_truncated = \
             self._manage_input_and_output_lists(list_of_lists_or_source_folder,
                                                 output_folder_or_list_of_truncated_output_files,
-                                                overwrite, part_id, num_parts,
-                                                save_probabilities)
+                                                overwrite, part_id, num_parts)
         if len(list_of_lists_or_source_folder) == 0:
             return
 
@@ -226,7 +224,7 @@ class nnUNetPredictor(object):
                                                                                  output_filename_truncated,
                                                                                  num_processes_preprocessing)
 
-        return self.predict_from_data_iterator(data_iterator, save_probabilities, num_processes_segmentation_export)
+        return self.predict_from_data_iterator(data_iterator, num_processes_segmentation_export)
 
     def _internal_get_data_iterator_from_lists_of_filenames(self,
                                                             input_list_of_lists: List[List[str]],
@@ -273,17 +271,15 @@ class nnUNetPredictor(object):
     #                                     properties_or_list_of_properties: Union[dict, List[dict]],
     #                                     truncated_ofname: Union[str, List[str], None],
     #                                     num_processes: int = 3,
-    #                                     save_probabilities: bool = False,
     #                                     num_processes_segmentation_export: int = default_num_processes):
     #     iterator = self.get_data_iterator_from_raw_npy_data(image_or_list_of_images,
     #                                                         properties_or_list_of_properties,
     #                                                         truncated_ofname,
     #                                                         num_processes)
-    #     return self.predict_from_data_iterator(iterator, save_probabilities, num_processes_segmentation_export)
+    #     return self.predict_from_data_iterator(iterator, num_processes_segmentation_export)
 
     def predict_from_data_iterator(self,
                                    data_iterator,
-                                   save_probabilities: bool = False,
                                    num_processes_segmentation_export: int = default_num_processes):
         """
         each element returned by data_iterator must be a dict with 'data', 'ofile' and 'data_properites' keys!
@@ -323,28 +319,26 @@ class nnUNetPredictor(object):
                 if ofile is not None:
                     # this needs to go into background processes
                     # export_prediction_from_logits(prediction, properties, configuration_manager, plans_manager,
-                    #                               dataset_json, ofile, save_probabilities)
+                    #                               dataset_json, ofile)
                     print('sending off prediction to background worker for resampling and export')
                     r.append(
                         export_pool.starmap_async(
                             export_prediction_from_logits,
                             ((prediction, properties, self.configuration_manager, self.plans_manager,
-                              self.dataset_json, ofile, save_probabilities),)
+                              self.dataset_json, ofile),)
                         )
                     )
                 else:
                     # convert_predicted_logits_to_segmentation_with_correct_shape(prediction, plans_manager,
                     #                                                             configuration_manager, label_manager,
-                    #                                                             properties,
-                    #                                                             save_probabilities)
+                    #                                                             properties)
                     print('sending off prediction to background worker for resampling')
                     r.append(
                         export_pool.starmap_async(
                             convert_predicted_logits_to_segmentation_with_correct_shape, (
                                 (prediction, self.plans_manager,
                                  self.configuration_manager, self.label_manager,
-                                 properties,
-                                 save_probabilities),)
+                                 properties),)
                         )
                     )
                 if ofile is not None:
@@ -661,9 +655,6 @@ def predict_entry_point():
                              'but less accurate inference. Not recommended.')
     parser.add_argument('--verbose', action='store_true', help="Set this if you like being talked to. You will have "
                                                                "to be a good listener/reader.")
-    parser.add_argument('--dont_save_probabilities', action='store_false',
-                        help='Set this to export predicted class "probabilities". Required if you want to ensemble '
-                             'multiple configurations.')
     parser.add_argument('--continue_prediction', action='store_true',
                         help='Continue an aborted previous prediction (will not overwrite existing files)')
     parser.add_argument('-chk', type=str, required=False, default='checkpoint_final.pth',
@@ -726,7 +717,7 @@ def predict_entry_point():
         args.f,
         checkpoint_name=args.chk
     )
-    predictor.predict_from_files(args.i, args.o, save_probabilities=args.save_probabilities,
+    predictor.predict_from_files(args.i, args.o, 
                                  overwrite=not args.continue_prediction,
                                  num_processes_preprocessing=args.npp,
                                  num_processes_segmentation_export=args.nps,
@@ -763,9 +754,6 @@ def predict_Ts_entry_point():
                              'but less accurate inference. Not recommended.')
     parser.add_argument('--verbose', action='store_true', help="Set this if you like being talked to. You will have "
                                                                "to be a good listener/reader.")
-    parser.add_argument('--dont_save_probabilities', action='store_false',
-                        help='Set this to export predicted class "probabilities". Required if you want to ensemble '
-                             'multiple configurations.')
     parser.add_argument('--continue_prediction', action='store_true',
                         help='Continue an aborted previous prediction (will not overwrite existing files)')
     parser.add_argument('-chk', type=str, required=False, default='checkpoint_final.pth',
@@ -839,7 +827,7 @@ def predict_Ts_entry_point():
         args.f,
         checkpoint_name=args.chk
     )
-    predictor.predict_from_files(input_folder, output_folder, save_probabilities=not args.dont_save_probabilities,
+    predictor.predict_from_files(input_folder, output_folder, 
                                  overwrite=not args.continue_prediction,
                                  num_processes_preprocessing=args.npp,
                                  num_processes_segmentation_export=args.nps,

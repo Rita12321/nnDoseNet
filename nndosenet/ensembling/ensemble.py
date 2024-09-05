@@ -36,8 +36,7 @@ def merge_files(list_of_files,
                 output_filename_truncated: str,
                 output_file_ending: str,
                 image_reader_writer: BaseReaderWriter,
-                label_manager: LabelManager#,
-                # save_probabilities: bool = False
+                label_manager: LabelManager
                 ):
     
     probabilities,properties = average_probabilities(list_of_files,image_reader_writer)

@@ -107,7 +107,7 @@ def cleanup_ddp():
     dist.destroy_process_group()
 
 
-def run_ddp(rank, dataset_name_or_id, configuration, fold, tr, p,loss_mode, epoch_num,use_compressed, disable_checkpointing, c, val, pretrained_weights, npz, world_size):
+def run_ddp(rank, dataset_name_or_id, configuration, fold, tr, p,use_compressed, disable_checkpointing, c, val, pretrained_weights, world_size):
     setup_ddp(rank, world_size)
     torch.cuda.set_device(torch.device('cuda', dist.get_rank()))
 
@@ -128,7 +128,7 @@ def run_ddp(rank, dataset_name_or_id, configuration, fold, tr, p,loss_mode, epoc
     if not val:
         nnunet_trainer.run_training()
 
-    nnunet_trainer.perform_actual_validation(npz)
+    nnunet_trainer.perform_actual_validation()
     cleanup_ddp()
 
 
@@ -139,7 +139,6 @@ def run_training(dataset_name_or_id: Union[str, int],
                  pretrained_weights: Optional[str] = None,
                  num_gpus: int = 1,
                  use_compressed_data: bool = False,
-                 export_validation_probabilities: bool = False,
                  continue_training: bool = False,
                  only_run_validation: bool = False,
                  disable_checkpointing: bool = False,
@@ -173,7 +172,6 @@ def run_training(dataset_name_or_id: Union[str, int],
                      continue_training,
                      only_run_validation,
                      pretrained_weights,
-                     export_validation_probabilities,
                      num_gpus),
                  nprocs=num_gpus,
                  join=True)
@@ -195,7 +193,7 @@ def run_training(dataset_name_or_id: Union[str, int],
         if not only_run_validation:
             nnunet_trainer.run_training()
 
-        nnunet_trainer.perform_actual_validation(export_validation_probabilities)
+        nnunet_trainer.perform_actual_validation()
 
 
 def run_training_entry():
@@ -250,7 +248,7 @@ def run_training_entry():
         device = torch.device('mps')
 
     run_training(args.dataset_name_or_id, args.configuration, args.fold, args.tr, args.p,args.pretrained_weights,
-                 args.num_gpus, args.use_compressed, False, args.c, args.val, args.disable_checkpointing,
+                 args.num_gpus, args.use_compressed, args.c, args.val, args.disable_checkpointing,
                  device=device)
 
 

@@ -1105,7 +1105,7 @@ class nnUNetTrainer(object):
             if checkpoint['grad_scaler_state'] is not None:
                 self.grad_scaler.load_state_dict(checkpoint['grad_scaler_state'])
 
-    def perform_actual_validation(self, save_probabilities: bool = False):
+    def perform_actual_validation(self):
         self.set_deep_supervision_enabled(False)
         self.network.eval()
 
@@ -1172,14 +1172,14 @@ class nnUNetTrainer(object):
                     segmentation_export_pool.starmap_async(
                         export_prediction_from_logits, (
                             (prediction, properties, self.configuration_manager, self.plans_manager,
-                             self.dataset_json, output_filename_truncated, save_probabilities),
+                             self.dataset_json, output_filename_truncated),
                         )
                     )
                 )
                 '''
                 # for debug purposes
                 # export_prediction(prediction_for_export, properties, self.configuration, self.plans, self.dataset_json,
-                #              output_filename_truncated, save_probabilities)
+                #              output_filename_truncated)
 
                 # if needed, export the prediction for the next stage
                 # if next_stages is not None:

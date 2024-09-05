@@ -17,7 +17,6 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
                                                                 configuration_manager: ConfigurationManager,
                                                                 label_manager: LabelManager,
                                                                 properties_dict: dict,
-                                                                return_probabilities: bool = False,
                                                                 num_threads_torch: int = default_num_processes):
     
     old_threads = torch.get_num_threads()
@@ -65,51 +64,39 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
 
     # revert transpose
     segmentation_reverted_cropping = segmentation_reverted_cropping.transpose(plans_manager.transpose_backward)
-    if return_probabilities:
-        # revert cropping
-        predicted_probabilities = label_manager.revert_cropping_on_probabilities(predicted_probabilities,
-                                                                                 properties_dict[
-                                                                                     'bbox_used_for_cropping'],
-                                                                                 properties_dict[
-                                                                                     'shape_before_cropping'])
-        predicted_probabilities = predicted_probabilities.cpu().numpy()
-        # revert transpose
-        predicted_probabilities = predicted_probabilities.transpose([0] + [i + 1 for i in
-                                                                           plans_manager.transpose_backward])
-        torch.set_num_threads(old_threads)   
-        return segmentation_reverted_cropping, predicted_probabilities
+    # if return_probabilities:
+    #     # revert cropping
+    #     predicted_probabilities = label_manager.revert_cropping_on_probabilities(predicted_probabilities,
+    #                                                                              properties_dict[
+    #                                                                                  'bbox_used_for_cropping'],
+    #                                                                              properties_dict[
+    #                                                                                  'shape_before_cropping'])
+    #     predicted_probabilities = predicted_probabilities.cpu().numpy()
+    #     # revert transpose
+    #     predicted_probabilities = predicted_probabilities.transpose([0] + [i + 1 for i in
+    #                                                                        plans_manager.transpose_backward])
+    #     torch.set_num_threads(old_threads)   
+    #     return segmentation_reverted_cropping, predicted_probabilities
 
-    else:
-        torch.set_num_threads(old_threads)
-        return segmentation_reverted_cropping
+    # else:
+    #     torch.set_num_threads(old_threads)
+    return segmentation_reverted_cropping
 
 
 def export_prediction_from_logits(predicted_array_or_file: Union[np.ndarray, torch.Tensor], properties_dict: dict,
                                   configuration_manager: ConfigurationManager,
                                   plans_manager: PlansManager,
-                                  dataset_json_dict_or_file: Union[dict, str], output_file_truncated: str,
-                                  save_probabilities: bool = False):
+                                  dataset_json_dict_or_file: Union[dict, str], output_file_truncated: str):
 
     if isinstance(dataset_json_dict_or_file, str):
         dataset_json_dict_or_file = load_json(dataset_json_dict_or_file)
 
     label_manager = plans_manager.get_label_manager(dataset_json_dict_or_file)
     segmentation_final = convert_predicted_logits_to_segmentation_with_correct_shape(
-        predicted_array_or_file, plans_manager, configuration_manager, label_manager, properties_dict,
-        return_probabilities=save_probabilities
+        predicted_array_or_file, plans_manager, configuration_manager, label_manager, properties_dict
     )
     del predicted_array_or_file
 
-    # save
-    # if save_probabilities:
-    #     segmentation_final, probabilities_final = ret
-    #     # np.savez_compressed(output_file_truncated + '.npz', probabilities=probabilities_final)
-    #     # save_pickle(properties_dict, output_file_truncated + '.pkl')
-    #     segmentation_final=probabilities_final.squeeze()
-    #     del probabilities_final, ret
-    # else:
-    # segmentation_final = ret
-    # del ret
 
     rw = plans_manager.image_reader_writer_class()
 

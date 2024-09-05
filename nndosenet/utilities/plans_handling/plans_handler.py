@@ -203,17 +203,6 @@ class ConfigurationManager(object):
     def batch_dice(self) -> bool:
         return self.configuration['batch_dice']
 
-    # @property
-    # def next_stage_names(self) -> Union[List[str], None]:
-    #     ret = self.configuration.get('next_stage')
-    #     if ret is not None:
-    #         if isinstance(ret, str):
-    #             ret = [ret]
-    #     return ret
-
-    # @property
-    # def previous_stage_name(self) -> Union[str, None]:
-    #     return self.configuration.get('previous_stage')
 
 
 class PlansManager(object):

@@ -160,8 +160,7 @@ def nii2dcm_and_gamma_analysis_Ts_entry_point():
     parser.add_argument('-name', type=str, required=False, help='Dataset Name')
     parser.add_argument('-c', required=False, default=['2d', '3d_fullres', '3d_lowres'], nargs='+',
                         help='[OPTIONAL] Configurations for which the evaluation should be run. Default: 2d 3f_fullres '
-                            '3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data '
-                            'from 3d_fullres. Configurations that do not exist for some dataset will be skipped.')    
+                            '3d_lowres.  Configurations that do not exist for some dataset will be skipped.')    
     parser.add_argument('-csv', type=str, required=False, default=None, help='csv conversion list of patient_num nifti folder \
                             and patient folder name in dicom folder, default use the \
                             "[nndose_prediction]/[-name]/Dataset+[-id]}/GroundTruth/patientTs.csv" that is created format and \

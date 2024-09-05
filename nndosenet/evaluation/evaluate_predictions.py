@@ -325,7 +325,7 @@ def evaluate_folder_entry_point():
 
 if __name__ == '__main__':
     #I know I spelled prediction wrong when i am naming my project folder....
-    #but I have too many code using abs path that i can't changed it.Please don't laugh ><
+    #but I have too many code using abs path that i can't changed it.Please don't laugh at me ><
     folder_ref = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/GroundTruth/labelsTs'
     folder_pred = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/Prediction'
     folder_input = '/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom/openkbp/Ts'

@@ -565,8 +565,7 @@ class nnUNetTrainer(object):
         else:
             splits_file = join(self.preprocessed_dataset_folder_base, "splits_final.json")
             dataset = nnDoseDataset(self.preprocessed_dataset_folder, case_identifiers=None,
-                                    num_images_properties_loading_threshold=0,
-                                    folder_with_segs_from_previous_stage=None)
+                                    num_images_properties_loading_threshold=0)
             # if the split file does not exist we need to create it
             if not isfile(splits_file):
                 self.print_to_log_file("Creating new 5-fold cross-validation split...")
@@ -617,11 +616,11 @@ class nnUNetTrainer(object):
         # load the datasets for training and validation. Note that we always draw random samples so we really don't
         # care about distributing training cases across GPUs.
         dataset_tr = nnDoseDataset(self.preprocessed_dataset_folder, tr_keys,
-                                   folder_with_segs_from_previous_stage=None,
                                    num_images_properties_loading_threshold=0)
+        
         dataset_val = nnDoseDataset(self.preprocessed_dataset_folder, val_keys,
-                                    folder_with_segs_from_previous_stage=None,
                                     num_images_properties_loading_threshold=0)
+        
         return dataset_tr, dataset_val
 
     def get_dataloaders(self):
@@ -646,17 +645,11 @@ class nnUNetTrainer(object):
             patch_size, rotation_for_DA, deep_supervision_scales, mirror_axes, do_dummy_2d_data_aug,
             order_resampling_data=0, order_resampling_seg=0,#3,0
             use_mask_for_norm=self.configuration_manager.use_mask_for_norm,
-            is_cascaded=False, foreground_labels=self.label_manager.foreground_labels,
-            regions = None,
-            ignore_label=None,mask_channel=self.configuration_manager.mask_channel,PTV_OAR_BODY=self.configuration_manager.PTV_OAR_BODY)
+            mask_channel=self.configuration_manager.mask_channel,PTV_OAR_BODY=self.configuration_manager.PTV_OAR_BODY)
 
         # validation pipeline
         val_transforms = self.get_validation_transforms(deep_supervision_scales,
-                                                        is_cascaded=False,
-                                                        foreground_labels=self.label_manager.foreground_labels,
-                                                        regions=None,
-                                                        ignore_label=None
-                                                        ,mask_channel=self.configuration_manager.mask_channel)
+                                                        mask_channel=self.configuration_manager.mask_channel)
         
   
         dl_tr, dl_val = self.get_plain_dataloaders(initial_patch_size, dim)
@@ -722,10 +715,6 @@ class nnUNetTrainer(object):
                                 order_resampling_seg: int = 0,# NOTE: changed order 3-->0
                                 border_val_seg: int = -1,
                                 use_mask_for_norm: List[bool] = None,
-                                is_cascaded: bool = False,
-                                foreground_labels: Union[Tuple[int, ...], List[int]] = None,
-                                regions: List[Union[List[int], Tuple[int, ...], int]] = None,
-                                ignore_label: int = None,
                                 mask_channel=None,
                                 PTV_OAR_BODY=None) -> AbstractTransform:
         
@@ -746,7 +735,7 @@ class nnUNetTrainer(object):
             do_rotation=True, angle_x=rotation_for_DA['x'], angle_y=rotation_for_DA['y'], angle_z=rotation_for_DA['z'],
             p_rot_per_axis=1,  # todo experiment with this
             do_scale=True, scale=(0.7, 1.4),
-            border_mode_data="constant", border_cval_data=0, order_data=0,# NOTE:changed order_resampling_data,mode constant-
+            border_mode_data="constant", border_cval_data=0, order_data=order_resampling_data,# NOTE:changed order_resampling_data,mode constant-
             border_mode_seg="constant", border_cval_seg=border_val_seg, order_seg=order_resampling_seg,
             random_crop=False,  # random cropping is part of our dataloaders
             p_el_per_sample=0, p_scale_per_sample=0.2, p_rot_per_sample=0.2,
@@ -804,10 +793,6 @@ class nnUNetTrainer(object):
 
     @staticmethod
     def get_validation_transforms(deep_supervision_scales: Union[List, Tuple],
-                                  is_cascaded: bool = False,
-                                  foreground_labels: Union[Tuple[int, ...], List[int]] = None,
-                                  regions: List[Union[List[int], Tuple[int, ...], int]] = None,
-                                  ignore_label: int = None,
                                   mask_channel=None) -> AbstractTransform:
         val_transforms = []
         val_transforms.append(RemoveLabelTransform(-1, 0))
@@ -818,8 +803,6 @@ class nnUNetTrainer(object):
             val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data_mask',
                                                               output_key='data_mask'))
 
-        # if is_cascaded:
-        #     val_transforms.append(MoveSegAsOneHotToData(1, foreground_labels, 'seg, 'data'))
 
         val_transforms.append(RenameTransform('seg', 'target', True))
 
@@ -1145,7 +1128,6 @@ class nnUNetTrainer(object):
                 val_keys = val_keys[self.local_rank:: dist.get_world_size()]
 
             dataset_val = nnDoseDataset(self.preprocessed_dataset_folder, val_keys,
-                                        folder_with_segs_from_previous_stage=None,
                                         num_images_properties_loading_threshold=0)
 
             # next_stages = self.configuration_manager.next_stage_names
@@ -1163,11 +1145,8 @@ class nnUNetTrainer(object):
                                                      allowed_num_queued=2)
 
                 self.print_to_log_file(f"predicting {k}")
-                data, gt, properties = dataset_val.load_case(k)
-                # if self.is_cascaded: #no cascade just keep for future use
-                #     data = np.vstack((data, convert_labelmap_to_one_hot(seg[-1], self.label_manager.foreground_labels,
-                #                                                    output_dtype=data.dtype)))
-   
+                data, _, properties = dataset_val.load_case(k)
+
                 with warnings.catch_warnings():
                     # ignore 'The given NumPy array is not writable' warning
                     warnings.simplefilter("ignore")

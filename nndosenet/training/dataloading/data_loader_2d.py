@@ -1,6 +1,6 @@
 import numpy as np
 from nndosenet.training.dataloading.base_data_loader import nnUNetDataLoaderBase
-from nndosenet.training.dataloading.nndose_dataset import nnDoseDataset
+
 
 
 class nnUNetDataLoader2D(nnUNetDataLoaderBase):

@@ -10,8 +10,7 @@ from nndosenet.training.dataloading.utils import get_case_identifiers
 
 class nnDoseDataset(object):
     def __init__(self, folder: str, case_identifiers: List[str] = None,
-                 num_images_properties_loading_threshold: int = 0,
-                 folder_with_segs_from_previous_stage: str = None):
+                 num_images_properties_loading_threshold: int = 0):
         """
         This does not actually load the dataset. It merely creates a dictionary where the keys are training case names and
         the values are dictionaries containing the relevant information for that case.
@@ -45,8 +44,6 @@ class nnDoseDataset(object):
             self.dataset[c] = {}
             self.dataset[c]['data_file'] = join(folder, "%s.npz" % c)
             self.dataset[c]['properties_file'] = join(folder, "%s.pkl" % c)
-            # if folder_with_segs_from_previous_stage is not None:
-            #     self.dataset[c]['seg_from_prev_stage_file'] = join(folder_with_segs_from_previous_stage, "%s.npz" % c)
 
         if len(case_identifiers) <= num_images_properties_loading_threshold:
             for i in self.dataset.keys():

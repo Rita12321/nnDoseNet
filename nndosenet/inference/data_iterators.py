@@ -59,7 +59,6 @@ def preprocess_fromfiles_save_to_queue(list_of_lists: List[List[str]],
 
 
 def preprocessing_iterator_fromfiles(list_of_lists: List[List[str]],
-                                     list_of_segs_from_prev_stage_files: Union[None, List[str]],
                                      output_filenames_truncated: Union[None, List[str]],
                                      plans_manager: PlansManager,
                                      dataset_json: dict,
@@ -148,12 +147,12 @@ class PreprocessAdapter(DataLoader):
     def generate_train_batch(self):
         idx = self.get_indices()[0]
         files = self._data[idx][0]
-        seg_prev_stage = self._data[idx][1]
+        # seg_prev_stage = self._data[idx][1]
         ofile = self._data[idx][2]
         # if we have a segmentation from the previous stage we have to process it together with the images so that we
         # can crop it appropriately (if needed). Otherwise it would just be resized to the shape of the data after
         # preprocessing and then there might be misalignments
-        data, seg, data_properites = self.preprocessor.run_case(files, seg_prev_stage, self.plans_manager,
+        data, _, data_properites = self.preprocessor.run_case(files, None, self.plans_manager,
                                                                 self.configuration_manager,
                                                                 self.dataset_json)
         # if seg_prev_stage is not None:
@@ -194,13 +193,13 @@ class PreprocessAdapter(DataLoader):
     def generate_train_batch(self):
         idx = self.get_indices()[0]
         image = self._data[idx][0]
-        seg_prev_stage = self._data[idx][1]
+        # seg_prev_stage = self._data[idx][1]
         props = self._data[idx][2]
         ofname = self._data[idx][3]
         # if we have a segmentation from the previous stage we have to process it together with the images so that we
         # can crop it appropriately (if needed). Otherwise it would just be resized to the shape of the data after
         # preprocessing and then there might be misalignments
-        data, seg = self.preprocessor.run_case_npy(image, seg_prev_stage, props,
+        data, _ = self.preprocessor.run_case_npy(image,None, props,
                                                    self.plans_manager,
                                                    self.configuration_manager,
                                                    self.dataset_json)
@@ -230,9 +229,8 @@ def preprocess_fromnpy_save_to_queue(list_of_images: List[np.ndarray],
         label_manager = plans_manager.get_label_manager(dataset_json)
         preprocessor = configuration_manager.preprocessor_class(verbose=verbose)
         for idx in range(len(list_of_images)):
-            data, gt = preprocessor.run_case_npy(list_of_images[idx],
-                                                  list_of_segs_from_prev_stage[
-                                                      idx] if list_of_segs_from_prev_stage is not None else None,
+            data, _ = preprocessor.run_case_npy(list_of_images[idx],
+                                                  None,
                                                   list_of_image_properties[idx],
                                                   plans_manager,
                                                   configuration_manager,
@@ -261,7 +259,6 @@ def preprocess_fromnpy_save_to_queue(list_of_images: List[np.ndarray],
 
 
 def preprocessing_iterator_fromnpy(list_of_images: List[np.ndarray],
-                                   list_of_segs_from_prev_stage: Union[List[np.ndarray], None],
                                    list_of_image_properties: List[dict],
                                    truncated_ofnames: Union[List[str], None],
                                    plans_manager: PlansManager,
@@ -284,8 +281,6 @@ def preprocessing_iterator_fromnpy(list_of_images: List[np.ndarray],
         pr = context.Process(target=preprocess_fromnpy_save_to_queue,
                      args=(
                          list_of_images[i::num_processes],
-                         list_of_segs_from_prev_stage[
-                         i::num_processes] if list_of_segs_from_prev_stage is not None else None,
                          list_of_image_properties[i::num_processes],
                          truncated_ofnames[i::num_processes] if truncated_ofnames is not None else None,
                          plans_manager,

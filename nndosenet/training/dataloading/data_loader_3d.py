@@ -1,6 +1,6 @@
 import numpy as np
 from nndosenet.training.dataloading.base_data_loader import nnUNetDataLoaderBase
-from nndosenet.training.dataloading.nndose_dataset import nnDoseDataset
+
 class nnUNetDataLoader3D(nnUNetDataLoaderBase):
    
     def generate_train_batch(self):
@@ -46,7 +46,7 @@ class nnUNetDataLoader3D(nnUNetDataLoaderBase):
             
             padding = [(-min(0, bbox_lbs[i]), max(bbox_ubs[i] - shape[i], 0)) for i in range(dim)]
             data_all[j] = np.pad(data, ((0, 0), *padding), 'constant', constant_values=0)#0 
-            gt_all[j] = np.pad(gt, ((0, 0), *padding), 'constant', constant_values=-1)#-1
+            gt_all[j] = np.pad(gt, ((0, 0), *padding), 'constant', constant_values=-1)#
             
 
               

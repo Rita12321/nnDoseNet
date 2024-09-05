@@ -54,7 +54,7 @@ def plan_experiment_dataset(dataset_id: int,
                             overwrite_target_spacing: Optional[Tuple[float, ...]] = None,
                             overwrite_plans_name: Optional[str] = None,dose=False) -> dict:
     """
-    overwrite_target_spacing ONLY applies to 3d_fullres and 3d_cascade fullres!
+    overwrite_target_spacing ONLY applies to 3d_fullres
     """
     kwargs = {}
     if overwrite_plans_name is not None:
@@ -75,7 +75,7 @@ def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str 
                      overwrite_target_spacing: Optional[Tuple[float, ...]] = None,
                      overwrite_plans_name: Optional[str] = None, dose=False):
     """
-    overwrite_target_spacing ONLY applies to 3d_fullres and 3d_cascade fullres(not available yet)!
+    overwrite_target_spacing ONLY applies to 3d_fullres
     """
     
  

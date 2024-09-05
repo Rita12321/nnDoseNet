@@ -45,7 +45,7 @@ class DefaultPreprocessor(object):
         if gt is not None:
             gt = np.copy(gt)
 
-        has_seg = gt is not None
+        has_gt = gt is not None
 
         # apply transpose_forward, this also needs to be applied to the spacing!
         data = data.transpose([0, *[i + 1 for i in plans_manager.transpose_forward]])
@@ -111,7 +111,7 @@ class DefaultPreprocessor(object):
         
 ## NOTE: changed: call label_manager first
         label_manager = plans_manager.get_label_manager(dataset_json)
-        if has_seg:
+        if has_gt:
             # reinstantiating LabelManager for each case is not ideal. We could replace the dataset_json argument
             # with a LabelManager Instance in this function because that's all its used for. Dunno what's better.
             # LabelManager is pretty light computation-wise.

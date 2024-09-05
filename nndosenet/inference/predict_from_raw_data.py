@@ -142,7 +142,6 @@ class nnUNetPredictor(object):
 
     def _manage_input_and_output_lists(self, list_of_lists_or_source_folder: Union[str, List[List[str]]],
                                        output_folder_or_list_of_truncated_output_files: Union[None, str, List[str]],
-                                       folder_with_gt_from_prev_stage: str = None,
                                        overwrite: bool = True,
                                        part_id: int = 0,
                                        num_parts: int = 1):
@@ -163,8 +162,6 @@ class nnUNetPredictor(object):
         else:
             output_filename_truncated = output_folder_or_list_of_truncated_output_files
 
-        gt_from_prev_stage_files = [join(folder_with_gt_from_prev_stage, i + self.dataset_json['file_ending']) if
-                                     folder_with_gt_from_prev_stage is not None else None for i in caseids]
         
         # remove already predicted files form the lists
         if not overwrite and output_filename_truncated is not None:
@@ -174,10 +171,9 @@ class nnUNetPredictor(object):
 
             output_filename_truncated = [output_filename_truncated[i] for i in not_existing_indices]
             list_of_lists_or_source_folder = [list_of_lists_or_source_folder[i] for i in not_existing_indices]
-            gt_from_prev_stage_files = [gt_from_prev_stage_files[i] for i in not_existing_indices]
             print(f'overwrite was set to {overwrite}, so I am only working on cases that haven\'t been predicted yet. '
                   f'That\'s {len(not_existing_indices)} cases.')
-        return list_of_lists_or_source_folder, output_filename_truncated, gt_from_prev_stage_files
+        return list_of_lists_or_source_folder, output_filename_truncated#, gt_from_prev_stage_files
 
     def predict_from_files(self,
                            list_of_lists_or_source_folder: Union[str, List[List[str]]],
@@ -186,7 +182,7 @@ class nnUNetPredictor(object):
                            overwrite: bool = True,
                            num_processes_preprocessing: int = default_num_processes,
                            num_processes_segmentation_export: int = default_num_processes,
-                           folder_with_segs_from_prev_stage: str = None,
+                    
                            num_parts: int = 1,
                            part_id: int = 0):
         """
@@ -215,26 +211,18 @@ class nnUNetPredictor(object):
             # we need these two if we want to do things with the predictions like for example apply postprocessing
             save_json(self.dataset_json, join(output_folder, 'dataset.json'), sort_keys=False)
             save_json(self.plans_manager.plans, join(output_folder, 'plans.json'), sort_keys=False)
-        #######################
 
-        # # check if we need a prediction from the previous stage
-        # if self.configuration_manager.previous_stage_name is not None:
-        #     assert folder_with_segs_from_prev_stage is not None, \
-        #         f'The requested configuration is a cascaded network. It requires the segmentations of the previous ' \
-        #         f'stage ({self.configuration_manager.previous_stage_name}) as input. Please provide the folder where' \
-        #         f' they are located via folder_with_segs_from_prev_stage'
 
         # sort out input and output filenames
-        list_of_lists_or_source_folder, output_filename_truncated, seg_from_prev_stage_files = \
+        list_of_lists_or_source_folder, output_filename_truncated = \
             self._manage_input_and_output_lists(list_of_lists_or_source_folder,
                                                 output_folder_or_list_of_truncated_output_files,
-                                                folder_with_segs_from_prev_stage, overwrite, part_id, num_parts,
+                                                overwrite, part_id, num_parts,
                                                 save_probabilities)
         if len(list_of_lists_or_source_folder) == 0:
             return
 
         data_iterator = self._internal_get_data_iterator_from_lists_of_filenames(list_of_lists_or_source_folder,
-                                                                                 seg_from_prev_stage_files,
                                                                                  output_filename_truncated,
                                                                                  num_processes_preprocessing)
 
@@ -242,66 +230,52 @@ class nnUNetPredictor(object):
 
     def _internal_get_data_iterator_from_lists_of_filenames(self,
                                                             input_list_of_lists: List[List[str]],
-                                                            seg_from_prev_stage_files: Union[List[str], None],
                                                             output_filenames_truncated: Union[List[str], None],
                                                             num_processes: int):
-        return preprocessing_iterator_fromfiles(input_list_of_lists, seg_from_prev_stage_files,
+        return preprocessing_iterator_fromfiles(input_list_of_lists, 
                                                 output_filenames_truncated, self.plans_manager, self.dataset_json,
                                                 self.configuration_manager, num_processes, self.device.type == 'cuda',
                                                 self.verbose_preprocessing)
 
-    def get_data_iterator_from_raw_npy_data(self,
-                                            image_or_list_of_images: Union[np.ndarray, List[np.ndarray]],
-                                            segs_from_prev_stage_or_list_of_segs_from_prev_stage: Union[None,
-                                                                                                        np.ndarray,
-                                                                                                        List[
-                                                                                                            np.ndarray]],
-                                            properties_or_list_of_properties: Union[dict, List[dict]],
-                                            truncated_ofname: Union[str, List[str], None],
-                                            num_processes: int = 3):
+    # def get_data_iterator_from_raw_npy_data(self,
+    #                                         image_or_list_of_images: Union[np.ndarray, List[np.ndarray]],
+    #                                         properties_or_list_of_properties: Union[dict, List[dict]],
+    #                                         truncated_ofname: Union[str, List[str], None],
+    #                                         num_processes: int = 3):
 
-        list_of_images = [image_or_list_of_images] if not isinstance(image_or_list_of_images, list) else \
-            image_or_list_of_images
+    #     list_of_images = [image_or_list_of_images] if not isinstance(image_or_list_of_images, list) else \
+    #         image_or_list_of_images
 
-        if isinstance(segs_from_prev_stage_or_list_of_segs_from_prev_stage, np.ndarray):
-            segs_from_prev_stage_or_list_of_segs_from_prev_stage = [
-                segs_from_prev_stage_or_list_of_segs_from_prev_stage]
 
-        if isinstance(truncated_ofname, str):
-            truncated_ofname = [truncated_ofname]
+    #     if isinstance(truncated_ofname, str):
+    #         truncated_ofname = [truncated_ofname]
 
-        if isinstance(properties_or_list_of_properties, dict):
-            properties_or_list_of_properties = [properties_or_list_of_properties]
+    #     if isinstance(properties_or_list_of_properties, dict):
+    #         properties_or_list_of_properties = [properties_or_list_of_properties]
 
-        num_processes = min(num_processes, len(list_of_images))
-        pp = preprocessing_iterator_fromnpy(
-            list_of_images,
-            segs_from_prev_stage_or_list_of_segs_from_prev_stage,
-            properties_or_list_of_properties,
-            truncated_ofname,
-            self.plans_manager,
-            self.dataset_json,
-            self.configuration_manager,
-            num_processes,
-            self.device.type == 'cuda',
-            self.verbose_preprocessing
-        )
+    #     num_processes = min(num_processes, len(list_of_images))
+    #     pp = preprocessing_iterator_fromnpy(
+    #         list_of_images,
+    #         properties_or_list_of_properties,
+    #         truncated_ofname,
+    #         self.plans_manager,
+    #         self.dataset_json,
+    #         self.configuration_manager,
+    #         num_processes,
+    #         self.device.type == 'cuda',
+    #         self.verbose_preprocessing
+    #     )
 
-        return pp
+    #     return pp
 
     # def predict_from_list_of_npy_arrays(self,
     #                                     image_or_list_of_images: Union[np.ndarray, List[np.ndarray]],
-    #                                     segs_from_prev_stage_or_list_of_segs_from_prev_stage: Union[None,
-    #                                                                                                 np.ndarray,
-    #                                                                                                 List[
-    #                                                                                                     np.ndarray]],
     #                                     properties_or_list_of_properties: Union[dict, List[dict]],
     #                                     truncated_ofname: Union[str, List[str], None],
     #                                     num_processes: int = 3,
     #                                     save_probabilities: bool = False,
     #                                     num_processes_segmentation_export: int = default_num_processes):
     #     iterator = self.get_data_iterator_from_raw_npy_data(image_or_list_of_images,
-    #                                                         segs_from_prev_stage_or_list_of_segs_from_prev_stage,
     #                                                         properties_or_list_of_properties,
     #                                                         truncated_ofname,
     #                                                         num_processes)
@@ -700,8 +674,6 @@ def predict_entry_point():
     parser.add_argument('-nps', type=int, required=False, default=3,
                         help='Number of processes used for segmentation export. More is not always better. Beware of '
                              'out-of-RAM issues. Default: 3')
-    # parser.add_argument('-prev_stage_predictions', type=str, required=False, default=None,
-    #                     help='Folder containing the predictions of the previous stage. Required for cascaded models.')
     parser.add_argument('-num_parts', type=int, required=False, default=1,
                         help='Number of separate nnDoseNet_predict call that you will be making. Default: 1 (= this one '
                              'call predicts everything)')
@@ -758,7 +730,6 @@ def predict_entry_point():
                                  overwrite=not args.continue_prediction,
                                  num_processes_preprocessing=args.npp,
                                  num_processes_segmentation_export=args.nps,
-                                 folder_with_segs_from_prev_stage=None,#TODO: casacade not avaliable yet. args.prev_stage_predictions,
                                  num_parts=args.num_parts,
                                  part_id=args.part_id)
 
@@ -805,8 +776,6 @@ def predict_Ts_entry_point():
     parser.add_argument('-nps', type=int, required=False, default=3,
                         help='Number of processes used for dose map export. More is not always better. Beware of '
                              'out-of-RAM issues. Default: 3')
-    # parser.add_argument('-prev_stage_predictions', type=str, required=False, default=None,
-    #                     help='Folder containing the predictions of the previous stage. Required for cascaded models.')
     parser.add_argument('-num_parts', type=int, required=False, default=1,
                         help='Number of separate nnDoseNet_predict call that you will be making. Default: 1 (= this one '
                              'call predicts everything)')
@@ -874,7 +843,6 @@ def predict_Ts_entry_point():
                                  overwrite=not args.continue_prediction,
                                  num_processes_preprocessing=args.npp,
                                  num_processes_segmentation_export=args.nps,
-                                 folder_with_segs_from_prev_stage=None,#TODO: casacade not avaliable yet. args.prev_stage_predictions,
                                  num_parts=args.num_parts,
                                  part_id=args.part_id)
     

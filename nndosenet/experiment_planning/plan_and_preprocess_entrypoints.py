@@ -53,7 +53,7 @@ def plan_experiment_entry():
                              'models performance! Only use this if you really know what you '
                              'are doing and NEVER use this without running the default nnDoseNet first (as a baseline).')
     parser.add_argument('-overwrite_target_spacing', default=None, nargs='+', required=False,
-                        help='[OPTIONAL] DANGER ZONE! Sets a custom target spacing for the 3d_fullres and 3d_cascade_fullres '
+                        help='[OPTIONAL] DANGER ZONE! Sets a custom target spacing for the 3d_fullres '
                              'configurations. Default: None [no changes]. Changing this will affect image size and '
                              'potentially patch and batch '
                              'size. This will definitely affect your models performance! Only use this if you really '
@@ -152,7 +152,7 @@ def plan_and_preprocess_entry():
                               'models performance! Only use this if you really know what you '
                               'are doing and NEVER use this without running the default nnDoseNet first (as a baseline).')
      parser.add_argument('-overwrite_target_spacing', default=None, nargs='+', required=False,
-                         help='[OPTIONAL] DANGER ZONE! Sets a custom target spacing for the 3d_fullres and 3d_cascade_fullres '
+                         help='[OPTIONAL] DANGER ZONE! Sets a custom target spacing for the 3d_fullres'
                               'configurations. Default: None [no changes]. Changing this will affect image size and '
                               'potentially patch and batch '
                               'size. This will definitely affect your models performance! Only use this if you really '
@@ -169,8 +169,7 @@ def plan_and_preprocess_entry():
 
      parser.add_argument('-c', required=False, default=['2d', '3d_fullres', '3d_lowres'], nargs='+',
                          help='[OPTIONAL] Configurations for which the preprocessing should be run. Default: 2d 3f_fullres '
-                              '3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data '
-                              'from 3f_fullres. Configurations that do not exist for some dataset will be skipped.')
+                              '3d_lowres. Configurations that do not exist for some dataset will be skipped.')
      parser.add_argument('-np', type=int, nargs='+', default=None, required=False,
                          help="[OPTIONAL] Use this to define how many processes are to be used. If this is just one number then "
                               "this number of processes is used for all configurations specified with -c. If it's a "

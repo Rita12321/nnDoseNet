@@ -121,13 +121,7 @@ def resample_and_save(predicted: Union[torch.Tensor, np.ndarray], target_shape: 
                       plans_manager: PlansManager, configuration_manager: ConfigurationManager, properties_dict: dict,
                       dataset_json_dict_or_file: Union[dict, str], num_threads_torch: int = default_num_processes) \
         -> None:
-    # # needed for cascade
-    # if isinstance(predicted, str):
-    #     assert isfile(predicted), "If isinstance(segmentation_softmax, str) then " \
-    #                               "isfile(segmentation_softmax) must be True"
-    #     del_file = deepcopy(predicted)
-    #     predicted = np.load(predicted)
-    #     os.remove(del_file)
+
     old_threads = torch.get_num_threads()
     torch.set_num_threads(num_threads_torch)
 

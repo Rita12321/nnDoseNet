@@ -10,7 +10,7 @@ $DESCRIPTION.
 Please contact $MAINTAINER with any questions.
 
 Build date: $now
-" > cecardenas_docker
+" > nndosenet_docker
 
 docker build --rm --network=host -t $IMAGE --build-arg BUILDDATE=$now --build-arg MAINTAINER="$MAINTAINER" --build-arg DESCRIPTION="$DESCRIPTION" .
 echo $IMAGE > pip_freeze.txt
@@ -21,3 +21,4 @@ docker run --rm $IMAGE conda list >> conda_list.txt
 # rm cecardenas_docker
 # rm -r auto-seg-engine
 # rm -r mri-brain-auto-seg
+docker push $IMAGE

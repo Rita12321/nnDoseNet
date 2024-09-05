@@ -1,7 +1,7 @@
 import numpy as np
 from nndosenet.training.dataloading.base_data_loader import nnUNetDataLoaderBase
 
-class nnUNetDataLoader3D(nnUNetDataLoaderBase):
+class nnDoseDataLoader3D(nnUNetDataLoaderBase):
    
     def generate_train_batch(self):
         selected_keys = self.get_indices()

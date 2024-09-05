@@ -3,7 +3,7 @@ from nndosenet.training.dataloading.base_data_loader import nnUNetDataLoaderBase
 
 
 
-class nnUNetDataLoader2D(nnUNetDataLoaderBase):
+class nnDoseDataLoader2D(nnUNetDataLoaderBase):
     def generate_train_batch(self):
         selected_keys = self.get_indices()
         # preallocate memory for data and seg

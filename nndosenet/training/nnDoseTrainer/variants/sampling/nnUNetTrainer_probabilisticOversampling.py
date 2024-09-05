@@ -2,8 +2,8 @@ from typing import Tuple
 
 import torch
 
-from nndosenet.training.dataloading.data_loader_2d import nnUNetDataLoader2D
-from nndosenet.training.dataloading.data_loader_3d import nnUNetDataLoader3D
+from nndosenet.training.dataloading.data_loader_2d import nnDoseDataLoader2D
+from nndosenet.training.dataloading.data_loader_3d import nnDoseDataLoader3D
 from nndosenet.training.nnDoseTrainer.nnDoseTrainer import nnDoseTrainer
 import numpy as np
 
@@ -28,14 +28,14 @@ class nnUNetTrainer_probabilisticOversampling(nnDoseTrainer):
         dataset_tr, dataset_val = self.get_tr_and_val_datasets()
 
         if dim == 2:
-            dl_tr = nnUNetDataLoader2D(dataset_tr,
+            dl_tr = nnDoseDataLoader2D(dataset_tr,
                                        self.batch_size,
                                        initial_patch_size,
                                        self.configuration_manager.patch_size,
                                        self.label_manager,
                                        oversample_foreground_percent=self.oversample_foreground_percent,
                                        sampling_probabilities=None, pad_sides=None, probabilistic_oversampling=True)
-            dl_val = nnUNetDataLoader2D(dataset_val,
+            dl_val = nnDoseDataLoader2D(dataset_val,
                                         self.batch_size,
                                         self.configuration_manager.patch_size,
                                         self.configuration_manager.patch_size,
@@ -43,14 +43,14 @@ class nnUNetTrainer_probabilisticOversampling(nnDoseTrainer):
                                         oversample_foreground_percent=self.oversample_foreground_percent,
                                         sampling_probabilities=None, pad_sides=None, probabilistic_oversampling=True)
         else:
-            dl_tr = nnUNetDataLoader3D(dataset_tr,
+            dl_tr = nnDoseDataLoader3D(dataset_tr,
                                        self.batch_size,
                                        initial_patch_size,
                                        self.configuration_manager.patch_size,
                                        self.label_manager,
                                        oversample_foreground_percent=self.oversample_foreground_percent,
                                        sampling_probabilities=None, pad_sides=None, probabilistic_oversampling=True)
-            dl_val = nnUNetDataLoader3D(dataset_val,
+            dl_val = nnDoseDataLoader3D(dataset_val,
                                         self.batch_size,
                                         self.configuration_manager.patch_size,
                                         self.configuration_manager.patch_size,

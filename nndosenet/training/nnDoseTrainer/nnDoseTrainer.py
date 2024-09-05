@@ -41,8 +41,8 @@ from nndosenet.training.data_augmentation.custom_transforms.masking import MaskT
 #     ConvertSegmentationToRegionsTransform
 from nndosenet.training.data_augmentation.custom_transforms.transforms_for_dummy_2d import Convert2DTo3DTransform, \
     Convert3DTo2DTransform
-from nndosenet.training.dataloading.data_loader_2d import nnUNetDataLoader2D
-from nndosenet.training.dataloading.data_loader_3d import nnUNetDataLoader3D
+from nndosenet.training.dataloading.data_loader_2d import nnDoseDataLoader2D
+from nndosenet.training.dataloading.data_loader_3d import nnDoseDataLoader3D
 from nndosenet.training.dataloading.nndose_dataset import nnDoseDataset
 from nndosenet.training.dataloading.utils import get_case_identifiers, unpack_dataset
 from nndosenet.training.logging.nnunet_logger import nnUNetLogger
@@ -678,26 +678,26 @@ class nnDoseTrainer(object):
         dataset_tr, dataset_val = self.get_tr_and_val_datasets()
 
         if dim == 2:
-            dl_tr = nnUNetDataLoader2D(dataset_tr, self.batch_size,
+            dl_tr = nnDoseDataLoader2D(dataset_tr, self.batch_size,
                                        initial_patch_size,
                                        self.configuration_manager.patch_size,
                                        self.label_manager,
                                        oversample_foreground_percent=self.oversample_foreground_percent,
                                        sampling_probabilities=None, pad_sides=None)
-            dl_val = nnUNetDataLoader2D(dataset_val, self.batch_size,
+            dl_val = nnDoseDataLoader2D(dataset_val, self.batch_size,
                                         self.configuration_manager.patch_size,
                                         self.configuration_manager.patch_size,
                                         self.label_manager,
                                         oversample_foreground_percent=self.oversample_foreground_percent,
                                         sampling_probabilities=None, pad_sides=None)
         else:
-            dl_tr = nnUNetDataLoader3D(dataset_tr, self.batch_size,
+            dl_tr = nnDoseDataLoader3D(dataset_tr, self.batch_size,
                                        initial_patch_size,
                                        self.configuration_manager.patch_size,
                                        self.label_manager,
                                        oversample_foreground_percent=self.oversample_foreground_percent,
                                        sampling_probabilities=None, pad_sides=None)
-            dl_val = nnUNetDataLoader3D(dataset_val, self.batch_size,
+            dl_val = nnDoseDataLoader3D(dataset_val, self.batch_size,
                                         self.configuration_manager.patch_size,
                                         self.configuration_manager.patch_size,
                                         self.label_manager,

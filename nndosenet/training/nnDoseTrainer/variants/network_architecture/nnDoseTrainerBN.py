@@ -5,8 +5,8 @@ from nndosenet.training.nnDoseTrainer.nnDoseTrainer import nnDoseTrainer
 from nndosenet.utilities.plans_handling.plans_handler import ConfigurationManager, PlansManager
 from torch import nn
 
-
-class nnUNetTrainerBN(nnDoseTrainer):
+# Not used or tested
+class nnDoseTrainerBN(nnDoseTrainer):
     @staticmethod
     def build_network_architecture(plans_manager: PlansManager,
                                    dataset_json,
@@ -28,14 +28,14 @@ class nnUNetTrainerBN(nnDoseTrainer):
         kwargs = {
             'PlainConvUNet': {
                 'conv_bias': True,
-                'norm_op': get_matching_batchnorm(conv_op),
+                'norm_op': get_matching_batchnorm(conv_op), #bn
                 'norm_op_kwargs': {'eps': 1e-5, 'affine': True},
                 'dropout_op': None, 'dropout_op_kwargs': None,
                 'nonlin': nn.LeakyReLU, 'nonlin_kwargs': {'inplace': True},
             },
             'ResidualEncoderUNet': {
                 'conv_bias': True,
-                'norm_op': get_matching_batchnorm(conv_op),
+                'norm_op': get_matching_batchnorm(conv_op),#bn
                 'norm_op_kwargs': {'eps': 1e-5, 'affine': True},
                 'dropout_op': None, 'dropout_op_kwargs': None,
                 'nonlin': nn.LeakyReLU, 'nonlin_kwargs': {'inplace': True},

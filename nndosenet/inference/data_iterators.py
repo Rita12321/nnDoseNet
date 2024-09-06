@@ -10,7 +10,6 @@ import torch
 from batchgenerators.dataloading.data_loader import DataLoader
 
 from nndosenet.preprocessing.preprocessors.default_preprocessor import DefaultPreprocessor
-# from nndosenet.utilities.label_handling.label_handling import convert_labelmap_to_one_hot
 from nndosenet.utilities.plans_handling.plans_handler import PlansManager, ConfigurationManager
 
 
@@ -35,9 +34,6 @@ def preprocess_fromfiles_save_to_queue(list_of_lists: List[List[str]],
                                                                configuration_manager,
                                                                dataset_json)
             
-            # if list_of_segs_from_prev_stage_files is not None and list_of_segs_from_prev_stage_files[idx] is not None:
-            #     seg_onehot = convert_labelmap_to_one_hot(seg[0], label_manager.foreground_labels, data.dtype)
-            #     data = np.vstack((data, seg_onehot))
 
             data = torch.from_numpy(data).contiguous().float()
 
@@ -132,7 +128,7 @@ class PreprocessAdapter(DataLoader):
 
         self.label_manager = plans_manager.get_label_manager(dataset_json)
 
-        # if list_of_segs_from_prev_stage_files is None:
+
         list_of_segs_from_prev_stage_files = [None] * len(list_of_lists)
         if output_filenames_truncated is None:
             output_filenames_truncated = [None] * len(list_of_lists)
@@ -155,9 +151,7 @@ class PreprocessAdapter(DataLoader):
         data, _, data_properites = self.preprocessor.run_case(files, None, self.plans_manager,
                                                                 self.configuration_manager,
                                                                 self.dataset_json)
-        # if seg_prev_stage is not None:
-        #     seg_onehot = convert_labelmap_to_one_hot(seg[0], self.label_manager.foreground_labels, data.dtype)
-        #     data = np.vstack((data, seg_onehot))
+
 
         data = torch.from_numpy(data)
 

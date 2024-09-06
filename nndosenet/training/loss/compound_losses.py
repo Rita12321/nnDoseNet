@@ -4,6 +4,8 @@ from nndosenet.training.loss.DVH_loss import value_DVH_Loss,criteria_DVH_Loss
 from torch import nn
 from torch.nn import MSELoss,L1Loss
 
+
+
 class Err_and_DVH_Loss(nn.Module):
     def __init__(self,losses:list=[MSELoss],kwargs:[{}]=[{}],weights:list=[1], channel_ptv_oar:list=[0,1],dose_mask=None):
         """ 
@@ -46,74 +48,111 @@ class Err_and_DVH_Loss(nn.Module):
         :param target:
         :return:
         """
-
+        net_output=net_output.flatten()
+        target=target.flatten()
+        
         device=data.device
-        losses=torch.tensor(0.).to(device)
-        err_weight=torch.tensor(0.).to(device)
 
+        losses=torch.tensor(0.0,device=device)
+        err_weight=torch.tensor(0.0,device=device)
+        
         if len(self.dvh_losses)>0:
-            if self.channel_ptv_oar == None:
+            if self.channel_ptv_oar is None:
                 for w in  self.weight_dvh:
                     err_weight+=w
-            else:
-                ptv_oar=get_roi_indexs(data, channel_ptv_oar=self.channel_ptv_oar,return_vptv_oar=True)
-                
+            else:          
+                ptv_oar=get_roi_indexs(data, channel_ptv_oar=self.channel_ptv_oar)
+
+                # print("1:",ptv_oar,"\n \n","2:",ptv_oar2,"\n\n ",start.elapsed_time(end)-start2.elapsed_time(end2),"\n \n \n\n\n")
+
                 for i,loss in  enumerate(self.dvh_losses):
                     dvh_loss=loss(net_output, target, mask_index=ptv_oar,channel_ptv_oar=self.channel_ptv_oar)
                     if dvh_loss is None or torch.isnan(dvh_loss):
                         err_weight+=self.weight_dvh[i]
                         continue
-                    losses=losses+(self.weight_dvh[i]*dvh_loss).to(device)           
+                    losses=losses+(self.weight_dvh[i]*dvh_loss)        
                 del ptv_oar        
-                    
+        
+        
+        dose_x=net_output
+        dose_y=target        
+            
         if self.dose_mask is not None: 
             dose_mask_indx=data[:,self.dose_mask,...].flatten().nonzero()
             if len(dose_mask_indx)>0:
-                dose_x=torch.take(net_output,dose_mask_indx).to(device)
-                dose_y=torch.take(target,dose_mask_indx).to(device) 
-            else:
-                dose_x=net_output
-                dose_y=target
-        else:
-            dose_x=net_output
-            dose_y=target    
+                dose_x=torch.take(net_output,dose_mask_indx)
+                dose_y=torch.take(target,dose_mask_indx) 
+
+   
         del data, net_output, target, dose_mask_indx
         
         for i,loss in enumerate(self.err_losses):
-            losses=losses+((self.weight_err[i]+err_weight)*loss(dose_x, dose_y)).to(device)
-                     
+            losses=losses+((self.weight_err[i]+err_weight)*loss(dose_x, dose_y))
+            
         return losses
         
 
 
-def get_roi_indexs(x:torch.Tensor,return_label=False, channel_ptv_oar=[0,1],return_vptv_oar=False):
-    with torch.no_grad():
-        device=x.device
+# def get_roi_indexs(x:torch.Tensor,return_label=False, channel_ptv_oar=[0,1],return_vptv_oar=False):
+#     with torch.no_grad():
+#         device=x.device
 
-        x=torch.split(x,1,dim=1)
+#         x=torch.split(x,1,dim=1)
         
         
-        if return_label:
-            labels=[]
+#         if return_label:
+#             labels=[]
 
-        indexs=[]
+#         indexs=[]
         
-        for c in channel_ptv_oar:
-            if c<0:
-                indexs.append([])
-            index=[]#
-            temp=x[c].flatten()
-            label=temp.unique()
-            if return_label:
-                labels.append(label)
-            for l in label:
-                if l ==0: 
-                    continue
-                where=(temp == l).nonzero().flatten().to(device)
-                index.append(where)#      
-            indexs.append(index)
+#         for c in channel_ptv_oar:
+#             if c<0:
+#                 indexs.append([])
+#             index=[]#
+#             temp=x[c].flatten()
+#             label=temp.unique()
+#             if return_label:
+#                 labels.append(label)
+#             for l in label:
+#                 if l ==0: 
+#                     continue
+#                 where=(temp == l).nonzero().flatten().to(device)
+#                 index.append(where)#      
+#             indexs.append(index)
                 
+#         if return_label:
+#             return indexs,labels
+#         return indexs
+
+
+def get_roi_indexs(x: torch.Tensor, return_label=False, channel_ptv_oar=[0, 1]):
+    with torch.no_grad():
+        device = x.device
+        
+        # Split input tensor by channel
+        x = torch.split(x, 1, dim=1)
+        
         if return_label:
-            return indexs,labels
-        return indexs
+            labels = []
+
+        indices = []
+
+        for c in channel_ptv_oar:
+            if c < 0:
+                indices.append(torch.tensor([], device=device, dtype=torch.long))
+                continue
+
+            temp = x[c].flatten()
+            unique_labels = temp.unique()
+
+            if return_label:
+                labels.append(unique_labels)
+
+            # Find indices of each unique label except 0
+            index = [torch.where(temp == l)[0].to(device) for l in unique_labels if l != 0]
+            indices.append(index)
+
+        if return_label:
+            return indices, labels
+        return indices
 

@@ -846,7 +846,7 @@ class nnDoseTrainer(object):
         # maybe unpack
         if self.unpack_dataset and self.local_rank == 0:
             self.print_to_log_file('unpacking dataset...')
-            unpack_dataset(self.preprocessed_dataset_folder, unpack_segmentation=True, overwrite_existing=False,
+            unpack_dataset(self.preprocessed_dataset_folder, unpack_gt=True, overwrite_existing=False,
                            num_processes=max(1, round(get_allowed_n_proc_DA() // 2)))
             self.print_to_log_file('unpacking done...')
 
@@ -1260,3 +1260,10 @@ class nnDoseTrainer(object):
             self.on_epoch_end()
 
         self.on_train_end()
+
+
+#TODO: remove
+
+class nnUNetTrainer(nnDoseTrainer):
+    def temp():
+        pass

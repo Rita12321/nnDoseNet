@@ -23,9 +23,9 @@ RUN apt-get update && \
 # COPY pip_requirements.txt /tmp/ 
 # RUN pip install -r /tmp/pip_requirements.txt
 # COPY . /tmp/
-#RUN conda activate nnunetv2_pytorch
+# RUN conda activate nnunetv2_pytorch
 RUN conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
-#RUN pip install nnunetv2
+# RUN pip install nnunetv2
 
 WORKDIR /
 COPY ./ /etc/nnDoseNet

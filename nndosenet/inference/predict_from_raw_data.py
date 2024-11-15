@@ -453,7 +453,7 @@ class nnUNetPredictor(object):
             prediction = prediction.to('cpu')
             self.perform_everything_on_gpu = original_perform_everything_on_gpu
         #print(type(data[dose_mask_channel,...]),type(prediction))
-        prediction = torch.clamp(prediction*data[dose_mask_channel,...],min=0)
+        #prediction = torch.clamp(prediction*data[dose_mask_channel,...],min=0)
         return prediction
 
     def _internal_get_sliding_window_slicers(self, image_size: Tuple[int, ...]):

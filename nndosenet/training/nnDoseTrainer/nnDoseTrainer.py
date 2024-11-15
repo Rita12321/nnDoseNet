@@ -328,9 +328,12 @@ class nnDoseTrainer(object):
             #print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()"
             
             channel_ptv_oar=[self.mask_channel.index(int(self.PTV_OAR_BODY[0])),self.mask_channel.index(int(self.PTV_OAR_BODY[1]))]
-            dose_mask=self.mask_channel.index(int(self.PTV_OAR_BODY[2]))
-            if dose_mask <0:
-                dose_mask==None
+            
+            
+            if int(self.PTV_OAR_BODY[2]) <0:
+                dose_mask=None
+            else:
+                dose_mask=self.mask_channel.index(int(self.PTV_OAR_BODY[2]))
                 
             self.print_to_log_file("Order of Target, OAR, Body in mask_channel:",channel_ptv_oar[0],channel_ptv_oar[1],dose_mask)
                 
@@ -1155,15 +1158,10 @@ class nnDoseTrainer(object):
                 output_filename_truncated = join(validation_output_folder, k)
                 
                 #mask output with dose/body mask and make negatives 0
+                prediction = predictor.predict_sliding_window_return_logits(data)
                 if int(self.PTV_OAR_BODY[2])>0:
-                    try:
-                        prediction = predictor.predict_sliding_window_return_logits(data)
-                        prediction=torch.clamp(prediction*data[int(self.PTV_OAR_BODY[2]),...],min=0) 
-                    except RuntimeError:
-                        predictor.perform_everything_on_gpu = False
-                        prediction = predictor.predict_sliding_window_return_logits(data)
-                        prediction=np.clip(prediction*data[int(self.PTV_OAR_BODY[2]),...],0,None) 
-                        predictor.perform_everything_on_gpu = True
+                    prediction=torch.clamp(prediction*data[int(self.PTV_OAR_BODY[2]),...],min=0) 
+ 
                  
                 prediction = prediction.cpu()
 

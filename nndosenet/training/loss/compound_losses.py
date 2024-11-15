@@ -82,9 +82,9 @@ class Err_and_DVH_Loss(nn.Module):
             if len(dose_mask_indx)>0:
                 dose_x=torch.take(net_output,dose_mask_indx)
                 dose_y=torch.take(target,dose_mask_indx) 
-
+            del dose_mask_indx
    
-        del data, net_output, target, dose_mask_indx
+        del data, net_output, target
         
         for i,loss in enumerate(self.err_losses):
             losses=losses+((self.weight_err[i]+err_weight)*loss(dose_x, dose_y))

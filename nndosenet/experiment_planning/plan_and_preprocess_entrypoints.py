@@ -127,9 +127,9 @@ def plan_and_preprocess_entry():
      parser.add_argument("--verify_dataset_integrity", required=False, default=False, action="store_true",
                          help="[RECOMMENDED] set this flag to check the dataset integrity. This is useful and should be done once for "
                               "each dataset!")
-     parser.add_argument('--dose', default=False, required=False, action="store_true",
-                         help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
-                              f'Default: {False}')
+     # parser.add_argument('--dose', default=False, required=False, action="store_true",
+     #                     help=f'[OPTIONAL] Use dose mode for fingerprint extraction. '
+     #                          f'Default: {False}')
      parser.add_argument('--no_pp', default=False, action='store_true', required=False,
                          help='[OPTIONAL] Set this to only run fingerprint extraction and experiment planning (no '
                               'preprocesing). Useful for debugging.')
@@ -189,12 +189,12 @@ def plan_and_preprocess_entry():
 
      # fingerprint extraction
      print("Fingerprint extraction...")
-     extract_fingerprints(args.d, args.fpe, args.npfp, args.verify_dataset_integrity, args.dose, args.clean, args.verbose)
+     extract_fingerprints(args.d, args.fpe, args.npfp, args.verify_dataset_integrity, True, args.clean, args.verbose)
 
      # experiment planning
      print('Experiment planning...')        
-     print(args.dose)
-     plan_experiments(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing, args.overwrite_plans_name, args.dose)
+     # print(args.dose)
+     plan_experiments(args.d, args.pl, args.gpu_memory_target, args.preprocessor_name, args.overwrite_target_spacing, args.overwrite_plans_name, True)
 
      # manage default np
     

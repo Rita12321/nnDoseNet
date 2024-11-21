@@ -93,36 +93,6 @@ class Err_and_DVH_Loss(nn.Module):
         
 
 
-# def get_roi_indexs(x:torch.Tensor,return_label=False, channel_ptv_oar=[0,1],return_vptv_oar=False):
-#     with torch.no_grad():
-#         device=x.device
-
-#         x=torch.split(x,1,dim=1)
-        
-        
-#         if return_label:
-#             labels=[]
-
-#         indexs=[]
-        
-#         for c in channel_ptv_oar:
-#             if c<0:
-#                 indexs.append([])
-#             index=[]#
-#             temp=x[c].flatten()
-#             label=temp.unique()
-#             if return_label:
-#                 labels.append(label)
-#             for l in label:
-#                 if l ==0: 
-#                     continue
-#                 where=(temp == l).nonzero().flatten().to(device)
-#                 index.append(where)#      
-#             indexs.append(index)
-                
-#         if return_label:
-#             return indexs,labels
-#         return indexs
 
 
 def get_roi_indexs(x: torch.Tensor, return_label=False, channel_ptv_oar=[0, 1]):

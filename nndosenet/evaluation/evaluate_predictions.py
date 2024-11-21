@@ -173,7 +173,7 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
             csv=pd.read_csv(patient_csv)
             p_id=dict(zip (csv['id'],csv['patient']))
 
-            files_ptv = [join(folder_input,p_id[ int(id[0:-len(file_ending)])],"Nifti") for i, id in enumerate(files_pred)]
+            files_ptv = [join(folder_input,p_id[id[0:-len(file_ending)]],"Nifti") for i, id in enumerate(files_pred)]
             files_oar =files_ptv.copy()
     else:
         files_ptv = [join(folder_input, i[0:-len(file_ending)]+"_000"+str(ptv_oar[0])+file_ending) for i in files_pred]

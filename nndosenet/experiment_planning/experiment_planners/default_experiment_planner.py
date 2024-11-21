@@ -242,9 +242,9 @@ class ExperimentPlanner(object):
             n=channel_names[c]
             #normalization_schemes.append(n)
             if n=="Target":
-                PTV_OAR_BODY[0]=c
+                PTV_OAR_BODY[0]=int(c)
             elif n=="OAR":
-                PTV_OAR_BODY[1]=c
+                PTV_OAR_BODY[1]=int(c)
             elif n=="BODY":
                 PTV_OAR_BODY[2]=c
         if -1 in PTV_OAR_BODY:

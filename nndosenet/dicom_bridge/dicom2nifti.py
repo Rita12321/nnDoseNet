@@ -28,7 +28,7 @@ def sitk_read_dcm(in_path,get_patient_id=True):
            
 class DicomConverter():#patient wise
     def __init__(self,dataset_folder,patient_folder,structure_name=None):      
-        
+        self.dose2ct=False
         self.patient_folder = patient_folder
         self.patient_id = None
         self.raw_dicom_folder = join(dataset_folder,patient_folder)
@@ -60,8 +60,12 @@ class DicomConverter():#patient wise
         self.get_dose()
         return self.confirm_structure_and_2nii()    
   
-    def get_ct(self,save=False,patient_id_dicom=False):
+    def get_ct(self,save=False,patient_id_dicom=False,overwrite=False):
+        
+            
         ct_path = join(self.nii_folder,"ct.nii.gz")
+        if overwrite:
+            return ct_path
         if os.path.isfile(ct_path) and (not patient_id_dicom):
             return sitk.ReadImage(ct_path),None
         
@@ -85,8 +89,8 @@ class DicomConverter():#patient wise
     
     def get_dose(self):
         dose_path = join(self.nii_folder,"dose.nii.gz")
-        if os.path.isfile(dose_path):
-            return sitk.ReadImage(dose_path)
+        # if os.path.isfile(dose_path):
+        #     return sitk.ReadImage(dose_path)
        
         if len(os.listdir(self.dose_folder)) == 1:
             for i,dose_path in enumerate(os.listdir(self.dose_folder)):
@@ -114,12 +118,20 @@ class DicomConverter():#patient wise
         dose.SetOrigin(dose_data.ImagePositionPatient)
         dose.SetSpacing([dose_data.PixelSpacing[0],dose_data.PixelSpacing[1],ct.GetSpacing()[2]])
 
-        resample = sitk.ResampleImageFilter()
-        resample.SetReferenceImage(ct)
-        resample.SetInterpolator(sitk.sitkNearestNeighbor)
-
-        dose_out = resample.Execute(dose)
-        sitk.WriteImage(dose_out,out_path)
+        if not self.dose2ct:
+            resample = sitk.ResampleImageFilter()
+            resample.SetReferenceImage(ct)
+            resample.SetInterpolator(sitk.sitkNearestNeighbor)
+            dose = resample.Execute(dose)
+        # else:
+        #     resample = sitk.ResampleImageFilter()
+        #     resample.SetReferenceImage(dose)
+        #     resample.SetInterpolator(sitk.sitkNearestNeighbor)
+        #     ct = resample.Execute(ct)
+        #     ct_path = self.get_ct(overwrite=True)
+        #     sitk.WriteImage(ct,ct_path)
+            
+        sitk.WriteImage(dose,out_path)
 
     def resample_to_ct(self,image: sitk.Image,transform=sitk.Euler3DTransform(),
                  interpolator = sitk.sitkNearestNeighbor,default_value=0):

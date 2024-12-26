@@ -94,17 +94,19 @@ In addition, if ground truth dicom files are provided, nnDoseNet provide the fun
 ## How to get started?
 Read these:
 - [Installation instructions](documentation/installation_instructions.md)
-- [Dataset conversion](documentation/dataset_format.md)
-- [Usage instructions](documentation/how_to_use_nnunet.md)
-- [all the command you need](documentation/how_to_use_nnunet.md)
+- [Dataset conversion from DICOM](documentation/dataset_format(nnDose_dicom).md)
+- [Usage instructions](documentation/how_to_use_dosenet.md)
+- [All the command you need](documentation/how_to_use_dosenet.md)
 
 Additional information:
-- [Region-based training](documentation/region_based_training.md)
+- [Dataset conversion from NIfTI](documentation/dataset_format(nnDose_raw).md)
+- [Dataset conversion for inference](documentation/dataset_format_inference.md)
+- [Model evaluation ](documentation/evaluation_methods.md)
+- [Set environment](documentation/set_environment_variables.md)
 - [Manual data splits](documentation/manual_data_splits.md)
-- [Pretraining and finetuning](documentation/pretraining_and_finetuning.md)
-- [Intensity Normalization in nnU-Net](documentation/explanation_normalization.md)
-- [Manually editing nnU-Net configurations](documentation/explanation_plans_files.md)
-- [Extending nnU-Net](documentation/extending_nnunet.md)
+- [Intensity Normalization ](documentation/channel_modality_normalization.md)
+- [Manually editing nnDoseNet configurations](documentation/explanation_plans_json_files.md)
+
 
 
 

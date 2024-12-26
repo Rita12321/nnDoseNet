@@ -31,6 +31,7 @@ nnDoseNet first convert the provided dicom/nifti under `nnDose_dicom` into 4 sep
 - **_0002** `OARs` : labeled OARs with given clinical goal in structure.json.
 - **_0003** `Body` : binary mask of body contour or dose range, if not provided would set 1 to full image by default for now.
 
+*new update! It doesn't need to be fix channel anymore
 
 > [!note]
 > Please check **structure.json** section in 

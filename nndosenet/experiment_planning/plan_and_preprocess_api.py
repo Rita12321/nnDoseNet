@@ -50,7 +50,7 @@ def extract_fingerprints(dataset_ids: List[int], fingerprint_extractor_class_nam
 
 def plan_experiment_dataset(dataset_id: int,
                             experiment_planner_class: Type[ExperimentPlanner] = ExperimentPlanner,
-                            gpu_memory_target_in_gb: float = 8, preprocess_class_name: str = 'DefaultPreprocessor',
+                            gpu_memory_target_in_gb: float = 10, preprocess_class_name: str = 'DefaultPreprocessor',
                             overwrite_target_spacing: Optional[Tuple[float, ...]] = None,
                             overwrite_plans_name: Optional[str] = None,dose=False) -> dict:
     """
@@ -71,7 +71,7 @@ def plan_experiment_dataset(dataset_id: int,
 
 
 def plan_experiments(dataset_ids: List[int], experiment_planner_class_name: str = 'ExperimentPlanner',
-                     gpu_memory_target_in_gb: float = 8, preprocess_class_name: str = 'DefaultPreprocessor',
+                     gpu_memory_target_in_gb: float = 10, preprocess_class_name: str = 'DefaultPreprocessor',
                      overwrite_target_spacing: Optional[Tuple[float, ...]] = None,
                      overwrite_plans_name: Optional[str] = None, dose=False):
     """

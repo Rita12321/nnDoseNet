@@ -12,14 +12,14 @@ The `channel_names` typically looks like this in nnDoseNet:
             "3": "BODY"
         },
 
-Here is the avaliable normalization method and corrrespond names.
+Here is the available normalization method and correspond names.
 If you enter a channel name that is not in the following list, the default (`zscore`) will be applied.
 
 
 - `CT`: Perform CT normalization. Specifically, collect intensity values from the foreground (where intensity in dose map is <=0) in all training cases, compute the mean, standard deviation as well as the 0.5 and 
 99.5 percentile of the values. Then clip to the percentiles, followed by subtraction of the mean and division with the 
 standard deviation. The normalization that is applied is the same for each training case (for this input channel).
-The values used by nnU-Net for normalization are stored in the `foreground_intensity_properties_per_channel` entry in the 
+The values used by nnDoseNet for normalization are stored in the `foreground_intensity_properties_per_channel` entry in the 
 corresponding plans file. This normalization is suitable for modalities presenting physical quantities such as CT 
 images and ADC maps.
 - `PTV`, `Target`, `OAR`, `Body`, `mask`: do not perform any normalization at all and set dtype to uint8

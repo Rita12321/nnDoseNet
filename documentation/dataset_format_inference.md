@@ -7,18 +7,18 @@ If the inference data is a split of training data in nnDose_dicom/[Dataset Name]
 
 Start from  [Dicom dataset format 1 (unorganized)](dataset_format(nnDose_dicom).md):
 ```bash
-    nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Ts -nps [num of processor]
+nnDoseNet_1_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Ts -nps [num of processor]
 ```
 
 Start from  [Dicom dataset format 2 (organized)](dataset_format(nnDose_dicom).md):
 
 ```bash
-    nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Ts -nps [num of processor] --organized_dicom
+nnDoseNet_1_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Ts -nps [num of processor] --organized_dicom
 ```
 
 Start from [Nifti dataset](dataset_format(nnDose_dicom).md):
 ```bash
-    nnDoseNet_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts Ts -nps [num of processor] 
+nnDoseNet_1.2_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts Ts -nps [num of processor] 
 ```
 
 
@@ -35,7 +35,7 @@ Inside folder GroundTruth, There will be a patientTs.csv, folder imagesTs and fo
 Please use this command o run inference of Ts files:
 
 ```bash
-    nnDoseNet_predict_Ts -id [id in nnDose_raw] -c [configuration for prediction]
+nnDoseNet_4_predict_Ts -id [id in nnDose_raw] -c [configuration for prediction]
 ```
 *There are other arguments like fold or step size you can play with, please use `nnDoseNet_predict_Ts -h `for details
 # Outsider inference (not the Ts folder origin from nndose_dicom)
@@ -65,7 +65,7 @@ Remember that the file format used for inference must be the same as was used fo
 
 Please use this code for prediction
 ```bash
-    nnDoseNet_predict -i [input_folder] -o [output_folder] -d [dataset id or full name] -c [configuration for prediction]
+nnDoseNet_4_predict -i [input_folder] -o [output_folder] -d [dataset id or full name] -c [configuration for prediction]
 ```
 *There are other arguments like fold or step size you can play with, please use `nnDoseNet_predict -h `for details
 

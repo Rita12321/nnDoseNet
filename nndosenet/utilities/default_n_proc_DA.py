@@ -21,8 +21,8 @@ def get_allowed_n_proc_DA():
     if 'nnDose_n_proc_DA' in os.environ.keys():
         use_this = int(os.environ['nnDose_n_proc_DA'])
     else:
-        if os.cpu_count()/3>1:
-            use_this=os.cpu_count()//3
+        # if os.cpu_count()/3>1:
+        #     use_this=os.cpu_count()//3
         hostname = subprocess.getoutput(['hostname'])
         if hostname in ['Fabian', ]:
             use_this = 12

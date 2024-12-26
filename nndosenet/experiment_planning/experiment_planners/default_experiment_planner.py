@@ -21,7 +21,7 @@ from nndosenet.utilities.utils import get_identifiers_from_splitted_dataset_fold
 
 class ExperimentPlanner(object):
     def __init__(self, dataset_name_or_id: Union[str, int],
-                 gpu_memory_target_in_gb: float = 8,
+                 gpu_memory_target_in_gb: float = 10,
                  preprocessor_name: str = 'DefaultPreprocessor', plans_name: str = 'nnDosePlans',dose=False,
                  overwrite_target_spacing: Union[List[float], Tuple[float, ...]] = None, 
                  suppress_transpose: bool = False):
@@ -51,7 +51,7 @@ class ExperimentPlanner(object):
         self.UNet_reference_val_3d = 455600128 #their default value560000000  # 455600128  550000000
         self.UNet_reference_val_2d = 85000000  # 83252480
         self.UNet_reference_com_nfeatures = 32
-        self.UNet_reference_val_corresp_GB = 8
+        self.UNet_reference_val_corresp_GB = 10
         self.UNet_reference_val_corresp_bs_2d = 12
         self.UNet_reference_val_corresp_bs_3d = 2
         self.UNet_vram_target_GB = gpu_memory_target_in_gb
@@ -246,7 +246,7 @@ class ExperimentPlanner(object):
             elif n=="OAR":
                 PTV_OAR_BODY[1]=int(c)
             elif n=="BODY":
-                PTV_OAR_BODY[2]=c
+                PTV_OAR_BODY[2]=int(c)
         if -1 in PTV_OAR_BODY:
             print('WARNING: "Target","OAR","BODY" should be mention in channel_names and please specific which channel it is in'\
                 '"Target" is the PTV or CTV or GTV or anything you that you target for treatment'\
@@ -596,4 +596,4 @@ class ExperimentPlanner(object):
 
 
 if __name__ == '__main__':
-    ExperimentPlanner(2, 8).plan_experiment()
+    ExperimentPlanner(2, 10).plan_experiment()

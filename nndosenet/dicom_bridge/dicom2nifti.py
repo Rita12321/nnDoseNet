@@ -39,7 +39,7 @@ class DicomConverter():#patient wise
             if "structure_name" in structure_name:
                 self.structure_name = structure_name["structure_name"]
             else:
-                self.structure_name = structure_name        
+                self.structure_name = structure_name
         elif isinstance(structure_name,str):
             if structure_name.endswith(".json") and isfile(structure_name):
                 self.structure_name = load_json(structure_name)["structure_name"]
@@ -123,13 +123,13 @@ class DicomConverter():#patient wise
             resample.SetReferenceImage(ct)
             resample.SetInterpolator(sitk.sitkNearestNeighbor)
             dose = resample.Execute(dose)
-        # else:
-        #     resample = sitk.ResampleImageFilter()
-        #     resample.SetReferenceImage(dose)
-        #     resample.SetInterpolator(sitk.sitkNearestNeighbor)
-        #     ct = resample.Execute(ct)
-        #     ct_path = self.get_ct(overwrite=True)
-        #     sitk.WriteImage(ct,ct_path)
+        else:
+            resample = sitk.ResampleImageFilter()
+            resample.SetReferenceImage(dose)
+            resample.SetInterpolator(sitk.sitkNearestNeighbor)
+            ct = resample.Execute(ct)
+            ct_path = self.get_ct(overwrite=True)
+            sitk.WriteImage(ct,ct_path)
             
         sitk.WriteImage(dose,out_path)
 
@@ -234,8 +234,6 @@ class NiftiLabeler(DicomConverter):
                 self.structure_label = load_json(structure_label)["structure_label"]
             else:
                 raise ValueError('the structure.json does not exist or it is not end wih json, please check the input again! ')
-
-
         
         
         #print(structure_label)
@@ -246,6 +244,9 @@ class NiftiLabeler(DicomConverter):
 
     def confirm_and_label(self):
         ct,_=self.get_ct()
+        #Copy dose and ct
+        shutil.copy2(join(self.nii_folder,"ct.nii.gz"),join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0000.nii.gz")) 
+        shutil.copy2(join(self.nii_folder,"dose.nii.gz"),join(self.raw_dataset_folder,"labels"+self.tr_ts,self.patient_id+".nii.gz")) 
         shape=sitk.GetArrayFromImage(ct).shape
         type_list = ["Target","OAR","Body"]
         for type in type_list:
@@ -291,14 +292,12 @@ class NiftiLabeler(DicomConverter):
             else:
                 if np.sum(img)<=0:
                     img= sitk.GetImageFromArray(img=np.array(shape).fill(1).astype(np.int32))
+                
+                    img.CopyInformation(ct)
+                    sitk.WriteImage(img,join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0003.nii.gz")) 
                 else:
-                    img= sitk.GetImageFromArray(img.astype(np.int32))
-                img.CopyInformation(ct)
-                sitk.WriteImage(img,join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0003.nii.gz")) 
-        
-        #Copy dose and ct
-        shutil.copy2(join(self.nii_folder,"ct.nii.gz"),join(self.raw_dataset_folder,"images"+self.tr_ts,self.patient_id+"_0000.nii.gz")) 
-        shutil.copy2(join(self.nii_folder,"dose.nii.gz"),join(self.raw_dataset_folder,"labels"+self.tr_ts,self.patient_id+".nii.gz")) 
+                            img= sitk.GetImageFromArray(img.astype(np.int32))
+
 #           
 
                 

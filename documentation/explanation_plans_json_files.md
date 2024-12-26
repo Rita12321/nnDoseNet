@@ -13,9 +13,9 @@ nnDoseNet inherit all the feature above in nnU-Net plans, and we add some new se
 to change this if, for example, you would like to run inference with files that have a different file format. The 
 class that is named here must be located in nndosenet.imageio!
 - `label_manager`: The name of the class that does label handling. Take a look at 
-nnunetv2.utilities.label_handling.LabelManager to see what it does. If you decide to change it, place your version 
-in nnunetv2.utilities.label_handling!
-- `transpose_forward`: nnU-Net transposes the input data so that the axes with the highest resolution (lowest spacing) 
+nndosenet.utilities.label_handling.LabelManager to see what it does. If you decide to change it, place your version 
+in nndosenet.utilities.label_handling!
+- `transpose_forward`: nnDoseNet transposes the input data so that the axes with the highest resolution (lowest spacing) 
 come last. This is because the 2D U-Net operates on the trailing dimensions (more efficient slicing due to internal 
 memory layout of arrays). 
 - transpose_backward is what numpy.transpose gets as new axis ordering.
@@ -36,8 +36,7 @@ Local settings:
 - `patch_size`: the patch size used for training this configuration
 - `data_identifier`: the preprocessed data for this configuration will be saved in
   nnDose_preprocessed/DATASET_NAME/_data_identifier_. If you add a new configuration, remember to set a unique
-  data_identifier in order to not create conflicts with other configurations (unless you plan to reuse the data from
-  another configuration, for example as is done in the cascade)
+  data_identifier in order to not create conflicts with other configurations.
 - `batch_size`: batch size used for training
 - `batch_dice`: **(plz don't change this)**\
 will be removed in next version of nnDoseNet
@@ -106,7 +105,7 @@ configuration in the `configurations` dict
     }
 
 No need to change the data_identifier. `3d_fullres_bs40` will just use the preprocessed data from `3d_fullres`.
-No need to rerun `nnUNetv2_preprocess` because we can use already existing data (if available) from `3d_fullres`.
+No need to rerun `nnDoseNet_2.3_preprocess` because we can use already existing data (if available) from `3d_fullres`.
 
 ## Using custom configuration (preprocesor)
 If you would like to use a different preprocessor class then this can be specified as follows:
@@ -120,7 +119,7 @@ If you would like to use a different preprocessor class then this can be specifi
     }
 
 You need to run preprocessing for this new configuration: 
-`nnUNetv2_preprocess -d DATASET_ID -c 3d_fullres_my_preprocesor` because it changes the preprocessing. Remember to 
+`nnDoseNet_2.3_preprocess -d DATASET_ID -c 3d_fullres_my_preprocesor` because it changes the preprocessing. Remember to 
 set a unique `data_identifier` whenever you make modifications to the preprocessed data!
 
 ## Change target spacing
@@ -134,11 +133,11 @@ set a unique `data_identifier` whenever you make modifications to the preprocess
     }
 
 You need to run preprocessing for this new configuration: 
-`nnUNetv2_preprocess -d DATASET_ID -c 3d_fullres_my_spacing` because it changes the preprocessing. Remember to 
+`nnDoseNet_2.3_preprocess -d DATASET_ID -c 3d_fullres_my_spacing` because it changes the preprocessing. Remember to 
 set a unique `data_identifier` whenever you make modifications to the preprocessed data!
 
 >[!notice]
-> cascade is not avaliable in nnDoseNet yet TAT.\
+> cascade is not avaliable for in nnDoseNet. \
 > There are some of them look a little weird, it would look more in intuitive in next updata.
 
 *resampling_fn_seg,resampling_fn_seg_kwargs are for label(dose map), since we don't want to change to much in this version of nnDoseNet, we keep the keys' name as it was in nnU-Net. This is why "seg" represent label(dose map) in some of the code. Eventhough it look like it's for segment(integer data) but I already adjust it for dose map(float data).

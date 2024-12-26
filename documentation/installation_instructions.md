@@ -37,11 +37,11 @@ install the latest version with support for your hardware (cuda, mps, cpu).
     This will create a copy of the nnU-Net code on your computer so that you
    can modify it as needed:
 
-          ```bash
-          git clone https://github.com/Rita12321/nnDoseNet
-          cd nnDoseNet
-          pip install -e .
-          ```
+      ```bash
+      git clone https://github.com/Rita12321/nnDoseNet
+      cd nnDoseNet
+      pip install -e .
+      ```
 3) nnDoseNet needs to know where you intend to save raw data, preprocessed data and trained models. For this you need to
    set a few environment variables. Please follow the instructions [here](setting_up_paths.md).
 

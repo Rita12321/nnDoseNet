@@ -50,7 +50,7 @@ If the Datatset is in `Dicom format 1`, please make sure
                 ...
 Please use this code to format dataset
 ```bash
-    nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor]
+nnDoseNet_1_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor]
 ```
 # Dicom dataset format 2 (organized) in nnDose_dicom
 If the Datatset is in Dicom format 2, please make sure 
@@ -83,7 +83,7 @@ If the Datatset is in Dicom format 2, please make sure
                 ...
 Please use this code to format dataset
 ```bash
-    nnDoseNet_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] --organized_dicom
+nnDoseNet_1_format_dataset -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] --organized_dicom
 ```
 > [!note]
 > id must be a 3 digit integer
@@ -118,7 +118,7 @@ If the Datatset is in Dicom format 2  or changing structure.json for different l
                 ...
 Please use this code to label and final formatting the dataset
 ```bash
-    nnDoseNet_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] 
+nnDoseNet_1.2_label_nifti_and_final_formatting -name [Dataset Name] -id [id in nnDose_raw] -trts Tr -nps [num of processor] 
 ```        
 # structure.json
 
@@ -173,17 +173,17 @@ Final look should be like this, if you have dicom dataset:
 
 # roi_summary
 If using dicom dataset,
-after running `nnDoseNet_format_dataset` or `nnDoseNet_organize_and_convert_dicom` you should see "Tr_roi_summary.csv" or "Ts_roi_summary.csv" and it's correspond json files.\
+after running `nnDoseNet_1_format_dataset` or `nnDoseNet_1.1_organize_and_convert_dicom` you should see "Tr_roi_summary.csv" or "Ts_roi_summary.csv" and it's correspond json files.\
 These file summarize which name in potential name list is converted into nifti and shows the remaining structure in structure dcms that is not being used. It also, shows which patient has missing contour.
 
 # patient__.csv
-After running `nnDoseNet_format_dataset` or `nnDoseNet_label_nifti_and_final_formatting`, you should see patientTr.csv in nnDose_raw/Datasetxxx or patientTs.csv in nnDose_prediction/Datasetxxx/GroundTruth.\
+After running `nnDoseNet_1_format_dataset` or `nnDoseNet_1.2_label_nifti_and_final_formatting`, you should see patientTr.csv in nnDose_raw/Datasetxxx or patientTs.csv in nnDose_prediction/Datasetxxx/GroundTruth.\
 nnDoseNet anonymize the cases(folders/ patients) name to patient id, and correspond id and original name is in the csv.
 
 # Related command
-- `nnDoseNet_format_dataset` 
-- `nnDoseNet_organize_and_convert_dicom` 
-- `nnDoseNet_label_nifti_and_final_formatting`
+- `nnDoseNet_1_format_dataset` 
+- `nnDoseNet_1.1_organize_and_convert_dicom` 
+- `nnDoseNet_1.2_label_nifti_and_final_formatting`
 
 *use -h to check how to use the command
 #

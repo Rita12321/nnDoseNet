@@ -42,8 +42,8 @@ def plan_experiment_entry():
                         help='[OPTIONAL] Name of the Experiment Planner class that should be used. Default is '
                              '\'ExperimentPlanner\'. Note: There is no longer a distinction between 2d and 3d planner. '
                              'It\'s an all in one solution now. Wuch. Such amazing.')
-    parser.add_argument('-gpu_memory_target', default=8, type=float, required=False,
-                        help='[OPTIONAL] DANGER ZONE! Sets a custom GPU memory target. Default: 8 [GB]. Changing this will '
+    parser.add_argument('-gpu_memory_target', default=10, type=float, required=False,
+                        help='[OPTIONAL] DANGER ZONE! Sets a custom GPU memory target. Default: 10 [GB]. Changing this will '
                              'affect patch and batch size and will '
                              'definitely affect your models performance! Only use this if you really know what you '
                              'are doing and NEVER use this without running the default nnDoseNet first (as a baseline).')
@@ -85,7 +85,7 @@ def preprocess_entry():
     parser.add_argument('-c', required=False, default=['2d', '3d_fullres', '3d_lowres'], nargs='+',
                         help='[OPTIONAL] Configurations for which the preprocessing should be run. Default: 2d 3f_fullres '
                              '3d_lowres. Configurations that do not exist for some dataset will be skipped.')
-    parser.add_argument('-np', type=int, nargs='+', default=[8, 18, 8], required=False,
+    parser.add_argument('-np', type=int, nargs='+', default=[8, 8, 8], required=False,
                         help="[OPTIONAL] Use this to define how many processes are to be used. If this is just one number then "
                              "this number of processes is used for all configurations specified with -c. If it's a "
                              "list of numbers this list must have as many elements as there are configurations. We "
@@ -141,8 +141,8 @@ def plan_and_preprocess_entry():
                          help='[OPTIONAL] Name of the Experiment Planner class that should be used. Default is '
                               '\'ExperimentPlanner\'. Note: There is no longer a distinction between 2d and 3d planner. '
                               'It\'s an all in one solution now. Wuch. Such amazing.')
-     parser.add_argument('-gpu_memory_target', default=8, type=int, required=False,
-                         help='[OPTIONAL] DANGER ZONE! Sets a custom GPU memory target. Default: 8 [GB]. Changing this will '
+     parser.add_argument('-gpu_memory_target', default=10, type=int, required=False,
+                         help='[OPTIONAL] DANGER ZONE! Sets a custom GPU memory target. Default: 10 [GB]. Changing this will '
                               'affect patch and batch size and will '
                               'definitely affect your models performance! Only use this if you really know what you '
                               'are doing and NEVER use this without running the default nnDoseNet first (as a baseline).')

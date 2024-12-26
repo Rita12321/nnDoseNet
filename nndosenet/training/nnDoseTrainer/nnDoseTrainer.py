@@ -1159,6 +1159,8 @@ class nnDoseTrainer(object):
                 
                 #mask output with dose/body mask and make negatives 0
                 prediction = predictor.predict_sliding_window_return_logits(data)
+                if prediction.device != data.device:
+                    data = data.to(prediction.device)
                 if int(self.PTV_OAR_BODY[2])>0:
                     prediction=torch.clamp(prediction*data[int(self.PTV_OAR_BODY[2]),...],min=0) 
  
@@ -1260,8 +1262,3 @@ class nnDoseTrainer(object):
         self.on_train_end()
 
 
-#TODO: remove
-
-class nnUNetTrainer(nnDoseTrainer):
-    def temp():
-        pass

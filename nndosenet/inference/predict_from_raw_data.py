@@ -452,6 +452,13 @@ class nnUNetPredictor(object):
             print('Prediction done, transferring to CPU if needed')
             prediction = prediction.to('cpu')
             self.perform_everything_on_gpu = original_perform_everything_on_gpu
+            
+            #TODO pass the PTV_OAR_BODY info here
+            # if prediction.device != data.device:
+            #     data = data.to(prediction.device)
+            # if int(self.PTV_OAR_BODY[2])>0:
+            #     prediction=torch.clamp(prediction*data[int(self.PTV_OAR_BODY[2]),...],min=0) 
+ 
         #print(type(data[dose_mask_channel,...]),type(prediction))
         #prediction = torch.clamp(prediction*data[dose_mask_channel,...],min=0)
         return prediction

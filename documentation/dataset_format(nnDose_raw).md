@@ -40,7 +40,7 @@ Folder structure should look like this in imagesTr:
 First 3 digit represent the patient number, that is anonymized while formatting it from nnDose_dicom folder. Please check the section **patinet__.csv** in  **[dataset_format(nnDose_dicom)](documentation/dataset_format(nnDose_dicom).md)**. \
 And each image file in imagesTr represent certain modality .
 
-- **_0000** `CT` : a full image(you can use MR or other instead, just rememeber to change it in dataset.json).
+- **_0000** `CT` : a full image(you can use MR or other instead, just remember to change it in dataset.json).
 - **_0001** `Targets` : labeled targets.
 - **_0002** `OARs` : labeled OARs.
 - **_0003** `Body` : binary mask of body contour or dose range.
@@ -75,6 +75,7 @@ Inside dataset.json should look like this. "CT" in "channel_name" should be chan
 We tend to keep the way [nnU-Net](https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/dataset_format.md) does so it might be a little awkward that we keep labels, since dose prediction would only have one background and dose in label. 
 
 # Related command
- - `nnDoseNet_plan_and_preprocess`
- - `nnDoseNet_plan_experiment`
- - `nnDoseNet_preprocess`
+ - `nnDoseNet_2_plan_and_preprocess`
+ - `nnDoseNet_2.1_extract_fingerprint`
+ - `nnDoseNet_2.2_plan_experiment`
+ - `nnDoseNet_2.3_preprocess`

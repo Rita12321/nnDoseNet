@@ -149,10 +149,5 @@ def rewrite_dcm(reference_dicom, new_array):
     new_dicom.PixelData = dose_map_scaled.tobytes()
     return new_dicom
     
-if __name__ == '__main__':
-    max_gamma=1
-    gamma_image=sitk.ReadImage("/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/prostate_UAB/Dataset099_prostate_UAB/Prediction/2d/Gamma/0035.nii.gz")
-    gamma=sitk.GetArrayFromImage(gamma_image)
-    mask_path="/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom/prostate_UAB/Ts/PROS_TEST_035_PROS_TEST_035_20240213_122201744/Nifti/Body.nii.gz"
-    print(pass_rate(max_gamma, gamma, gamma_image, mask_path))
+
  

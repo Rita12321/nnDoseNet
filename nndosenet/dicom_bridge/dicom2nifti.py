@@ -28,7 +28,7 @@ def sitk_read_dcm(in_path,get_patient_id=True):
            
 class DicomConverter():#patient wise
     def __init__(self,dataset_folder,patient_folder,structure_name=None):      
-        self.dose2ct=False
+        self.dose2ct = True
         self.patient_folder = patient_folder
         self.patient_id = None
         self.raw_dicom_folder = join(dataset_folder,patient_folder)
@@ -45,24 +45,22 @@ class DicomConverter():#patient wise
                 self.structure_name = load_json(structure_name)["structure_name"]
             else:
                 raise ValueError('the structure.json does not exist or it is not end wih json, please check the input again! ')
-
-
         
         self.ct_folder = join(self.raw_dicom_folder,"Dicom","CT")
         self.dose_folder = join(self.raw_dicom_folder,"Dicom","RD")
         self.struct_folder = join(self.raw_dicom_folder,"Dicom","RS")
         self.plan_folder = join(self.raw_dicom_folder,"Dicom","RP")
         self.nii_folder = join(self.raw_dicom_folder,"Nifti")
-
+        
         
     def run(self):
         _, self.patient_id = self.get_ct(save=True, patient_id_dicom=True)
+        dict_return = self.confirm_structure_and_2nii()
         self.get_dose()
-        return self.confirm_structure_and_2nii()    
+        return dict_return
+  
   
     def get_ct(self,save=False,patient_id_dicom=False,overwrite=False):
-        
-            
         ct_path = join(self.nii_folder,"ct.nii.gz")
         if overwrite:
             return ct_path
@@ -118,19 +116,23 @@ class DicomConverter():#patient wise
         dose.SetOrigin(dose_data.ImagePositionPatient)
         dose.SetSpacing([dose_data.PixelSpacing[0],dose_data.PixelSpacing[1],ct.GetSpacing()[2]])
 
-        if not self.dose2ct:
+        if self.dose2ct:
+            for file in os.listdir(self.nii_folder):
+                if file == "dose.nii.gz":
+                    continue
+                resample = sitk.ResampleImageFilter()
+                resample.SetReferenceImage(dose)
+                resample.SetInterpolator(sitk.sitkNearestNeighbor)
+                image_path = join(self.nii_folder,file)
+                image = sitk.ReadImage(image_path)
+                image = resample.Execute(image)
+                sitk.WriteImage(image,image_path)
+        else:
             resample = sitk.ResampleImageFilter()
             resample.SetReferenceImage(ct)
             resample.SetInterpolator(sitk.sitkNearestNeighbor)
             dose = resample.Execute(dose)
-        else:
-            resample = sitk.ResampleImageFilter()
-            resample.SetReferenceImage(dose)
-            resample.SetInterpolator(sitk.sitkNearestNeighbor)
-            ct = resample.Execute(ct)
-            ct_path = self.get_ct(overwrite=True)
-            sitk.WriteImage(ct,ct_path)
-            
+       
         sitk.WriteImage(dose,out_path)
 
     def resample_to_ct(self,image: sitk.Image,transform=sitk.Euler3DTransform(),

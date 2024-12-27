@@ -28,7 +28,7 @@ def sitk_read_dcm(in_path,get_patient_id=True):
            
 class DicomConverter():#patient wise
     def __init__(self,dataset_folder,patient_folder,structure_name=None):      
-        self.dose2ct = True
+        self.dose2ct = False
         self.patient_folder = patient_folder
         self.patient_id = None
         self.raw_dicom_folder = join(dataset_folder,patient_folder)
@@ -55,9 +55,8 @@ class DicomConverter():#patient wise
         
     def run(self):
         _, self.patient_id = self.get_ct(save=True, patient_id_dicom=True)
-        dict_return = self.confirm_structure_and_2nii()
         self.get_dose()
-        return dict_return
+        return self.confirm_structure_and_2nii()    
   
   
     def get_ct(self,save=False,patient_id_dicom=False,overwrite=False):
@@ -117,16 +116,12 @@ class DicomConverter():#patient wise
         dose.SetSpacing([dose_data.PixelSpacing[0],dose_data.PixelSpacing[1],ct.GetSpacing()[2]])
 
         if self.dose2ct:
-            for file in os.listdir(self.nii_folder):
-                if file == "dose.nii.gz":
-                    continue
-                resample = sitk.ResampleImageFilter()
-                resample.SetReferenceImage(dose)
-                resample.SetInterpolator(sitk.sitkNearestNeighbor)
-                image_path = join(self.nii_folder,file)
-                image = sitk.ReadImage(image_path)
-                image = resample.Execute(image)
-                sitk.WriteImage(image,image_path)
+            resample = sitk.ResampleImageFilter()
+            resample.SetReferenceImage(dose)
+            resample.SetInterpolator(sitk.sitkNearestNeighbor)
+            ct = resample.Execute(ct)
+            ct_path = self.get_ct(overwrite=True)
+            sitk.WriteImage(ct,ct_path)
         else:
             resample = sitk.ResampleImageFilter()
             resample.SetReferenceImage(ct)

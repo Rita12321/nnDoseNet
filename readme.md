@@ -4,6 +4,8 @@
 User can easily train a model given dicom or nifti data, and the nnDose would automatically convert, label, analysis, preprocess and make training plan based on the input dataset.\
 It is built on top of [nnU-Net](https://github.com/MIC-DKFZ/nnUNet), a deep learning framework for segmentation purpose.
 
+> **Research use only.** nnDoseNet is not a medical device and is not validated for clinical decision-making. Review all generated plans, structures, doses, and metrics through the appropriate clinical and institutional process.
+
 #[nnDoseNet](https://www.sciencedirect.com/science/article/pii/S0010482525015902)
 Please cite oir paper if you are using our pacakage! Really appreciate it!
 
@@ -97,8 +99,8 @@ In addition, if ground truth dicom files are provided, nnDoseNet provide the fun
 Read these:
 - [Installation instructions](documentation/installation_instructions.md)
 - [Dataset conversion from DICOM](documentation/dataset_format(nnDose_dicom).md)
-- [Usage instructions](documentation/how_to_use_dosenet.md)
-- [All the command you need](documentation/how_to_use_dosenet.md)
+- [Usage instructions](documentation/how_to_use_nndosenet.md)
+- [CLI reference](documentation/CLI_REFERENCE_LEGACY.md)
 
 Additional information:
 - [Dataset conversion from NIfTI](documentation/dataset_format(nnDose_raw).md)
@@ -108,7 +110,6 @@ Additional information:
 - [Manual data splits](documentation/manual_data_splits.md)
 - [Intensity Normalization ](documentation/channel_modality_normalization.md)
 - [Manually editing nnDoseNet configurations](documentation/explanation_plans_json_files.md)
-
 
 
 

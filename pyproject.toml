@@ -1,6 +1,6 @@
 [project]
 name = "nndosenet"
-version = "1.0.0"
+version = "2.0.0"
 requires-python = ">=3.9"
 description = "nnDoseNet is a flexible and intuitive framework for dose prediction in radiotherapy planning."
 readme = "readme.md"

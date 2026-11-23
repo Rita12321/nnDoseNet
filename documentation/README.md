@@ -11,7 +11,7 @@ Start with [Handoff workflow](HANDOFF_NNDOSEV2.md). It explains the required pat
 
 Use [CLI and configuration reference](CLI_REFERENCE_LEGACY.md) to look up every installed `nnDoseNet_*` command, its inputs, and where it writes output.
 
-[Dicom_Test validation](DICOM_TEST_VALIDATION.md) records the end-to-end checks performed against the included prostate DICOM subset and the limits of that subset.
+[Dicom_Test validation](DICOM_TEST_VALIDATION.md) records the end-to-end checks performed against a local de-identified validation subset. The DICOM data are not included in this repository.
 
 Runnable templates are in [Sample_bash](Sample_bash/README.md). Copy and edit `var.txt` before running the scripts.
 

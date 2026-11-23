@@ -18,45 +18,40 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
                                                                 label_manager: LabelManager,
                                                                 properties_dict: dict,
                                                                 num_threads_torch: int = default_num_processes):
-    
+
     old_threads = torch.get_num_threads()
     torch.set_num_threads(num_threads_torch)
-    
+
     # resample to original shape
     current_spacing = configuration_manager.spacing if \
         len(configuration_manager.spacing) == \
         len(properties_dict['shape_after_cropping_and_before_resampling']) else \
         [properties_dict['spacing'][0], *configuration_manager.spacing]
-    
-    
+
+
     predicted_probabilities = configuration_manager.resampling_fn_probabilities(predicted_logits,
                                             properties_dict['shape_after_cropping_and_before_resampling'],
                                             current_spacing,
                                             properties_dict['spacing'])
-    
+
     predicted_probabilities=torch.from_numpy(predicted_probabilities).cuda()
     del predicted_logits
 
-    if label_manager.dose_label==None: 
+    if label_manager.dose_label==None:
         label_manager._get_all_labels
-        
-    if label_manager.dose_label==True:
-        segmentation=predicted_probabilities #in dose mode segmentation here is dose
-        segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
-                                              dtype=np.float32)
-        
-    else:
-        segmentation = label_manager.probability_squeeze_channel(predicted_probabilities)
-        segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
-                                                dtype=np.uint8 if len(label_manager.foreground_labels) < 255 else np.uint16)
-    
-    
+
+
+    segmentation=predicted_probabilities #in dose mode segmentation here is dose
+    segmentation_reverted_cropping = np.zeros(properties_dict['shape_before_cropping'],
+                                            dtype=np.float32)
+
+
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):
         segmentation = segmentation.cpu().numpy()
     if label_manager.dose_label==True:
         segmentation=np.clip(segmentation,0.0,None)
-    
+
     # put segmentation in bbox (revert cropping)
     slicer = bounding_box_to_slice(properties_dict['bbox_used_for_cropping'])
     segmentation_reverted_cropping[slicer] = segmentation
@@ -75,7 +70,7 @@ def convert_predicted_logits_to_segmentation_with_correct_shape(predicted_logits
     #     # revert transpose
     #     predicted_probabilities = predicted_probabilities.transpose([0] + [i + 1 for i in
     #                                                                        plans_manager.transpose_backward])
-    #     torch.set_num_threads(old_threads)   
+    #     torch.set_num_threads(old_threads)
     #     return segmentation_reverted_cropping, predicted_probabilities
 
     # else:
@@ -129,7 +124,7 @@ def resample_and_save(predicted: Union[torch.Tensor, np.ndarray], target_shape: 
 
     # create segmentation (argmax, regions, etc)
     label_manager = plans_manager.get_label_manager(dataset_json_dict_or_file)
-    
+
     segmentation = label_manager.convert_logits_to_image_array(predicted_array_or_file)
     # segmentation may be torch.Tensor but we continue with numpy
     if isinstance(segmentation, torch.Tensor):

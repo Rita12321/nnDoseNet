@@ -5,10 +5,7 @@ requires-python = ">=3.9"
 description = "nnDoseNet is a flexible and intuitive framework for dose prediction in radiotherapy planning."
 readme = "readme.md"
 license = { file = "LICENSE" }
-authors = [
-    { name = "Ho-Hsin (Rita) Chang", email = "changh@uab.edu"},
-    { name = "University of Alabama at Birmingham Radiation Oncology Dr. Carlos E. Cardenas' Lab" }
-]
+authors = [{ name = "nnDoseNet contributors" }]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -61,10 +58,26 @@ dependencies = [
 homepage = "https://github.com/Rita12321/nnDoseNet"
 repository = "https://github.com/Rita12321/nnDoseNet"
 
+[tool.setuptools.packages.find]
+include = ["nndosenet*"]
+
 [project.scripts]
+# Stage 0 — DICOM organization and structure review
+nnDoseNet_0-0_list_dicom_and_organize = "nndosenet.formating_dataset.format_dataset_entrypoints:list_dicom_entry"
+nnDoseNet_0-1_list_roi = "nndosenet.formating_dataset.format_dataset_entrypoints:list_roi_entry"
+nnDoseNet_0-2a_suggest_structure_csv = "nndosenet.formating_dataset.format_dataset_entrypoints:suggest_structure_csv_entry"
+nnDoseNet_0-2b_csv_to_structure_json = "nndosenet.formating_dataset.format_dataset_entrypoints:csv_to_structure_json_entry"
+nnDoseNet_0-2_suggest_structure = "nndosenet.formating_dataset.format_dataset_entrypoints:suggest_structure_entry"
+nnDoseNet_0-3_list_target = "nndosenet.formating_dataset.format_dataset_entrypoints:list_target_entry"
+
+# Stage 1 — DICOM conversion, labeling, and beam export
 nnDoseNet_1_format_dataset = "nndosenet.formating_dataset.format_dataset_entrypoints:format_dataset_entry"
-nnDoseNet_1-1_organize_and_convert_dicom = "nndosenet.formating_dataset.format_dataset_entrypoints:organize_and_convert_dicom_entry"
-nnDoseNet_1-2_label_nifti_and_final_formatting = "nndosenet.formating_dataset.format_dataset_entrypoints:label_nifti_and_final_formatting_entry"
+nnDoseNet_1-1_convert_dicom_image = "nndosenet.formating_dataset.format_dataset_entrypoints:convert_dicom_image_entry"
+nnDoseNet_1-2_label_nifti = "nndosenet.formating_dataset.format_dataset_entrypoints:label_nifti_entry"
+nnDoseNet_1-3_beam_export = "nndosenet.formating_dataset.format_dataset_entrypoints:beam_export_entry"
+# Backward-compatible aliases
+nnDoseNet_1-1_organize_and_convert_dicom = "nndosenet.formating_dataset.format_dataset_entrypoints:convert_dicom_image_entry"
+nnDoseNet_1-2_label_nifti_and_final_formatting = "nndosenet.formating_dataset.format_dataset_entrypoints:label_nifti_entry"
 
 nnDoseNet_2_plan_and_preprocess = "nndosenet.experiment_planning.plan_and_preprocess_entrypoints:plan_and_preprocess_entry"
 nnDoseNet_2-1_extract_fingerprint = "nndosenet.experiment_planning.plan_and_preprocess_entrypoints:extract_fingerprint_entry"

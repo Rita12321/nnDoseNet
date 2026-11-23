@@ -5,6 +5,7 @@ from nndosenet.utilities.network_initialization import InitWeights_He
 from nndosenet.utilities.plans_handling.plans_handler import ConfigurationManager, PlansManager
 from torch import nn
 
+from nndosenet.utilities.DiffusionUNet_3 import DiffusionUNet_3
 
 def get_network_from_plans(plans_manager: PlansManager,
                            dataset_json: dict,
@@ -17,6 +18,8 @@ def get_network_from_plans(plans_manager: PlansManager,
     num_input_channels can differ depending on whether we do cascade. Its best to make this info available in the
     trainer rather than inferring it again from the plans here.
     """
+    label_manager = plans_manager.get_label_manager(dataset_json)
+    network_class_name = configuration_manager.UNet_class_name
     num_stages = len(configuration_manager.conv_kernel_sizes)
 
     dim = len(configuration_manager.conv_kernel_sizes[0])
@@ -27,7 +30,8 @@ def get_network_from_plans(plans_manager: PlansManager,
     network_class_name = configuration_manager.UNet_class_name
     mapping = {
         'PlainConvUNet': PlainConvUNet,
-        'ResidualEncoderUNet': ResidualEncoderUNet
+        'ResidualEncoderUNet': ResidualEncoderUNet,
+        'DiffusionUNet_3': DiffusionUNet_3,
     }
     kwargs = {
         'PlainConvUNet': {
@@ -43,19 +47,45 @@ def get_network_from_plans(plans_manager: PlansManager,
             'norm_op_kwargs': {'eps': 1e-5, 'affine': True},
             'dropout_op': None, 'dropout_op_kwargs': None,
             'nonlin': nn.LeakyReLU, 'nonlin_kwargs': {'inplace': True},
+        },
+        'DiffusionUNet_3': {
+        'conv_bias': True,
+        'norm_op': get_matching_instancenorm(conv_op),
+        'norm_op_kwargs': {'eps': 1e-5, 'affine': True},
+        'dropout_op': None, 'dropout_op_kwargs': None,
+        'nonlin': nn.LeakyReLU, 'nonlin_kwargs': {'inplace': True}
         }
+        # 'CycleGANGenerator': {
+        # 'conv_bias': True,
+        # 'norm_op': get_matching_instancenorm(conv_op),
+        # 'norm_op_kwargs': {'eps': 1e-5, 'affine': True},
+        # 'dropout_op': None, 'dropout_op_kwargs': None,
+        # 'nonlin': nn.LeakyReLU, 'nonlin_kwargs': {'inplace': True}
+        # },
+        # 'PatchGANDiscriminator': {
+        # 'conv_bias': True,
+        # 'norm_op': get_matching_instancenorm(conv_op),
+        # 'norm_op_kwargs': {'eps': 1e-5, 'affine': True},
+        # 'dropout_op': None, 'dropout_op_kwargs': None,
+        # 'nonlin': nn.LeakyReLU, 'nonlin_kwargs': {'inplace': True}
+        # }
     }
     assert network_class_name in mapping.keys(), 'The network architecture specified by the plans file ' \
-                                                              'is non-standard (maybe your own?). Yo\'ll have to dive ' \
-                                                              'into either this ' \
-                                                              'function (get_network_from_plans) or ' \
-                                                              'the init of your UNetModule to accommodate that.'
+                                                            'is non-standard (maybe your own?). Yo\'ll have to dive ' \
+                                                            'into either this ' \
+                                                            'function (get_network_from_plans) or ' \
+                                                            'the init of your UNetModule to accommodate that.'
     network_class = mapping[network_class_name]
 
+    # conv_or_blocks_per_stage = {
+    #     'n_conv_per_stage'
+    #     if network_class == 'PlainConvUNet' else 'n_blocks_per_stage': configuration_manager.n_conv_per_stage_encoder,
+    #     'n_conv_per_stage_decoder': configuration_manager.n_conv_per_stage_decoder
+    # }
     conv_or_blocks_per_stage = {
-        'n_conv_per_stage'
-        if network_class != ResidualEncoderUNet else 'n_blocks_per_stage': configuration_manager.n_conv_per_stage_encoder,
-        'n_conv_per_stage_decoder': configuration_manager.n_conv_per_stage_decoder
+    'n_conv_per_stage'
+    if network_class != ResidualEncoderUNet else 'n_blocks_per_stage': configuration_manager.n_conv_per_stage_encoder,
+    'n_conv_per_stage_decoder': configuration_manager.n_conv_per_stage_decoder
     }
     # network class name!!
 
@@ -73,6 +103,6 @@ def get_network_from_plans(plans_manager: PlansManager,
         **kwargs[network_class_name]
     )
     model.apply(InitWeights_He(1e-2))
-    if network_class == ResidualEncoderUNet:
+    if network_class == ResidualEncoderUNet or network_class != DiffusionUNet_3 :
         model.apply(init_last_bn_before_add_to_0)
     return model

@@ -57,7 +57,7 @@ class nnUNetLogger(object):
         ax.set_xlabel("epoch")
         ax.set_ylabel("loss")
         ax.legend(loc=(0, 1))
-        
+
         ax = ax_all[1]
         ax.plot(x_values, [i - j for i, j in zip(self.my_fantastic_logging['epoch_end_timestamps'][:epoch + 1],
                                                  self.my_fantastic_logging['epoch_start_timestamps'])][:epoch + 1], color='b',
@@ -85,3 +85,14 @@ class nnUNetLogger(object):
 
     def load_checkpoint(self, checkpoint: dict):
         self.my_fantastic_logging = checkpoint
+
+    # def get_current():
+    #     if Logger.CURRENT is None:
+    #         _configure_default_logger()
+
+    #  return Logger.CURRENT
+    # def logkv_mean(key, val):
+    #     """
+    #     The same as logkv(), but if called many times, values averaged.
+    #     """
+    #     get_current().logkv_mean(key, val)

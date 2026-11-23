@@ -103,6 +103,14 @@ ENV/
 *.nii
 *.tif
 *.bmp
+*.dcm
+*.DCM
+*.dicom
+*.IMA
+*.ima
+*.mha
+*.mhd
+*.nrrd
 *.pkl
 *.xml
 *.pkl
@@ -113,3 +121,25 @@ ENV/
 
 *.model
 
+# Local, hard-linked end-to-end validation workspace. Never commit patient data
+# or generated artifacts from a handoff test run.
+_handoff_test/
+_smoke/
+
+# Keep local nnDoseNet data roots, derived data, and case-specific target
+# summaries out of the source repository.
+nnDose_1_dicom/
+nnDose_2_raw/
+nnDose_3_preprocess/
+nnDose_4_result/
+nnDose_5_prediction/
+**/*target_summary*.json
+patient*.csv
+*patient*.csv
+
+# Superseded accidental duplicate. CycleGANDataLoader3D lives in data_loader_3d.py.
+nndosenet/training/dataloading/cycle_gan_data_loader_3d .py
+
+# The shell-source template is intentionally versioned despite the broad
+# generated-text ignore rule above.
+!documentation/Sample_bash/var.txt

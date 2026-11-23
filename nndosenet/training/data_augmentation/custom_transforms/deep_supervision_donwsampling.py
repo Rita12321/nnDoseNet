@@ -31,8 +31,7 @@ class DownsampleSegForDSTransform2(AbstractTransform):
             axes = self.axes
 
         output = []
-        #print("data_mask_len before ddp",len(data_dict[self.input_key]))
-       
+
         for s in self.ds_scales:
             if not isinstance(s, (tuple, list)):
                 s = [s] * len(axes)
@@ -41,18 +40,21 @@ class DownsampleSegForDSTransform2(AbstractTransform):
                                             f'for each axis) then the number of entried in that tuple (here ' \
                                             f'{len(s)}) must be the same as the number of axes (here {len(axes)}).'
 
+            # print("Current scale:", s)
             if all([i == 1 for i in s]):#if[1,1,1]
                 output.append(data_dict[self.input_key])
+                # print("Using original shape:", data_dict[self.input_key].shape)
             else:
                 new_shape = np.array(data_dict[self.input_key].shape).astype(float)
                 for i, a in enumerate(axes):
                     new_shape[a] *= s[i]
                 new_shape = np.round(new_shape).astype(int)
+                # print("Downsampled shape:", new_shape)
                 out_seg = np.zeros(new_shape, dtype=data_dict[self.input_key].dtype)
                 for b in range(data_dict[self.input_key].shape[0]):
                     for c in range(data_dict[self.input_key].shape[1]):
                         out_seg[b, c] = resize_segmentation(data_dict[self.input_key][b, c], new_shape[2:], self.order)#self.order
                 output.append(out_seg)
         data_dict[self.output_key] = output
-        #print("data_mask_len before ddp",len(output[0]))
+
         return data_dict

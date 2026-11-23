@@ -26,7 +26,7 @@ from torch._dynamo import OptimizedModule
 from nndosenet.configuration import ANISO_THRESHOLD, default_num_processes
 from nndosenet.evaluation.evaluate_predictions import compute_dose_metrics_on_folder
 from nndosenet.inference.export_prediction import export_prediction_from_logits
-from nndosenet.inference.predict_from_raw_data import nnUNetPredictor
+from nndosenet.inference.predict_from_raw_data import nnDoseNetPredictor
 from nndosenet.inference.sliding_window_prediction import compute_gaussian
 from nndosenet.paths import nnDose_preprocessed, nnDose_results, nnDose_raw
 from nndosenet.training.data_augmentation.compute_initial_patch_size import get_patch_size
@@ -82,16 +82,16 @@ class nnDoseTrainer(object):
         # next day impossible: complexity demon spirit has entered code and very dangerous situation!
 
         # OK OK I am guilty. But I tried. http://tiny.cc/gzgwuz
-        
-        # A bit mean but ... :)        
 
-        self.is_ddp = dist.is_available() and dist.is_initialized() 
-        self.local_rank = 0 if not self.is_ddp else dist.get_rank()
+        # A bit mean but ... :)
+
+        self.is_dsv = dist.is_available() and dist.is_initialized()
+        self.local_rank = 0 if not self.is_dsv else dist.get_rank()
         self.device = device
-        
+
 
         # print what device we are using
-        if self.is_ddp:  # implicitly it's clear that we use cuda in this case
+        if self.is_dsv:  # implicitly it's clear that we use cuda in this case
             print(f"I am local rank {self.local_rank}. {device_count()} GPUs are available. The world size is "
                   f"{dist.get_world_size()}."
                   f"Setting device to {self.device}")
@@ -114,13 +114,13 @@ class nnDoseTrainer(object):
         self.configuration_manager = self.plans_manager.get_configuration(configuration)
         self.configuration_name = configuration
         self.dataset_json = dataset_json
-        
+
         self.fold = fold
         self.unpack_dataset = unpack_dataset
         self.num_epochs = self.configuration_manager.epoch_num
         self.mask_channel = self.configuration_manager.mask_channel
         self.PTV_OAR_BODY = self.configuration_manager.PTV_OAR_BODY
-        
+
 
         ### Setting all the folder names. We need to make sure things don't crash in case we are just running
         # inference and some of the folders may not be defined!
@@ -135,7 +135,7 @@ class nnDoseTrainer(object):
 
         self.preprocessed_dataset_folder = join(self.preprocessed_dataset_folder_base,
                                                 self.configuration_manager.data_identifier)
-   
+
         ### Some hyperparameters for you to fiddle with
         self.initial_lr = 1e-2
         self.weight_decay = 3e-5
@@ -146,9 +146,8 @@ class nnDoseTrainer(object):
 
         ### Dealing with labels/regions
         self.label_manager = self.plans_manager.get_label_manager(dataset_json)
-        
-        # labels is an image in nnDoseNet that usually is RT dose map but ideally can be any image.
 
+        # labels is an image in nnDoseNet that usually is RT dose map but ideally can be any image.
         self.num_input_channels = None  # -> self.initialize()
         self.network = None  # -> self._get_network()
         self.optimizer = self.lr_scheduler = None  # -> self.initialize
@@ -176,10 +175,10 @@ class nnDoseTrainer(object):
         # self.configure_rotation_dummyDA_mirroring_and_inital_patch_size and will be saved in checkpoints
 
         ### checkpoint saving stuff
-        
-        
+
+
         self.save_every = 50
-        
+
         self.disable_checkpointing = False
 
         ## DDP batch size and oversampling can differ between workers and needs adaptation
@@ -204,9 +203,9 @@ class nnDoseTrainer(object):
                 self.network = torch.compile(self.network)
 
             self.optimizer, self.lr_scheduler = self.configure_optimizers()
-            # if ddp, wrap in DDP wrapper
-            if self.is_ddp:
-            
+            # if dsv, wrap in DDP wrapper
+            if self.is_dsv:
+
                 self.network = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.network)
                 self.network = DDP(self.network, device_ids=[self.local_rank])
 
@@ -278,7 +277,7 @@ class nnDoseTrainer(object):
         return deep_supervision_scales
 
     def _set_batch_size_and_oversample(self):
-        if not self.is_ddp:
+        if not self.is_dsv:
             # set batch size to what the plan says, leave oversample untouched
             self.batch_size = self.configuration_manager.batch_size
         else:
@@ -323,65 +322,65 @@ class nnDoseTrainer(object):
             self.oversample_foreground_percent = oversample_percents[my_rank]
 
     def _build_loss(self):
-        
+
         if (self.configuration_manager.dose==True) or self.label_manager.dose_label:
             #print(self.configuration_manager.dose,"---->loss=torch.nn.MSELoss()"
-            
+
             channel_ptv_oar=[self.mask_channel.index(int(self.PTV_OAR_BODY[0])),self.mask_channel.index(int(self.PTV_OAR_BODY[1]))]
-            
-            
+
+
             if int(self.PTV_OAR_BODY[2]) <0:
                 dose_mask=None
             else:
                 dose_mask=self.mask_channel.index(int(self.PTV_OAR_BODY[2]))
-                
+
             self.print_to_log_file("Order of Target, OAR, Body in mask_channel:",channel_ptv_oar[0],channel_ptv_oar[1],dose_mask)
-                
+
             self.loss_mode=str(self.configuration_manager.loss_mode)
-            if self.configuration_manager.mask_channel != None:# if use criteria loss ptv_oar_channel is required 
+            if self.configuration_manager.mask_channel != None:# if use criteria loss ptv_oar_channel is required
                 if self.loss_mode=='0':
                     loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                     self.print_to_log_file(loss)
                     self.print_to_log_file("Using loss mode 0: 1*MSE")
                 elif self.loss_mode=='1':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss],kwargs=[{},{'dsv': self.is_dsv}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                     self.print_to_log_file(loss)
                     self.print_to_log_file("Using loss mode 1: 0.5*MSE+0.5*vDVH")
                 elif self.loss_mode=='2':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)            
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,criteria_DVH_Loss],kwargs=[{},{'dsv': self.is_dsv}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                     self.print_to_log_file(loss)
                     self.print_to_log_file("Using loss mode 2: 0.5*MSE+0.5*cDVH")
                 elif self.loss_mode=='3':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'dsv': self.is_dsv},{'dsv': self.is_dsv}],weights=[0.4,0.3,0.3], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                     self.print_to_log_file(loss)
                     self.print_to_log_file("Using loss mode 3: 0.4*MSE+0.3*vDVH+0.3*cDVH")
                 elif self.loss_mode=='4':
-                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[MSELoss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'dsv': self.is_dsv},{'dsv': self.is_dsv}],weights=[0.6,0.2,0.2], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                     self.print_to_log_file(loss)
-                    self.print_to_log_file("Using loss mode 4: 0.6*MSE+0.2*vDVH+0.2*cDVH")                
+                    self.print_to_log_file("Using loss mode 4: 0.6*MSE+0.2*vDVH+0.2*cDVH")
                 elif self.loss_mode=='5':
                     loss=Err_and_DVH_Loss(losses=[L1Loss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                     self.print_to_log_file(loss)
                     self.print_to_log_file("Using loss mode 5: 1*MAE")
                 elif self.loss_mode=='6':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss],kwargs=[{},{'dsv': self.is_dsv}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                     self.print_to_log_file(loss)
                     self.print_to_log_file("Using loss mode 6: 0.5*MAE+0.5*vDVH")
                 elif self.loss_mode=='7':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)            
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,criteria_DVH_Loss],kwargs=[{},{'dsv': self.is_dsv}],weights=[0.5,0.5], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                     self.print_to_log_file(loss)
                     self.print_to_log_file("Using loss mode 7: 0.5*MSE+0.5*cDVH")
                 elif self.loss_mode=='8':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.4,0.3,0.3], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'dsv': self.is_dsv},{'dsv': self.is_dsv}],weights=[0.4,0.3,0.3], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                     self.print_to_log_file(loss)
                     self.print_to_log_file("Using loss mode 8: 0.4*MAE+0.3*vDVH+0.3*cDVH")
                 elif self.loss_mode=='9':
-                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'ddp': self.is_ddp},{'ddp': self.is_ddp}],weights=[0.6,0.2,0.2], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
+                    loss=Err_and_DVH_Loss(losses=[L1Loss,value_DVH_Loss,criteria_DVH_Loss],kwargs=[{},{'dsv': self.is_dsv},{'dsv': self.is_dsv}],weights=[0.6,0.2,0.2], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
                     self.print_to_log_file(loss)
                     self.print_to_log_file("Using loss mode 9: 0.6*MAE+0.2*vDVH+0.2*cDVH")
                 else:
                     self.print_to_log_file("unknown loss mode, set to default: MSE")
-                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)    
+                    loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
             else:
                 if self.loss_mode=='0':
                     loss=Err_and_DVH_Loss(losses=[MSELoss],kwargs=[{}],weights=[1], channel_ptv_oar=channel_ptv_oar,dose_mask=dose_mask)
@@ -394,11 +393,11 @@ class nnDoseTrainer(object):
 
         else:
             self.print_to_log_file("Somehow it's not running in dose mode. Please check did you")
-            self.print_to_log_file("1. put dose as label in dataset.json") 
+            self.print_to_log_file("1. put dose as label in dataset.json")
             self.print_to_log_file("2. Or put --dose argument when planning")
-            
 
-        
+
+
 
         deep_supervision_scales = self._get_deep_supervision_scales()
 
@@ -406,11 +405,11 @@ class nnDoseTrainer(object):
         # this gives higher resolution outputs more weight in the loss
         weights = np.array([1 / (2 ** i) for i in range(len(deep_supervision_scales))])
         weights[-1] = 0
-        
+
 
         # we don't use the lowest 2 outputs. Normalize weights so that they sum to 1
         weights = weights / weights.sum()
-    
+
 
         # now wrap the loss
 
@@ -513,8 +512,8 @@ class nnDoseTrainer(object):
             self.print_to_log_file('These are the global plan.json settings:\n', dct, '\n', add_timestamp=False)
 
     def configure_optimizers(self):
-        
-      
+
+
         optimizer = torch.optim.SGD(self.network.parameters(), self.initial_lr, weight_decay=self.weight_decay,
                                     momentum=0.99, nesterov=True)
         lr_scheduler = PolyLRScheduler(optimizer, self.initial_lr, self.num_epochs)
@@ -620,10 +619,10 @@ class nnDoseTrainer(object):
         # care about distributing training cases across GPUs.
         dataset_tr = nnDoseDataset(self.preprocessed_dataset_folder, tr_keys,
                                    num_images_properties_loading_threshold=0)
-        
+
         dataset_val = nnDoseDataset(self.preprocessed_dataset_folder, val_keys,
                                     num_images_properties_loading_threshold=0)
-        
+
         return dataset_tr, dataset_val
 
     def get_dataloaders(self):
@@ -632,41 +631,37 @@ class nnDoseTrainer(object):
         patch_size = self.configuration_manager.patch_size
         dim = len(patch_size)
 
-        # needed for deep supervision: how much do we need to downscale the segmentation targets for the different
-        # outputs?
-        #if self.enable_deep_supervision: #NOTE: fixed
-        deep_supervision_scales = self._get_deep_supervision_scales()
-        # else:
-        #     deep_supervision_scales=None
+        # Only get deep supervision scales if it's enabled
+        deep_supervision_scales = self._get_deep_supervision_scales() if self.is_deep_supervision_enabled() else None
 
         rotation_for_DA, do_dummy_2d_data_aug, initial_patch_size, mirror_axes = \
             self.configure_rotation_dummyDA_mirroring_and_inital_patch_size()
 
         # training pipeline
-        #NOTE: changed resample order for transform 
         tr_transforms = self.get_training_transforms(
             patch_size, rotation_for_DA, deep_supervision_scales, mirror_axes, do_dummy_2d_data_aug,
-            order_resampling_data=0, order_resampling_seg=0,#3,0
+            order_resampling_data=0, order_resampling_seg=0,
             use_mask_for_norm=self.configuration_manager.use_mask_for_norm,
-            mask_channel=self.configuration_manager.mask_channel,PTV_OAR_BODY=self.configuration_manager.PTV_OAR_BODY)
+            mask_channel=self.configuration_manager.mask_channel,
+            PTV_OAR_BODY=self.configuration_manager.PTV_OAR_BODY)
 
         # validation pipeline
         val_transforms = self.get_validation_transforms(deep_supervision_scales,
                                                         mask_channel=self.configuration_manager.mask_channel)
-        
-  
+
+
         dl_tr, dl_val = self.get_plain_dataloaders(initial_patch_size, dim)
 
-        
+
 
         allowed_num_processes = get_allowed_n_proc_DA()
         self.print_to_log_file("Using",allowed_num_processes, "CPU")
         if allowed_num_processes == 0:
-            
+
             mt_gen_train = SingleThreadedAugmenter(dl_tr, tr_transforms)
             mt_gen_val = SingleThreadedAugmenter(dl_val, val_transforms)
         else:
-            
+
             mt_gen_train = LimitedLenWrapper(self.num_iterations_per_epoch, data_loader=dl_tr, transform=tr_transforms,
                                              num_processes=allowed_num_processes, num_cached=6, seeds=None,
                                              pin_memory=self.device.type == 'cuda', wait_time=0.02)
@@ -674,7 +669,7 @@ class nnDoseTrainer(object):
                                            transform=val_transforms, num_processes=max(1, allowed_num_processes // 2),
                                            num_cached=3, seeds=None, pin_memory=self.device.type == 'cuda',
                                            wait_time=0.02)
-     
+
         return mt_gen_train, mt_gen_val
 
     def get_plain_dataloaders(self, initial_patch_size: Tuple[int, ...], dim: int):
@@ -720,8 +715,8 @@ class nnDoseTrainer(object):
                                 use_mask_for_norm: List[bool] = None,
                                 mask_channel=None,
                                 PTV_OAR_BODY=None) -> AbstractTransform:
-        
-        
+
+
         tr_transforms = []
 
         if do_dummy_2d_data_aug: #False
@@ -746,8 +741,8 @@ class nnDoseTrainer(object):
         ))
         if mirror_axes is not None and len(mirror_axes) > 0:
             tr_transforms.append(MirrorTransform(mirror_axes))
-        
-             
+
+
         if do_dummy_2d_data_aug:#False
             tr_transforms.append(Convert2DTo3DTransform())
         if mask_channel is not None :
@@ -756,7 +751,7 @@ class nnDoseTrainer(object):
         if deep_supervision_scales is not None:#NOTE: fixed
             tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='data_mask',
                                                               output_key='data_mask'))
-            
+
         tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))#
         tr_transforms.append(GaussianBlurTransform((0.5, 1.), different_sigma_per_channel=True, p_per_sample=0.2,
                                                    p_per_channel=0.5))
@@ -787,10 +782,10 @@ class nnDoseTrainer(object):
                                                               output_key='target'))
         if mask_channel is not None :
             if len(mask_channel)>0:
-                tr_transforms.append(revert_SeperateDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask',ddp=(deep_supervision_scales is not None)))
+                tr_transforms.append(revert_SeperateDataMask(mask_channel=mask_channel,input_key='data',output_key='data_mask',dsv=(deep_supervision_scales is not None)))
         tr_transforms.append(NumpyToTensor(['data', 'target','data_mask'], 'float'))
 
-        
+
         tr_transforms = Compose(tr_transforms)
         return tr_transforms
 
@@ -812,7 +807,7 @@ class nnDoseTrainer(object):
         if deep_supervision_scales is not None:
             val_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
                                                                output_key='target'))
-  
+
 
         val_transforms.append(NumpyToTensor(['data', 'target','data_mask'], 'float'))
 
@@ -825,7 +820,7 @@ class nnDoseTrainer(object):
         This function is specific for the default architecture in nnDoseNet. If you change the architecture, there are
         chances you need to change this as well!
         """
-        if self.is_ddp:
+        if self.is_dsv:
             mod = self.network.module
         else:
             mod = self.network
@@ -833,7 +828,7 @@ class nnDoseTrainer(object):
             mod = mod._orig_mod
 
         mod.decoder.deep_supervision = enabled
-        
+
     def on_train_start(self):
         if not self.was_initialized:
             self.initialize()
@@ -853,7 +848,7 @@ class nnDoseTrainer(object):
                            num_processes=max(1, round(get_allowed_n_proc_DA() // 2)))
             self.print_to_log_file('unpacking done...')
 
-        if self.is_ddp:
+        if self.is_dsv:
             dist.barrier()
 
         # dataloaders must be instantiated here because they need access to the training data which may not be present
@@ -863,8 +858,8 @@ class nnDoseTrainer(object):
         # copy plans and dataset.json so that they can be used for restoring everything we need for inference
         save_json(self.plans_manager.plans, join(self.output_folder_base, 'plans.json'), sort_keys=False)
         save_json(self.dataset_json, join(self.output_folder_base, 'dataset.json'), sort_keys=False)
-        
-        #we need structure.json for evaluation 
+
+        #we need structure.json for evaluation
         shutil.copy(join(self.preprocessed_dataset_folder_base, 'structure.json'),
                     join(self.output_folder_base, 'structure.json'))
 
@@ -884,7 +879,7 @@ class nnDoseTrainer(object):
         self.current_epoch -= 1
         self.save_checkpoint(join(self.output_folder, "checkpoint_final.pth"))
         self.current_epoch += 1
-        
+
         if self.local_rank == 0 and isfile(join(self.output_folder, "checkpoint_latest.pth")):
             os.remove(join(self.output_folder, "checkpoint_latest.pth"))
 
@@ -914,11 +909,11 @@ class nnDoseTrainer(object):
     def train_step(self, batch: dict) -> dict:
         data = batch['data']#(b,c,x,y,z) check basedataloader shape
         target = batch['target']
-        ddp_data = batch['data_mask']
-     
+        dsv_data = batch['data_mask']
 
 
-        
+
+
         data = data.to(self.device, non_blocking=True)
         if isinstance(target, list):
 
@@ -926,41 +921,42 @@ class nnDoseTrainer(object):
         else:
 
             target = target.to(self.device, non_blocking=True)
-        # for i in range(0,5):  
-        #     print(i,"label before loss",np.unique(ddp_data[i]))
-        if isinstance(ddp_data, list):
+        # for i in range(0,5):
+        #     print(i,"label before loss",np.unique(dsv_data[i]))
+        if isinstance(dsv_data, list):
 
-            ddp_data = [i.to(self.device, non_blocking=True) for i in ddp_data]
+            dsv_data = [i.to(self.device, non_blocking=True) for i in dsv_data]
         else:
 
-            ddp_data = ddp_data.to(self.device, non_blocking=True)
+            dsv_data = dsv_data.to(self.device, non_blocking=True)
 
         self.optimizer.zero_grad()
         output = self.network(data)
 
-        l = self.loss(output, target,ddp_data)#)#,ddp_data
+        l = self.loss(output, target, dsv_data)#)#,dsv_data
 
- 
+
 
         if self.grad_scaler is not None:
-            
+
             self.grad_scaler.scale(l).backward()
             self.grad_scaler.unscale_(self.optimizer)
             torch.nn.utils.clip_grad_norm_(self.network.parameters(), 12)
             self.grad_scaler.step(self.optimizer)
             self.grad_scaler.update()
-  
+
         else:
+            l.backward()
             torch.nn.utils.clip_grad_norm_(self.network.parameters(), 12)
             self.optimizer.step()
-            
+
         #print("b_return_loss")
         return {'loss': l.detach().cpu().numpy()}
 
     def on_train_epoch_end(self, train_outputs: List[dict]):
         outputs = collate_outputs(train_outputs)
 
-        if self.is_ddp:
+        if self.is_dsv:
             losses_tr = [None for _ in range(dist.get_world_size())]
             dist.all_gather_object(losses_tr, outputs['loss'])
             loss_here = np.vstack(losses_tr).mean()
@@ -975,30 +971,27 @@ class nnDoseTrainer(object):
     def validation_step(self, batch: dict) -> dict:
         data = batch['data']
         target = batch['target']
-        mask_data=batch['data_mask']
-        
+        mask_data = batch['data_mask']
+
         data = data.to(self.device, non_blocking=True)
         if isinstance(target, list):
             target = [i.to(self.device, non_blocking=True) for i in target]
         else:
             target = target.to(self.device, non_blocking=True)
         if isinstance(mask_data, list):
-
             mask_data = [i.to(self.device, non_blocking=True) for i in mask_data]
         else:
-
             mask_data = mask_data.to(self.device, non_blocking=True)
+
         output = self.network(data)
-        
-        l = self.loss(output, target,mask_data)
+        l = self.loss(output, target, mask_data)
         del data
-            
-            
 
-        # we only need the output with the highest output resolution
-        output = output[0]
-        target = target[0]
-
+        # Handle both DSV and non-DSV cases
+        if isinstance(output, list):
+            output = output[0]
+        if isinstance(target, list):
+            target = target[0]
 
         return {'loss': l.detach().cpu().numpy()}
 
@@ -1006,7 +999,7 @@ class nnDoseTrainer(object):
         outputs_collated = collate_outputs(val_outputs)
 
 
-        if self.is_ddp:
+        if self.is_dsv:
             world_size = dist.get_world_size()
             losses_val = [None for _ in range(world_size)]
             dist.all_gather_object(losses_val, outputs_collated['loss'])
@@ -1033,7 +1026,7 @@ class nnDoseTrainer(object):
         if (current_epoch + 1) % self.save_every == 0 and current_epoch != (self.num_epochs - 1):
 
             self.save_checkpoint(join(self.output_folder, 'checkpoint_latest.pth'))
-     
+
 
         if self._best_ema is None or self.logger.my_fantastic_logging['val_losses'][-1] < self._best_ema:
             self._best_ema = self.logger.my_fantastic_logging['val_losses'][-1]
@@ -1048,7 +1041,7 @@ class nnDoseTrainer(object):
     def save_checkpoint(self, filename: str) -> None:
         if self.local_rank == 0:
             if not self.disable_checkpointing:
-                if self.is_ddp:
+                if self.is_dsv:
                     mod = self.network.module
                 else:
                     mod = self.network
@@ -1093,7 +1086,7 @@ class nnDoseTrainer(object):
             'inference_allowed_mirroring_axes'] if 'inference_allowed_mirroring_axes' in checkpoint.keys() else self.inference_allowed_mirroring_axes
 
 
-        if self.is_ddp:
+        if self.is_dsv:
             if isinstance(self.network.module, OptimizedModule):
                 self.network.module._orig_mod.load_state_dict(new_state_dict)
             else:
@@ -1112,7 +1105,7 @@ class nnDoseTrainer(object):
         self.set_deep_supervision_enabled(False)
         self.network.eval()
 
-        predictor = nnUNetPredictor(tile_step_size=0.5, use_gaussian=True, use_mirroring=True,
+        predictor = nnDoseNetPredictor(tile_step_size=0.5, use_gaussian=True, use_mirroring=True,
                                     perform_everything_on_gpu=True, device=self.device, verbose=False,
                                     verbose_preprocessing=False, allow_tqdm=False)
         predictor.manual_initialization(self.network, self.plans_manager, self.configuration_manager, None,
@@ -1127,7 +1120,7 @@ class nnDoseTrainer(object):
             # we cannot use self.get_tr_and_val_datasets() here because we might be DDP and then we have to distribute
             # the validation keys across the workers.
             _, val_keys = self.do_split()
-            if self.is_ddp:
+            if self.is_dsv:
                 val_keys = val_keys[self.local_rank:: dist.get_world_size()]
 
             dataset_val = nnDoseDataset(self.preprocessed_dataset_folder, val_keys,
@@ -1156,15 +1149,15 @@ class nnDoseTrainer(object):
                     data = torch.from_numpy(data)
 
                 output_filename_truncated = join(validation_output_folder, k)
-                
+
                 #mask output with dose/body mask and make negatives 0
                 prediction = predictor.predict_sliding_window_return_logits(data)
                 if prediction.device != data.device:
                     data = data.to(prediction.device)
                 if int(self.PTV_OAR_BODY[2])>0:
-                    prediction=torch.clamp(prediction*data[int(self.PTV_OAR_BODY[2]),...],min=0) 
- 
-                 
+                    prediction=torch.clamp(prediction*data[int(self.PTV_OAR_BODY[2]),...],min=0)
+
+
                 prediction = prediction.cpu()
 
                 # this needs to go into background processes
@@ -1216,7 +1209,7 @@ class nnDoseTrainer(object):
                 '''
             _ = [r.get() for r in results]
 
-        if self.is_ddp:
+        if self.is_dsv:
             dist.barrier()
 
         if self.local_rank == 0:
@@ -1235,7 +1228,7 @@ class nnDoseTrainer(object):
                                                 chill=True)
             self.print_to_log_file("Validation complete", also_print_to_console=True)
 
-        self.set_deep_supervision_enabled(True) 
+        self.set_deep_supervision_enabled(True)
         compute_gaussian.cache_clear()
 
     def run_training(self):
@@ -1261,4 +1254,23 @@ class nnDoseTrainer(object):
 
         self.on_train_end()
 
+    def is_deep_supervision_enabled(self) -> bool:
+        """
+        Check if deep supervision is currently enabled in the network.
+        Returns:
+            bool: True if deep supervision is enabled, False otherwise
+        """
+        if self.is_dsv:
+            mod = self.network.module
+        else:
+            mod = self.network
+        if isinstance(mod, OptimizedModule):
+            mod = mod._orig_mod
+
+        return mod.decoder.deep_supervision if hasattr(mod, 'decoder') else False
+
+class nnUNetTrainer(nnDoseTrainer):
+    def __init__(self, plans: dict, configuration: str, fold: int,dataset_json: dict, unpack_dataset: bool = True,
+                 device: torch.device = torch.device('cuda')):
+        super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
 

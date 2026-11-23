@@ -1,6 +1,6 @@
 import multiprocessing
 import os
-import pandas as pd 
+import pandas as pd
 from copy import deepcopy
 from multiprocessing import Pool
 from typing import Tuple, List, Union, Optional
@@ -41,16 +41,16 @@ def save_summary_json(results: dict, output_file: str):
     ourselves
     """
     results_converted = deepcopy(results)
-    #print(results_converted) 
+    #print(results_converted)
     # convert keys in mean metrics
     try:
         results_converted['mean'] = {label_or_region_to_key(k): results['mean'][k] for k in results['mean'].keys()}
     except:
         print("no means")
-    # convert metric_per_case 
+    # convert metric_per_case
     try:
         for i in range(len(results_converted["metric_per_case"])):
-        
+
             results_converted["metric_per_case"][i]['metrics'] = \
                 {label_or_region_to_key(k): results["metric_per_case"][i]['metrics'][k]
                 for k in results["metric_per_case"][i]['metrics'].keys()}
@@ -79,15 +79,15 @@ def load_summary_json(filename: str):
 def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: str, oar_file: str,
                          image_reader_writer: BaseReaderWriter,
                         structure_label: Union[List[int], List[Union[int, Tuple[int, ...]]]]) -> dict:
-    
+
     PTV_METRICS=["mean","min","max","D_0.1_cc","D_99","D_95","D_1","homogeneity","conformity"]#
     OAR_METRICS=["mean","min","max","D_0.1_cc"]
     # metrics: full image evaluation, only need ref and pred
     dose_ref, dose_dict = image_reader_writer.read_gt(reference_file)
     dose_pred, _ = image_reader_writer.read_gt(prediction_file)
     dose_ref = dose_ref.squeeze().flatten()
-    dose_pred = dose_pred.squeeze().flatten()    
-    
+    dose_pred = dose_pred.squeeze().flatten()
+
     results = {}
     results['reference_file'] = reference_file
     results['prediction_file'] = prediction_file
@@ -99,28 +99,37 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
     results['metrics']['MSE'] = MSE(dose_ref,dose_pred)
     results['metrics']['max_Ref'] = np.max(dose_ref)
     results['metrics']['max_Pred'] = np.max(dose_pred)
-    # DVH: ROI/contour/seg evaluation, need ref, pred and cotour  
+    # DVH: ROI/contour/seg evaluation, need ref, pred and cotour
     shape=dose_ref.shape
-    voxel_size = np.prod(dose_dict['sitk_stuff']['spacing']) 
-    if os.path.isdir(ptv_file) :
-        seg_ptv=[]
+    voxel_size = np.prod(dose_dict['sitk_stuff']['spacing'])
+    # if os.path.isdir(ptv_file) :
+    #     seg_ptv=[]
 
-        for i in structure_label['Target'].values():
-            for j in i:
-                path=join(ptv_file,j+".nii.gz")
-                if os.path.isfile(path):
-                    temp, _ = image_reader_writer.read_gt(path)
-                    seg_ptv.append(temp.squeeze().flatten())
-                    
-                else:
-                    seg_ptv.append(np.zeros(shape)) 
-        results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv, 
-                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,separate_label=True).calculate_dvh_metrics()
-    else:
-        seg_ptv, _ = image_reader_writer.read_gt(ptv_file)
-        seg_ptv = seg_ptv.squeeze().flatten()
-        results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv, 
-                                structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,separate_label=False).calculate_dvh_metrics() 
+    #     for i in structure_label['Target'].values():
+    #         for j in i:
+    #             path=join(ptv_file,j+".nii.gz")
+    #             if os.path.isfile(path):
+    #                 temp, _ = image_reader_writer.read_gt(path)
+    #                 seg_ptv.append(temp.squeeze().flatten())
+
+    #             else:
+    #                 seg_ptv.append(np.zeros(shape))
+    #     results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv,
+    #                             structure_label['Target'],voxel_size,metrics_list=PTV_METRICS,separate_label=True).calculate_dvh_metrics()
+    # else:
+    if os.path.isdir(ptv_file) :
+        target_path=join(oar_file,"combined_target.nii.gz")
+    def label_dict(mask):
+        unique_labels = np.unique(mask)# Get unique labels
+        unique_labels = unique_labels[unique_labels != 0] /100
+        max_value = np.max(unique_labels)
+        return {label:[f"target {i+1}"]  for i, label in enumerate(unique_labels)}, max_value
+    seg_ptv, _ = image_reader_writer.read_gt(target_path)
+    seg_ptv = seg_ptv.squeeze().flatten()
+    target_dict, results['prescription']= label_dict(seg_ptv)
+    # print(target_dict)
+    results['Target'] = DoseEvaluator(dose_ref, dose_pred, seg_ptv,
+                            target_dict,voxel_size,metrics_list=PTV_METRICS,separate_label=True).calculate_dvh_metrics()
     if os.path.isdir(oar_file) :
         seg_oar=[]
         for i in structure_label['OAR'].values():
@@ -130,13 +139,13 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
                     temp, _ = image_reader_writer.read_gt(path)
                     seg_oar.append(temp.squeeze().flatten())
                 else:
-                    seg_oar.append(np.zeros(shape)) 
-        results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar, 
+                    seg_oar.append(np.zeros(shape))
+        results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar,
                                 structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,separate_label=True).calculate_dvh_metrics()
     else:
         seg_oar, _ = image_reader_writer.read_gt(oar_file)
         seg_oar = seg_oar.squeeze().flatten()
-        results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar, 
+        results['OAR'] = DoseEvaluator(dose_ref, dose_pred, seg_oar,
                                 structure_label['OAR'],voxel_size,metrics_list=OAR_METRICS,separate_label=False).calculate_dvh_metrics()
 
 
@@ -144,7 +153,7 @@ def compute_dose_metrics(reference_file: str, prediction_file: str, ptv_file: st
 
 
 
-def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str, 
+def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
                                    folder_input:str, output_file: str,
                                    image_reader_writer: BaseReaderWriter,
                                    file_ending: str,
@@ -162,7 +171,7 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
     if not chill:
         present = [isfile(join(folder_pred, i)) for i in files_ref]
         assert all(present), "Not all files in folder_pred exist in folder_ref"
-        
+
 
     if raw_folder:
         files_ptv = [join(folder_input, i,"Nifti") for i in files_pred]
@@ -178,15 +187,15 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
     else:
         files_ptv = [join(folder_input, i[0:-len(file_ending)]+"_000"+str(ptv_oar[0])+file_ending) for i in files_pred]
         files_oar = [join(folder_input, i[0:-len(file_ending)]+"_000"+str(ptv_oar[1])+file_ending) for i in files_pred]
-    
+
     files_ref = [join(folder_ref, i) for i in files_pred]
     files_pred = [join(folder_pred, i) for i in files_pred]
 
-    
+
     with multiprocessing.get_context("spawn").Pool(num_processes) as pool:
 
 
-        
+
         print("computing dose metrics")
         results = pool.starmap(
             compute_dose_metrics,
@@ -199,13 +208,13 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
     image_prescription_compare_list=['max_Ref','max_Pred']
     target_prescription_compare_list=['D_99_Pred','D_99_Ref','D_95_Pred','D_95_Ref']
     means={}
-    # find max prescription per case 
+    # find max prescription per case
     for i in results:
         for c in i['Target'].keys():
             if i['prescription'] < float(i['Target'][c]["input_label"]):
                 i['prescription'] = float(i['Target'][c]["input_label"])
-    
-    # mean image metrices 
+
+    # mean image metrices
     metric_list = results[0]['metrics'].keys()
     for m in metric_list:
         count_107 = 0
@@ -220,11 +229,11 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
         if m in image_prescription_compare_list:
             means["# < 105% prescription of "+m] = count_105
             means["# < 107% prescription of "+m] = count_107
-            
-    # mean contour metrics 
+
+    # mean contour metrics
     for typ in ["Target","OAR"]:
-        means[typ]={} 
-        contour_list = list(results[0][typ].keys())      
+        means[typ]={}
+        contour_list = list(results[0][typ].keys())
         metric_list = results[0][typ][contour_list[0]].keys()#
         for c in contour_list:
             means[typ][c]={}
@@ -235,27 +244,27 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
                 if m =="input_label":
                     continue
                 temp_list=[]
-                
+
                 for r in results:
                     try:
                         if m in target_prescription_compare_list:
                             if r[typ][c][m] >= float(means[typ][c]["input_label"]):
                                 count += 1
-                
+
                         temp_list.append(r[typ][c][m])
                     except:
                         pass
-        
-                means[typ][c][m]=np.mean(temp_list)
-                
+                if len(temp_list)>0:
+                    means[typ][c][m]=np.mean(temp_list)
+
                 if m in target_prescription_compare_list:
                     means[typ][c]["# > target prescription of "+m] = count
-                    
-                
+
+
     [recursive_fix_for_json_export(i) for i in results]
     recursive_fix_for_json_export(means)
-    
-    
+
+
     result = {'mean': means,'metric_per_case': results}
 
 
@@ -264,10 +273,10 @@ def compute_dose_metrics_on_folder(folder_ref: str, folder_pred: str,
     return result
 
 
-    
+
 
 def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_input:str,
-                                dataset_json_file: str,# plans_file: str, 
+                                dataset_json_file: str,# plans_file: str,
                                 structure_file: str,
                                output_file: str = None,
                                num_processes: int = default_num_processes,
@@ -290,12 +299,12 @@ def compute_dose_metrics_on_folder2(folder_ref: str, folder_pred: str,folder_inp
         output_file = join(folder_pred, 'summary.json')
 
 
-    compute_dose_metrics_on_folder(folder_ref, folder_pred, folder_input, output_file, 
+    compute_dose_metrics_on_folder(folder_ref, folder_pred, folder_input, output_file,
                                    rw, file_ending,structure_json,
                                    num_processes=num_processes,dose_label=True, chill=chill,
                               raw_folder=raw_folder,patient_csv=patient_csv)
 
-    
+
 def evaluate_folder_entry_point():
     import argparse
     parser = argparse.ArgumentParser()
@@ -318,30 +327,9 @@ def evaluate_folder_entry_point():
         print("detected that image_folder is not under nndosenet dicom")
         print("with --by_roi flag, the image folder should struct as folder in nndose_dicom, that \
             that should be [image_folder]/[Nifti]/oar1.nii.gz, oar2.nii.gz, ptv1.nii.gz....continue ")
-    compute_dose_metrics_on_folder2(args.gt_folder, args.pred_folder, args.image_folder, args.djfile, args.sjfile, args.o, 
+    compute_dose_metrics_on_folder2(args.gt_folder, args.pred_folder, args.image_folder, args.djfile, args.sjfile, args.o,
                                     args.np, chill=args.chill,raw_folder=args.by_roi,patient_csv=args.id_patient_csv)
-    
+
 
 if __name__ == '__main__':
-    #I know I spelled prediction wrong when i am naming my project folder....
-    #but I am too lazy to change it.Please don't laugh at me >_<
-    folder_ref = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/GroundTruth/labelsTs'
-    folder_pred = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/Prediction'
-    folder_input = '/home/changh/Documents/2023_DosePredcition/nnDose_1_dicom/openkbp/Ts'
-    output_file = '/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/summary.json'
-    structure_json = load_json('/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/Prediction/structure.json')['structure_label']
-    patient_csv = "/home/changh/Documents/2023_DosePredcition/nnDose_5_prediction/openkbp/Dataset024/GroundTruth/patientTs.csv"
-    image_reader_writer = SimpleITKIO()
-    file_ending = '.nii.gz'
-
-    ignore_label = None
-    dose_label= True
-    num_processes = 12
-    compute_dose_metrics_on_folder(folder_ref, folder_pred, folder_input, output_file,
-                              image_reader_writer,
-                              file_ending,
-                              structure_json,
-                              dose_label,
-                              num_processes,raw_folder=True,patient_csv=patient_csv)
-    
- 
+    evaluate_folder_entry_point()

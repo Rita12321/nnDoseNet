@@ -1,0 +1,35 @@
+# Source this file from Bash: source documentation/Sample_bash/var.txt
+# Use only absolute paths. Edit these values for a new cohort/experiment.
+# Do not store DICOM, NIfTI, target-summary JSON, or patient-identifying files
+# in this repository.
+
+PROJECT_ROOT="/absolute/path/to/project-root"
+NNDOSE_REPO="${PROJECT_ROOT}/nnDosev2"
+
+export nnDose_dicom="${PROJECT_ROOT}/nnDose_1_dicom"
+export nnDose_raw="${PROJECT_ROOT}/nnDose_2_raw"
+export nnDose_preprocessed="${PROJECT_ROOT}/nnDose_3_preprocess"
+export nnDose_results="${PROJECT_ROOT}/nnDose_4_result"
+export nnDose_prediction="${PROJECT_ROOT}/nnDose_5_prediction"
+
+# NOTE: The supplied source directory is literally named "Dicom_Test " (trailing space).
+# Rename the folder and edit this value before a production handoff if desired.
+DATASET_NAME="Dicom_Test "
+DATASET_ID="990"
+# This reviewed example mapping is versioned with the code. Copy and review it
+# before using it for a different cohort.
+STRUCTURE_JSON="${NNDOSE_REPO}/documentation/Sample_bash/structure_dicom_test_example.json"
+# Optional but recommended when clinical target prescriptions vary by case.
+# This file is local-only and must not be committed. Stage 1 then builds Target
+# from combined_target.nii.gz (Gy x 100).
+TARGET_SUMMARY="${nnDose_dicom}/${DATASET_NAME}/target_summary.json"
+
+# Keep this low for the smoke test. Increase only after checking RAM and disk capacity.
+N_PROCESSES="1"
+PREPROCESS_PROCESSES="1"
+PLANS_NAME="nnDosePlans"
+TRAIN_CONFIGURATION="3d_fullres"
+TRAINER="nnDoseTrainer"
+DEVICE="cuda"
+BEAM_MODE="template"  # template or bev
+FOLDS=(0 1 2 3 4)

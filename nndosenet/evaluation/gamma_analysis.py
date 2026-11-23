@@ -3,40 +3,40 @@ import pymedphys
 import SimpleITK as sitk
 import numpy as np
 import typing
-def find_dose_spacing(reference):
-    spacing=[reference.PixelSpacing[0],reference.PixelSpacing[1],1]
-    if reference.SliceThickness is None:
-        spacing[2]=spacing[0]
-        return spacing
-    
-    if reference.SliceThickness is not None:
-        # if str(reference.SliceThickness).isnumeric():
-            spacing[2] = int(reference.SliceThickness)
-            return spacing
-    
-    spacing[2]=spacing[0]
+# def find_dose_spacing(reference):
+#     spacing=[reference.PixelSpacing[0],reference.PixelSpacing[1],1]
+#     if reference.SliceThickness is None:
+#         spacing[2]=spacing[0]
+#         return spacing
 
-    return spacing
+#     if reference.SliceThickness is not None:
+#         # if str(reference.SliceThickness).isnumeric():
+#             spacing[2] = int(reference.SliceThickness)
+#             return spacing
+
+#     spacing[2]=spacing[0]
+
+#     return spacing
 
 def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
                    evaluation: typing.Union[pydicom.dataset.FileDataset, str],
                    mask_path,
                    save_path=None,
-                   percent=3,mm=2,cutoff=20,max_gamma=1,ram=2**32):#2**32): 
-    
+                   percent=3,mm=2,cutoff=20,max_gamma=1,ram=2**32):#2**32):
+
     # just checking
     if isinstance(reference, str):
         reference = pydicom.read_file(reference, force=True)
     if isinstance(evaluation, str):
-        evaluation = pydicom.read_file(evaluation, force=True)        
-    
+        evaluation = pydicom.read_file(evaluation, force=True)
+
     if not isinstance(reference, pydicom.dataset.FileDataset):
         raise ValueError('Cannot get ground truth/reference dose dicom file, wrong file type.')
-    
+
     if not isinstance(evaluation, pydicom.dataset.FileDataset):
-        raise ValueError('Cannot get predict/evaluation dose dicom file, wrong file type.') 
-    
-    
+        raise ValueError('Cannot get predict/evaluation dose dicom file, wrong file type.')
+
+
     axes_reference, dose_reference = pymedphys.dicom.zyx_and_dose_from_dataset(reference)
     axes_evaluation, dose_evaluation = pymedphys.dicom.zyx_and_dose_from_dataset(evaluation)
 
@@ -49,45 +49,47 @@ def gamma_analysis(reference: typing.Union[pydicom.dataset.FileDataset, str],
         'random_subset': None,  # Can be used to get quick pass rates
         'local_gamma': True,  # Change to false for global gamma
         'ram_available': ram,
-        'quiet':True  
+        'quiet':True
     }
 
     gamma = pymedphys.gamma(
-        axes_reference, dose_reference, 
+        axes_reference, dose_reference,
         axes_evaluation, dose_evaluation,
         **gamma_options)
     if save_path==None:
         return gamma
     gamma_np=np.nan_to_num(gamma,-1)
     image=sitk.GetImageFromArray(gamma_np)
-    
-    spacing=find_dose_spacing(reference=evaluation) 
 
-    image.SetSpacing(spacing)
+    # spacing=find_dose_spacing(reference=evaluation)
+    grid_frame_offset_vector = evaluation.GridFrameOffsetVector  # List of Z positions
+    z_spacing = float(grid_frame_offset_vector[1] - grid_frame_offset_vector[0])
+
+    image.SetSpacing([evaluation.PixelSpacing[0],evaluation.PixelSpacing[1],z_spacing])
     image.SetDirection(list(evaluation.ImageOrientationPatient)+[0,0,1])
     image.SetOrigin(evaluation.ImagePositionPatient)
-    
+
     sitk.WriteImage(image,save_path)
     pass_gamma,mask_num=pass_rate(max_gamma,gamma_np,image,mask_path)
     return gamma_options,pass_gamma,mask_num
-    
+
 def pass_rate(max_gamma, gamma, gamma_image, mask_path):
     #mask=np.nonzero(sitk.GetArrayFromImage(sitk.ReadImage(mask_path)).flatten())
     mask=sitk.ReadImage(mask_path)
     mask=resample2ref(gamma_image,mask)
     mask=sitk.GetArrayFromImage(mask).flatten()
     mask=np.nonzero(mask)[0]
-    
+
     gamma=np.take(gamma.flatten(),mask)
     pass_gamma=len(np.nonzero(gamma<max_gamma)[0])
     return pass_gamma,len(mask)
 
 def resample2ref(ref:sitk.Image,new:sitk.Image):
 
-    
+
     # new.SetOrigin(ref.GetOrigin())
     # new.SetSpacing(ref.GetSpacing())
-   
+
 
     resample = sitk.ResampleImageFilter()
     resample.SetReferenceImage(ref)
@@ -133,21 +135,20 @@ def rewrite_dcm(reference_dicom, new_array):
         raise ValueError(
             'Must be 16-bit or 32-bit unsigned integer data in `dicom_path` dicom'
         )
-        
+
     # ori_dose=ori_dose.astype(float)
     ori_dose=sitk.GetImageFromArray(reference_dicom.pixel_array)
     ori_dose.SetOrigin(reference_dicom.ImagePositionPatient)
     ori_dose.SetSpacing([reference_dicom.PixelSpacing[0],reference_dicom.PixelSpacing[1],reference_dicom.PixelSpacing[0]])
-    
-    
+
+
     new_dicom.DoseGridScaling = float(new_array.max()) / float(np.iinfo(out_type).max)
     dose_map_scaled = new_array / new_dicom.DoseGridScaling
- 
+
 
     #print(dose_map_scaled.dtype,out_type,np.min(dose_map_scaled),np.max(dose_map_scaled),dose_map_scaled.shape)
     dose_map_scaled = dose_map_scaled.astype(out_type)
     new_dicom.PixelData = dose_map_scaled.tobytes()
     return new_dicom
-    
 
- 
+

@@ -12,51 +12,54 @@ from nndosenet.evaluation.gamma_analysis import gamma_analysis
 from tqdm import tqdm
 from time import sleep
 def nii2dcm_and_gamma(ref_path, pred_path, mask_path, save_folder, gamma = True) -> np.ndarray:
-    
-    #TODO: find the save path based on nnDoseNet_predict path? 
+
+    #TODO: find the save path based on nnDoseNet_predict path?
     name=pred_path.split("/")[-1]
     dicom_save_path=join(save_folder, "PredDicom", name+".dcm")
-    
-    
+
+
     ref_dcm,pred_dcm = dose_to_dicom(predict_nifti_path = pred_path,
                                      reference_dicom_path = ref_path,
                                      save_path = dicom_save_path,
                                      for_gamma = True)
-    
-    if gamma:
-        gamma_save_path=join(save_folder,"Gamma",name+".nii.gz")
-        gamma_options,pass_gamma_num,mask_num = gamma_analysis(reference = ref_dcm,
-                                                               evaluation = pred_dcm,
-                                                               mask_path = mask_path,
-                                                               save_path = gamma_save_path)
-        
-        gamma_dict={pred_path.split("/")[-1]:{"gamma_setting":gamma_options,
-                                                "passing_rate(%)":pass_gamma_num*100/mask_num,
-                                                "pass_gamma_num":pass_gamma_num,
-                                                "mask_num":mask_num,
-                                                "prediction_file":pred_path,
-                                                "reference_file":ref_path,
-                                                "Body/dose mask_file":mask_path}}
-        
-        return gamma_dict
-    else:
-        return {}
+    try:
+        if gamma:
+            gamma_save_path=join(save_folder,"Gamma",name+".nii.gz")
+            gamma_options,pass_gamma_num,mask_num = gamma_analysis(reference = ref_dcm,
+                                                                evaluation = pred_dcm,
+                                                                mask_path = mask_path,
+                                                                save_path = gamma_save_path)
 
+            gamma_dict={pred_path.split("/")[-1]:{"gamma_setting":gamma_options,
+                                                    "passing_rate(%)":pass_gamma_num*100/mask_num,
+                                                    "pass_gamma_num":pass_gamma_num,
+                                                    "mask_num":mask_num,
+                                                    "prediction_file":pred_path,
+                                                    "reference_file":ref_path,
+                                                    "Body/dose mask_file":mask_path}}
+
+            return gamma_dict
+        else:
+            return {}
+    except Exception as e:
+        print(pred_path)
+        print(e)
+        return {}
 def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
                                       reference_folder:str,
                                       output_folder: str,
                                       patient_csv:str,
                                       num_processes=8,
                                       gamma=True) -> None:
-     
+
 
     if gamma:
         if not os.path.isdir(join(output_folder,"Gamma")):
             os.mkdir(join(output_folder,"Gamma"))
     if not os.path.isdir(join(output_folder,"PredDicom")):
-        os.mkdir(join(output_folder,"PredDicom"))        
+        os.mkdir(join(output_folder,"PredDicom"))
     # maybe_mkdir_p(output_folder)
-    
+
     patient_csv=pd.read_csv(patient_csv)
     ref_list=list(patient_csv['patient'])
     pred_list=list(patient_csv['id'])
@@ -71,7 +74,7 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
                                        join(prediction_folder, str(pred).zfill(4)),
                                        join(reference_folder, ref_list[k],"Nifti","Body.nii.gz"),#TODO: change to read structure json for body mask
                                        output_folder,gamma),)))
-            
+
         remaining = list(range(len(pred_list)))
             # p is pretty nifti. If we kill workers they just respawn but don't do any work.
             # So we need to store the original pool of workers.
@@ -95,24 +98,24 @@ def apply_nii2dcm_and_gamma_to_folder(prediction_folder: str,
         #print(results_dict)
         for case in results_dict:
             #print(case)
-            
+
             # print(case.keys())
             gamma_setting=results_dict[str(case)]['gamma_setting']
             pass_list.append(results_dict[str(case)]['passing_rate(%)'])
-        
+
         mean_dict={"gamma_setting":gamma_setting,
                    "mean_gamma_passing_rate":np.mean(pass_list),
                    "std_gamma_passing_rate":np.std(pass_list),
                    "# of case has GPR > 90%": len([i for i in pass_list if float(i) > 90.0]),
                    "total_case":len(results_dict)}
-        
+
         mean_dict.update(dict(sorted(results_dict.items())))
         save_json(mean_dict,join(output_folder,"gamma_summary.json"),sort_keys=False)
 
 def nii2dcm_and_gamma_analysis_entry_point():
     parser = argparse.ArgumentParser('Convert nifti prediction to dicom if the ground truth is in dicom format. \
                                         Also perform gamma analysis on prediction in default ')
-    
+
     parser.add_argument('-pred', type=str, required=True,help='Prediction folder')
     parser.add_argument('-ref', type=str, required=True, help='Reference folder')
     parser.add_argument('-out', type=str, required=False, default=None, help='Output folder. Default create a subfolder PredDicom in -pred folder')
@@ -125,42 +128,42 @@ def nii2dcm_and_gamma_analysis_entry_point():
                         help='Only convert prediction of nifti back to dicom without doing gamma analysis. \
                             It would be wayyyyyyyy faster if you disable gamma analysis!.')
     args = parser.parse_args()
-    
-    ## prediction folder default 
+
+    ## prediction folder default
     prediction_folder=args.pred
     if not os.path.isdir(prediction_folder):
-        raise(RuntimeError("Prediction_folder: "+prediction_folder+" do not exist"))  
-    
-    ## reference folder default    
+        raise(RuntimeError("Prediction_folder: "+prediction_folder+" do not exist"))
+
+    ## reference folder default
     reference_folder=args.ref
     if not os.path.isdir(reference_folder):
-        raise(RuntimeError("Reference_folder: "+reference_folder+" do not exist"))  
-    
-    ## patient csv default  
+        raise(RuntimeError("Reference_folder: "+reference_folder+" do not exist"))
+
+    ## patient csv default
     patient_csv=args.csv
     # if patient_csv is None:
     #     pass#TODO: find patient csv in reference and prediction
-        
+
     if not os.path.isfile(patient_csv):
-        raise(RuntimeError("Patient_csv: "+patient_csv+" do not exist"))      
-    
+        raise(RuntimeError("Patient_csv: "+patient_csv+" do not exist"))
+
     ## output folder default
     output_folder=args.out
     if output_folder==None:
         output_folder=args.pred
-    
+
     apply_nii2dcm_and_gamma_to_folder(prediction_folder, reference_folder, output_folder, patient_csv, args.np,gamma=args.no_gamma)
     print("finish !!! ")
-    
+
 def nii2dcm_and_gamma_analysis_Ts_entry_point():
     parser = argparse.ArgumentParser('Convert nifti prediction to dicom if the ground truth is in dicom format. \
                                         Also perform gamma analysis on prediction in default ')
-    
+
     parser.add_argument('-id', type=str, required=False, help='Prediction id')
     parser.add_argument('-name', type=str, required=False, help='Dataset Name')
     parser.add_argument('-c', required=False, default=['2d', '3d_fullres', '3d_lowres'], nargs='+',
                         help='[OPTIONAL] Configurations for which the evaluation should be run. Default: 2d 3f_fullres '
-                            '3d_lowres.  Configurations that do not exist for some dataset will be skipped.')    
+                            '3d_lowres.  Configurations that do not exist for some dataset will be skipped.')
     parser.add_argument('-csv', type=str, required=False, default=None, help='csv conversion list of patient_num nifti folder \
                             and patient folder name in dicom folder, default use the \
                             "[nndose_prediction]/[-name]/Dataset+[-id]}/GroundTruth/patientTs.csv" that is created format and \
@@ -173,40 +176,43 @@ def nii2dcm_and_gamma_analysis_Ts_entry_point():
                         help='Only convert prediction of nifti back to dicom without doing gamma analysis. \
                             It would be wayyyyyyyy faster if you do not need gamma!')
     args = parser.parse_args()
-    
-        
+    output_dataset_name = args.name.strip()
+    if not output_dataset_name:
+        raise ValueError('-name must contain a non-whitespace dataset name')
+
+
     ## reference folder default
     reference_folder=join(nnDose_dicom,args.name,"Ts")
     if not os.path.isdir(reference_folder):
-        raise(RuntimeError("Reference_folder: "+reference_folder+" do not exist"))  
+        raise(RuntimeError("Reference_folder: "+reference_folder+" do not exist"))
     print("default reference folder: ", reference_folder)
-    
-    
+
+
     ## patient csv default
     patient_csv=args.csv
     if patient_csv is None:
-        patient_csv=join(nnDose_prediction,args.name,"Dataset"+args.id+"_"+args.name,"GroundTruth","patientTs.csv")
+        patient_csv=join(nnDose_prediction,output_dataset_name,"Dataset"+args.id+"_"+output_dataset_name,"GroundTruth","patientTs.csv")
         print("default patient_csv: ", patient_csv)
-        
+
     if not os.path.isfile(patient_csv):
-        raise(RuntimeError("Patient_csv: "+patient_csv+" do not exist"))      
+        raise(RuntimeError("Patient_csv: "+patient_csv+" do not exist"))
     #TODO: else glob csv
-    
+
     ## prediction folder default
-    prediction_folder=join(nnDose_prediction,args.name,"Dataset"+args.id+"_"+args.name,"Prediction")
+    prediction_folder=join(nnDose_prediction,output_dataset_name,"Dataset"+args.id+"_"+output_dataset_name,"Prediction")
     if not os.path.isdir(prediction_folder):
-        raise(RuntimeError("Prediction_folder: "+prediction_folder+" do not exist"))  
+        raise(RuntimeError("Prediction_folder: "+prediction_folder+" do not exist"))
     print("prediction folder: ", prediction_folder, ":")
-    
+
     temp=[]
     for i in os.listdir(prediction_folder):
         if os.path.isdir(os.path.join(prediction_folder,i)):
             temp.append(i)
     print("Folders(configurations) in prediction folder: ",temp)
-    print("running configurations: ",args.c)    
-    
-    
-    
+    print("running configurations: ",args.c)
+
+
+
 
     for config in args.c:
         if os.path.isdir(join(prediction_folder,config)):
@@ -214,57 +220,57 @@ def nii2dcm_and_gamma_analysis_Ts_entry_point():
             output_folder=join(prediction_folder,config)
             print("output_folder: ", output_folder)
             apply_nii2dcm_and_gamma_to_folder(join(prediction_folder,config), reference_folder, output_folder, patient_csv, args.np,gamma=args.no_gamma)
-            
+
             print("all done")
-            
-            
+
+
     print("finish !!! ")
 if __name__ == '__main__':
-    ## reference folder default    
+    ## reference folder default
     reference_folder=None
     prediction_folder=None
     output_folder=None
     patient_csv=None
-    
+
 
     name="prostate_UAB"
     id="520"
-        
-    ## prediction folder default 
+
+    ## prediction folder default
 
     if prediction_folder is None:
         if name is None or id is None:
             raise(RuntimeError("Either input predict folder or input dataset name and id"))
         prediction_folder=join(nnDose_prediction,name,"Dataset"+id,"Prediction")
-        
+
     if not os.path.isdir(prediction_folder):
         raise(RuntimeError("Prediction folder: "+prediction_folder+" do not exist"))
     elif len(os.listdir(prediction_folder))<1:
         raise(RuntimeError("There is no files in Prediction folder: "+prediction_folder))
     elif len(glob.glob(join(prediction_folder,"*.nii.gz")))<1:
         raise(RuntimeError("There is no nifti file in Prediction folder: "+prediction_folder))
-    
-    ## reference folder default    
+
+    ## reference folder default
 
     if reference_folder is None:
         reference_folder=join(nnDose_dicom,name,"Ts")
     if not os.path.isdir(reference_folder):
-        raise(RuntimeError("Reference_folder: "+reference_folder+" do not exist"))      
+        raise(RuntimeError("Reference_folder: "+reference_folder+" do not exist"))
 
-    
-    ## patient csv default  
+
+    ## patient csv default
 
     if patient_csv is None:
         patient_csv=join(nnDose_prediction,name,"Dataset"+id,"GroundTruth","patientTs.csv")
     if not os.path.isfile(patient_csv):
-        raise(RuntimeError("Patient_csv: "+patient_csv+" do not exist"))      
+        raise(RuntimeError("Patient_csv: "+patient_csv+" do not exist"))
     #TODO: else glob csv
-    
+
     ## output folder default
-    
+
     # if output_folder is None:
     #     output_folder=os.path.dirname(prediction_folder)
-    
+
     if not os.path.isdir(output_folder):
-        raise(RuntimeError("Output_folder: "+output_folder+" do not exist")) 
+        raise(RuntimeError("Output_folder: "+output_folder+" do not exist"))
     apply_nii2dcm_and_gamma_to_folder(prediction_folder, reference_folder, output_folder, patient_csv, 8)

@@ -1,0 +1,27 @@
+{
+  "structure_name": {
+    "Target_High": ["PTVsb_High", "PTV_High"],
+    "Target_Low": ["PTVn_Low", "PTV_Low"],
+    "Bladder": ["Bladder"],
+    "Rectum": ["Rectum"],
+    "Femur_Head_L": ["Femur_Head_L", "Femur_Heads"],
+    "Femur_Head_R": ["Femur_Head_R"],
+    "Bowel": ["Bowel_Large", "Bowel_Small"],
+    "Body": ["BODY"]
+  },
+  "structure_label": {
+    "Target": {
+      "2": ["Target_High"],
+      "1": ["Target_Low"]
+    },
+    "OAR": {
+      "1": ["Bladder"],
+      "2": ["Rectum"],
+      "3": ["Femur_Head_L", "Femur_Head_R"],
+      "4": ["Bowel"]
+    },
+    "Body": {
+      "1": ["Body"]
+    }
+  }
+}

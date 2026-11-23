@@ -1,0 +1,165 @@
+{
+  "_comment": "Canonical structure name -> list of synonyms/abbreviations found in DICOM. Used to auto-suggest structure_name from roi_list_summary. Match is case-insensitive; spaces/underscores normalized.",
+  "Breast_L": [
+    "Breast_L", "Breast L", "Breast-Left", "Left_Breast", "left_breast", "L_Breast", "BST_L", "BST L", "BreastLeft", "Left Breast", "BREAST_L", "Breast_Left"
+  ],
+  "Breast_R": [
+    "Breast_R", "Breast R", "Breast-Right", "Right_Breast", "right_breast", "R_Breast", "BST_R", "BST R", "BreastRight", "Right Breast", "BREAST_R", "Breast_Right"
+  ],
+  "Lung_L": [
+    "Lung_L", "Lung L", "Lung-Left", "Left_Lung", "left_lung", "L_Lung", "LungLeft", "Left Lung", "LUNG_L", "Lung_Left", "GTV_Lung_L"
+  ],
+  "Lung_R": [
+    "Lung_R", "Lung R", "Lung-Right", "Right_Lung", "right_lung", "R_Lung", "LungRight", "Right Lung", "LUNG_R", "Lung_Right", "GTV_Lung_R"
+  ],
+  "Heart": [
+    "Heart", "HEART", "heart", "GTV_Heart"
+  ],
+  "Spine": [
+    "Spine", "spine", "Spinal Cord", "spinal cord", "spinal_cord", "Spinal_Cord", "SpinalCord", "Cord", "SC", "SCord", "SpinalCanal"
+  ],
+  "Esophagus": [
+    "Esophagus", "Esophagus_S", "Esophagus_M", "Esophagus_I", "Oesophagus", "ESOPHAGUS"
+  ],
+  "Trachea": [
+    "Trachea", "TRACHEA", "trachea"
+  ],
+  "Carina": [
+    "Carina", "carina"
+  ],
+  "Bronchus_Main_R": [
+    "Bronchus_Main_R", "BronchusMain_R", "Bronchus_main_R", "bronchus_main_R", "Bronchus_R", "bronchus_R", "Bronchus_Main_r", "BronchusMain_r", "Bronchus_main_r", "Bronchus_r"
+  ],
+  "Bronchus_Main_L": [
+    "Bronchus_Main_L", "BronchusMain_L", "Bronchus_main_L", "bronchus_main_L", "Bronchus_L", "bronchus_L", "Bronchus_Main_l", "BronchusMain_l", "Bronchus_main_l", "Bronchus_l"
+  ],
+  "Mandible": [
+    "Mandible", "mandible", "Bone_Mandible"
+  ],
+  "BrainStem": [
+    "Brainstem", "brainstem"
+  ],
+  "Glnd_Thyroid": [
+    "Glnd_Thyroid", "GlndThyroid", "Thyroid", "glnd_thyroid", "thyroid", "THYROID"
+  ],
+  "Larynx": [
+    "Larynx", "LARYNX", "larynx", "GTV_Larynx"
+  ],
+  "Parotid_L": [
+    "Parotid_L", "Parotid L", "Left_Parotid", "left_parotid", "L_Parotid", "ParotidLeft", "Left Parotid", "PAROTID_L"
+  ],
+  "Parotid_R": [
+    "Parotid_R", "Parotid R", "Right_Parotid", "right_parotid", "R_Parotid", "ParotidRight", "Right Parotid", "PAROTID_R"
+  ],
+  "Submandibular_L": [
+    "Submandibular_L", "Submandibular L", "Left_Submandibular", "SMG_L", "L_SMG", "SubmandibularLeft"
+  ],
+  "Submandibular_R": [
+    "Submandibular_R", "Submandibular R", "Right_Submandibular", "SMG_R", "R_SMG", "SubmandibularRight"
+  ],
+  "Femur_Head_L": [
+    "Femur_Head_L", "Femur Head L", "Left_Femur_Head", "Femur_Head_Left", "L_Femur_Head", "FemurHead_L", "FH_L"
+  ],
+  "Femur_Head_R": [
+    "Femur_Head_R", "Femur Head R", "Right_Femur_Head", "Femur_Head_Right", "R_Femur_Head", "FemurHead_R", "FH_R"
+  ],
+  "Femur_L": [
+    "Femur_L", "Femur L", "Left_Femur", "L_Femur", "Femur_Left"
+  ],
+  "Femur_R": [
+    "Femur_R", "Femur R", "Right_Femur", "R_Femur", "Femur_Right"
+  ],
+  "Bladder": [
+    "Bladder", "BLADDER", "bladder", "GTV_Bladder"
+  ],
+  "Rectum": [
+    "Rectum", "RECTUM", "rectum", "GTV_Rectum"
+  ],
+  "Bowel": [
+    "Bowel", "Bowel_Large", "Bowel_Small", "Bag_Bowel", "BOWEL", "bowel", "Small_Bowel", "Large_Bowel", "Bowel_Bag"
+  ],
+  "Kidney": [
+    "Kidney", "kidney", "KIDNEY"
+  ],
+  "Kidney_L": [
+    "Kidney_L", "Kidney L", "Left_Kidney", "L_Kidney", "Kidney_Left", "KidneyLeft", "Kdney_L", "Lidney_Left"
+  ],
+  "Kidney_R": [
+    "Kidney_R", "Kidney R", "Right_Kidney", "R_Kidney", "Kidney_Right", "KidneyRight", "Kdney_R", "Lidney_Right"
+  ],
+  "Liver": [
+    "Liver", "LIVER", "liver", "GTV_Liver"
+  ],
+  "Spleen": [
+    "Spleen", "SPLEEN", "spleen"
+  ],
+  "Stomach": [
+    "Stomach", "STOMACH", "stomach", "GTV_Stomach"
+  ],
+  "Body": [
+    "Body", "BODY", "body", "External", "external", "EXTERNAL", "Skin", "SKIN", "Patient", "Contour", "Body_Outline"
+  ],
+  "PTV": [
+    "PTV", "ptv", "PTV1", "PTV2", "PTV_1", "PTV_2", "Primary_PTV", "Planning_Target"
+  ],
+  "PTV_High": [
+    "PTV_High", "PTV High", "PTV_High^p", "PTV_High^p+sv", "PTV_Pros_7000", "PTV^p+sv", "PTVp_High", "High_PTV"
+  ],
+  "CTV": [
+    "CTV", "ctv", "CTV1", "CTV_1", "Clinical_Target"
+  ],
+  "GTV": [
+    "GTV", "gtv", "GTV1", "GTV_1", "Gross_Target"
+  ],
+  "Eye_L": [
+    "Eye_L", "Eye L", "Left_Eye", "Eye_Left", "Eyes_L", "eye_l"
+  ],
+  "Eye_R": [
+    "Eye_R", "Eye R", "Right_Eye", "Eye_Right", "Eyes_R", "eye_r"
+  ],
+  "Eyes": [
+    "Eyes", "eyes", "EYES"
+  ],
+  "Lens_L": [
+    "Lens_L", "Lens L", "Left_Lens", "Lens_Left", "Lenses_L", "Lens_l", "lens_l"
+  ],
+  "Lens_R": [
+    "Lens_R", "Lens R", "Right_Lens", "Lens_Right", "Lenses_R", "Lens_r", "lens_r"
+  ],
+  "Lens": [
+    "Lens", "Lenses", "lens", "lenses", "LENS"
+  ],
+  "Brain": [
+    "Brain", "brain", "BRAIN"
+  ],
+  "Cavity_Oral": [
+    "Cavity_Oral", "Cavity Oral", "Oral_Cavity", "OralCavity", "Cavity_Oral", "oral_cavity"
+  ],
+  "CaudaEquina": [
+    "CaudaEquina", "Cauda Equina", "cauda_equina", "CaudaEquina"
+  ],
+  "OpticNrv_L": [
+    "OpticNrv_L", "Optic Nerve L", "OpticNerve_L", "Optic_Nrv_L", "Left_Optic_Nerve", "OpticNrv_l"
+  ],
+  "OpticNrv_R": [
+    "OpticNrv_R", "Optic Nerve R", "OpticNerve_R", "Optic_Nrv_R", "Right_Optic_Nerve", "OpticNrv_r"
+  ],
+  "Genitals": [
+    "Genitals", "genitals", "GENITALS"
+  ],
+  "PTV_Lower": [
+    "PTV^Lower", "PTV Lower", "PTV_Lower", "ptv_lower", "PTVlower"
+  ],
+  "PTV_Upper": [
+    "PTV^Upper", "PTV Upper", "PTV_Upper", "ptv_upper", "PTVupper"
+  ],
+  "PTV_Body": [
+    "PTV^Body", "PTV Body", "PTV_Body", "ptv_body", "PTVbody"
+  ],
+  "Lungs": [
+    "Lungs", "lungs", "LUNGS"
+  ],
+  "Kidneys": [
+    "Kidneys", "kidneys", "KIDNEYS"
+  ]
+}

@@ -1,3 +1,7 @@
+# Current CLI names
+
+This is a legacy format reference. The current installed commands use hyphenated names such as `nnDoseNet_1-1_convert_dicom_image` and `nnDoseNet_1-2_label_nifti`; older dotted command spellings in this page may no longer be installed. Use the [legacy CLI reference](CLI_REFERENCE_LEGACY.md) for the authoritative command inventory and [handoff guide](HANDOFF_NNDOSEV2.md) for the supported workflow.
+
 Welcome to dataset_format in `nnDose_diom`! Here are the section in this page:)
 
  - [unorganized Dicom dataset](#dicom-dataset-format-1-unorganized-in-nndose_dicom)

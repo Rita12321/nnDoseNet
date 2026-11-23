@@ -42,7 +42,7 @@ def crop_to_nonzero(data, gt=None, nonzero_label=-1):
     if gt is not None:
         gt[(gt == 0) & (~nonzero_mask)] = nonzero_label
     else:
-        nonzero_mask = nonzero_mask.astype(np.int8)
+        nonzero_mask = nonzero_mask.astype(np.int16)
         nonzero_mask[nonzero_mask == 0] = nonzero_label
         nonzero_mask[nonzero_mask > 0] = 0
         gt = nonzero_mask

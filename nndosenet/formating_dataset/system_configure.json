@@ -1,0 +1,17 @@
+{
+    "_comment": "nnDoseNet system configuration. Override by: (1) NNDOSE_SYSTEM_CONFIG env var, (2) nnDose_dicom/system_configure.json, (3) this file (package default). CLI flags always override.",
+
+    "num_processes": 8,
+    "structure": null,
+    "gpu_availability": true,
+    "gpu_ids": [0, 1],
+
+    "_hardware_detected": {
+        "cpu": "Intel Core i9-9940X @ 3.30GHz",
+        "cpu_cores": 28,
+        "ram_gb": 125,
+        "gpu_0": "NVIDIA TITAN RTX (24 GB)",
+        "gpu_1": "NVIDIA TITAN RTX (24 GB)",
+        "cuda": "12.0"
+    }
+}
